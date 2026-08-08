@@ -1,0 +1,47 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using TakeAuction.Api.Common.Persistence.Seeding;
+using TakeAuction.Api.Common.Security;
+
+namespace TakeAuction.Api.Common.Persistence;
+
+public static class PersistenceExtensions
+{
+    public static IServiceCollection AddTakeAuctionPersistence(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        services.AddOptions<SeedOptions>()
+            .Bind(configuration.GetSection(SeedOptions.SectionName));
+
+        var connectionString = configuration.GetConnectionString("Postgres")
+            ?? throw new InvalidOperationException("Connection string 'Postgres' is not configured.");
+
+        services.AddDbContext<AppDbContext>((serviceProvider, options) =>
+        {
+            options.UseNpgsql(connectionString, npgsql =>
+            {
+                npgsql.MigrationsHistoryTable("__ef_migrations_history");
+                npgsql.EnableRetryOnFailure(3, TimeSpan.FromSeconds(5), null);
+            });
+
+            var seedOptions = serviceProvider.GetRequiredService<IOptions<SeedOptions>>().Value;
+            var passwordHasher = serviceProvider.GetRequiredService<IPasswordHasher>();
+
+            options.UseAsyncSeeding((context, _, cancellationToken) =>
+                DatabaseSeeder.SeedAsync(context, seedOptions, passwordHasher, cancellationToken));
+
+            options.UseSeeding((context, _) =>
+                DatabaseSeeder.SeedAsync(context, seedOptions, passwordHasher).GetAwaiter().GetResult());
+        });
+
+        return services;
+    }
+
+    public static async Task MigrateAndSeedAsync(this WebApplication app)
+    {
+        await using var scope = app.Services.CreateAsyncScope();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await context.Database.MigrateAsync();
+    }
+}

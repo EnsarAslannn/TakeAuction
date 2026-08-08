@@ -1,20 +1,94 @@
-var builder = WebApplication.CreateBuilder(args);
+using Asp.Versioning;
+using Asp.Versioning.Builder;
+using Serilog;
+using TakeAuction.Api.Common.Api;
+using TakeAuction.Api.Common.Observability;
+using TakeAuction.Api.Common.Persistence;
+using TakeAuction.Api.Common.Security;
 
-builder.Services.AddOpenApi();
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
 
-var app = builder.Build();
-
-if (app.Environment.IsDevelopment())
+try
 {
-    app.MapOpenApi();
+    var builder = WebApplication.CreateBuilder(args);
+
+    builder.Host.UseTakeAuctionSerilog();
+
+    builder.Services.AddTakeAuctionForwardedHeaders(builder.Configuration);
+    builder.Services.AddTakeAuctionApiVersioning();
+    builder.Services.AddTakeAuctionSwagger();
+    builder.Services.AddTakeAuctionRateLimiting(builder.Configuration);
+    builder.Services.AddTakeAuctionAuthentication(builder.Configuration);
+    builder.Services.AddTakeAuctionPersistence(builder.Configuration);
+    builder.Services.AddProblemDetails();
+
+    var app = builder.Build();
+
+    app.UseForwardedHeaders();
+    app.UseTakeAuctionRequestLogging();
+    app.UseExceptionHandler();
+    app.UseStatusCodePages();
+
+    if (app.Environment.IsDevelopment())
+    {
+        app.UseTakeAuctionSwagger();
+    }
+
+    app.UseRouting();
+    app.UseAuthentication();
+    app.UseAuthorization();
+    app.UseRateLimiter();
+
+    ApiVersionSet versionSet = app.NewApiVersionSet()
+        .HasApiVersion(ApiVersioningExtensions.V1)
+        .ReportApiVersions()
+        .Build();
+
+    RouteGroupBuilder api = app
+        .MapGroup("/api/v{version:apiVersion}")
+        .WithApiVersionSet(versionSet);
+
+    api.MapGet("/diagnostics/info", (IWebHostEnvironment environment, HttpContext httpContext) => Results.Ok(new
+    {
+        service = "TakeAuction.Api",
+        apiVersion = httpContext.Features.Get<IApiVersioningFeature>()?.RequestedApiVersion?.ToString() ?? "1.0",
+        environment = environment.EnvironmentName,
+        clientIp = httpContext.Connection.RemoteIpAddress?.ToString(),
+        scheme = httpContext.Request.Scheme,
+        timestamp = DateTimeOffset.UtcNow
+    }))
+    .WithName("DiagnosticsInfo")
+    .WithTags("Diagnostics")
+    .WithSummary("Returns runtime information and the client IP as resolved behind the reverse proxy.");
+
+    app.MapGet("/health", () => Results.Ok(new
+    {
+        status = "healthy",
+        service = "TakeAuction.Api",
+        environment = app.Environment.EnvironmentName,
+        timestamp = DateTimeOffset.UtcNow
+    }))
+    .WithName("HealthCheck")
+    .WithTags("Diagnostics")
+    .DisableRateLimiting();
+
+    if (app.Environment.IsDevelopment())
+    {
+        await app.MigrateAndSeedAsync();
+    }
+
+    await app.RunAsync();
+}
+catch (Exception ex) when (ex is not HostAbortedException)
+{
+    Log.Fatal(ex, "TakeAuction.Api terminated unexpectedly");
+    throw;
+}
+finally
+{
+    await Log.CloseAndFlushAsync();
 }
 
-app.MapGet("/health", () => Results.Ok(new
-{
-    status = "healthy",
-    service = "TakeAuction.Api",
-    environment = app.Environment.EnvironmentName,
-    timestamp = DateTimeOffset.UtcNow
-}));
-
-app.Run();
+public partial class Program;
