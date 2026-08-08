@@ -1,0 +1,12 @@
+@TakeAuction_Api_HostAddress = http://localhost:5080
+@TakeAuction_Gateway_HostAddress = http://localhost:8080
+
+GET {{TakeAuction_Api_HostAddress}}/health
+Accept: application/json
+
+###
+
+GET {{TakeAuction_Gateway_HostAddress}}/health
+Accept: application/json
+
+###

@@ -1,0 +1,84 @@
+name: takeauction
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: takeauction-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-takeauction}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-takeauction_dev_pw}
+      POSTGRES_DB: ${POSTGRES_DB:-takeauction}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-takeauction} -d ${POSTGRES_DB:-takeauction}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - takeauction-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: takeauction-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - takeauction-network
+
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    container_name: takeauction-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-takeauction}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-takeauction_dev_pw}
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 45s
+    networks:
+      - takeauction-network
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: takeauction-nginx
+    restart: unless-stopped
+    ports:
+      - "${NGINX_PORT:-8080}:80"
+    volumes:
+      - ./infra/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - takeauction-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  rabbitmq_data:
+
+networks:
+  takeauction-network:
+    driver: bridge
