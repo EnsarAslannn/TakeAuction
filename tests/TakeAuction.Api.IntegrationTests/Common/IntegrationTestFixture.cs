@@ -88,7 +88,7 @@ public sealed class IntegrationTestFixture : IAsyncLifetime
         {
             var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             await dbContext.Database.ExecuteSqlRawAsync(
-                """TRUNCATE TABLE "auctions", "users" RESTART IDENTITY CASCADE;""");
+                """TRUNCATE TABLE "bids", "auctions", "users" RESTART IDENTITY CASCADE;""");
         }
 
         await _redis.ExecAsync(["redis-cli", "FLUSHALL"]);

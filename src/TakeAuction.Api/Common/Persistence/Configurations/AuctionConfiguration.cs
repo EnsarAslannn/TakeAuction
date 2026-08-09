@@ -12,6 +12,8 @@ public sealed class AuctionConfiguration : IEntityTypeConfiguration<Auction>
 
         builder.HasKey(a => a.Id);
 
+        builder.Ignore(a => a.MinimumAcceptableBid);
+
         builder.Property(a => a.SellerId)
             .IsRequired();
 
@@ -46,6 +48,11 @@ public sealed class AuctionConfiguration : IEntityTypeConfiguration<Auction>
         builder.Property(a => a.Status)
             .HasConversion<string>()
             .HasMaxLength(32)
+            .IsRequired();
+
+        builder.Property(a => a.LeadingBidderId);
+
+        builder.Property(a => a.BidCount)
             .IsRequired();
 
         builder.Property(a => a.CreatedAtUtc)

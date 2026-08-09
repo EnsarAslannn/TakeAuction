@@ -12,8 +12,13 @@ public sealed class Auction
     public DateTimeOffset StartsAtUtc { get; private set; }
     public DateTimeOffset EndsAtUtc { get; private set; }
     public AuctionStatus Status { get; private set; }
+    public Guid? LeadingBidderId { get; private set; }
+    public int BidCount { get; private set; }
     public DateTimeOffset CreatedAtUtc { get; private set; }
     public uint Version { get; private set; }
+
+    public decimal MinimumAcceptableBid =>
+        BidCount == 0 ? StartingPrice : CurrentPrice + MinimumBidIncrement;
 
     private Auction() { }
 
@@ -61,5 +66,42 @@ public sealed class Auction
             Status = startsAtUtc > nowUtc ? AuctionStatus.Scheduled : AuctionStatus.Active,
             CreatedAtUtc = nowUtc
         };
+    }
+
+    public BidOutcome PlaceBid(Guid bidderId, decimal amount, DateTimeOffset nowUtc)
+    {
+        if (bidderId == Guid.Empty)
+        {
+            throw new ArgumentException("Bidder id is required.", nameof(bidderId));
+        }
+
+        if (bidderId == SellerId)
+        {
+            return BidOutcome.Rejected(BidRejection.SellerCannotBid);
+        }
+
+        if (Status is AuctionStatus.Ended or AuctionStatus.Cancelled)
+        {
+            return BidOutcome.Rejected(BidRejection.AuctionNotOpen);
+        }
+
+        if (nowUtc < StartsAtUtc || nowUtc >= EndsAtUtc)
+        {
+            return BidOutcome.Rejected(BidRejection.AuctionNotOpen);
+        }
+
+        if (amount < MinimumAcceptableBid)
+        {
+            return BidOutcome.Rejected(BidRejection.BidTooLow);
+        }
+
+        var bid = Bid.Create(Id, bidderId, amount, nowUtc);
+
+        Status = AuctionStatus.Active;
+        CurrentPrice = amount;
+        LeadingBidderId = bidderId;
+        BidCount++;
+
+        return BidOutcome.Accepted(bid);
     }
 }

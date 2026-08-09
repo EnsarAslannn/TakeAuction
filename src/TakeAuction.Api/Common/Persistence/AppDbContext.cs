@@ -14,6 +14,8 @@ public sealed class AppDbContext : DbContext
 
     public DbSet<Auction> Auctions => Set<Auction>();
 
+    public DbSet<Bid> Bids => Set<Bid>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
