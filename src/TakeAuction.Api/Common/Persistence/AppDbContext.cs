@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using TakeAuction.Api.Domain.Auctions;
 using TakeAuction.Api.Domain.Users;
 
 namespace TakeAuction.Api.Common.Persistence;
@@ -10,6 +11,8 @@ public sealed class AppDbContext : DbContext
     }
 
     public DbSet<User> Users => Set<User>();
+
+    public DbSet<Auction> Auctions => Set<Auction>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

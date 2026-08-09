@@ -2,4 +2,8 @@
   <Folder Name="/src/">
     <Project Path="src/TakeAuction.Api/TakeAuction.Api.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/TakeAuction.Api.IntegrationTests/TakeAuction.Api.IntegrationTests.csproj" />
+    <Project Path="tests/TakeAuction.Api.UnitTests/TakeAuction.Api.UnitTests.csproj" />
+  </Folder>
 </Solution>
