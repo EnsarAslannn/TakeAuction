@@ -7,6 +7,7 @@ using TakeAuction.Api.Common.Caching;
 using TakeAuction.Api.Common.Messaging;
 using TakeAuction.Api.Common.Observability;
 using TakeAuction.Api.Common.Persistence;
+using TakeAuction.Api.Common.RealTime;
 using TakeAuction.Api.Common.Security;
 using TakeAuction.Api.Features.Auctions;
 
@@ -28,6 +29,8 @@ try
     builder.Services.AddTakeAuctionPersistence(builder.Configuration);
     builder.Services.AddTakeAuctionCaching(builder.Configuration);
     builder.Services.AddTakeAuctionMessaging(Assembly.GetExecutingAssembly());
+    builder.Services.AddTakeAuctionMessageBroker(builder.Configuration, Assembly.GetExecutingAssembly());
+    builder.Services.AddTakeAuctionRealTime(builder.Configuration);
     builder.Services.AddTakeAuctionEndpoints(Assembly.GetExecutingAssembly());
     builder.Services.AddAuctionsFeature();
     builder.Services.AddProblemDetails();
@@ -73,6 +76,8 @@ try
     .WithSummary("Returns runtime information and the client IP as resolved behind the reverse proxy.");
 
     api.MapTakeAuctionEndpoints();
+
+    app.MapTakeAuctionRealTime();
 
     app.MapGet("/health", () => Results.Ok(new
     {

@@ -49,7 +49,13 @@ public sealed class CreateAuctionHandler : IRequestHandler<CreateAuctionCommand,
             auction.EndsAtUtc);
 
         await _publisher.Publish(
-            new AuctionCreatedEvent(auction.Id, auction.SellerId, auction.StartingPrice, auction.EndsAtUtc, now),
+            new AuctionCreatedEvent(
+                auction.Id,
+                auction.SellerId,
+                auction.StartingPrice,
+                auction.Status.ToString(),
+                auction.EndsAtUtc,
+                now),
             cancellationToken);
 
         return new CreateAuctionResponse(

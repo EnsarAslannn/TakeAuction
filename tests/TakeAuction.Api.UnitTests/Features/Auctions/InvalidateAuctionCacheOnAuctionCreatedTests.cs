@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using TakeAuction.Api.Common.Caching;
+using TakeAuction.Api.Domain.Auctions;
 using TakeAuction.Api.Features.Auctions;
 using TakeAuction.Api.Features.Auctions.CreateAuction;
 using TakeAuction.Api.UnitTests.Common;
@@ -35,6 +36,7 @@ public sealed class InvalidateAuctionCacheOnAuctionCreatedTests
         Guid.CreateVersion7(),
         Guid.CreateVersion7(),
         100m,
+        nameof(AuctionStatus.Active),
         TestHarness.Now.AddDays(1),
         TestHarness.Now);
 }
