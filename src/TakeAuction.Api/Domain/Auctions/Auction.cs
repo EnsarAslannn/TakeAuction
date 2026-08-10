@@ -104,4 +104,21 @@ public sealed class Auction
 
         return BidOutcome.Accepted(bid);
     }
+
+    public bool End(DateTimeOffset nowUtc)
+    {
+        if (Status is AuctionStatus.Ended or AuctionStatus.Cancelled)
+        {
+            return false;
+        }
+
+        if (nowUtc < EndsAtUtc)
+        {
+            return false;
+        }
+
+        Status = AuctionStatus.Ended;
+
+        return true;
+    }
 }

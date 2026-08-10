@@ -92,6 +92,7 @@ public sealed class SignalRAuctionNotifierTests
         AuctionId,
         "Active",
         100m,
+        null,
         TestHarness.Now.AddDays(2),
         TestHarness.Now);
 }

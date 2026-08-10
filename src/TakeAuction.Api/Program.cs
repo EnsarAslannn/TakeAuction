@@ -4,6 +4,7 @@ using Asp.Versioning.Builder;
 using Serilog;
 using TakeAuction.Api.Common.Api;
 using TakeAuction.Api.Common.Caching;
+using TakeAuction.Api.Common.Jobs;
 using TakeAuction.Api.Common.Messaging;
 using TakeAuction.Api.Common.Observability;
 using TakeAuction.Api.Common.Persistence;
@@ -31,6 +32,7 @@ try
     builder.Services.AddTakeAuctionMessaging(Assembly.GetExecutingAssembly());
     builder.Services.AddTakeAuctionMessageBroker(builder.Configuration, Assembly.GetExecutingAssembly());
     builder.Services.AddTakeAuctionRealTime(builder.Configuration);
+    builder.Services.AddTakeAuctionJobs(builder.Configuration, Assembly.GetExecutingAssembly());
     builder.Services.AddTakeAuctionEndpoints(Assembly.GetExecutingAssembly());
     builder.Services.AddAuctionsFeature();
     builder.Services.AddProblemDetails();
@@ -46,6 +48,7 @@ try
     if (app.Environment.IsDevelopment())
     {
         app.UseTakeAuctionSwagger();
+        app.UseTakeAuctionJobsDashboard();
     }
 
     app.UseRouting();
@@ -78,6 +81,7 @@ try
     api.MapTakeAuctionEndpoints();
 
     app.MapTakeAuctionRealTime();
+    app.UseTakeAuctionRecurringJobs();
 
     app.MapGet("/health", () => Results.Ok(new
     {

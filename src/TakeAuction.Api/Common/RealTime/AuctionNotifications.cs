@@ -14,5 +14,6 @@ public sealed record AuctionStatusChangedNotification(
     Guid AuctionId,
     string Status,
     decimal CurrentPrice,
+    Guid? LeadingBidderId,
     DateTimeOffset EndsAtUtc,
     DateTimeOffset OccurredAtUtc);
