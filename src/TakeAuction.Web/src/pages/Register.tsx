@@ -1,0 +1,175 @@
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { ApiError } from "@/api/client";
+import { VISUALS } from "@/content/catalog";
+import { useAuthStore } from "@/store/authStore";
+import { SplitLine } from "@/motion/Reveal";
+import type { UserRole } from "@/api/types";
+
+const ROLES: { value: Exclude<UserRole, "Admin">; label: string; hint: string }[] = [
+  { value: "Bidder", label: "Alıcı", hint: "Açık artırmalara teklif ver" },
+  { value: "Seller", label: "Satıcı", hint: "Kendi ilanlarını aç ve yönet" },
+];
+
+export function Register() {
+  const navigate = useNavigate();
+  const register = useAuthStore((state) => state.register);
+
+  const [form, setForm] = useState({
+    email: "",
+    displayName: "",
+    password: "",
+    role: "Bidder" as Exclude<UserRole, "Admin">,
+  });
+  const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
+  const [pending, setPending] = useState(false);
+
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setPending(true);
+    setError(null);
+    setFieldErrors({});
+
+    try {
+      await register(form);
+      navigate("/auctions", { replace: true });
+    } catch (caught) {
+      if (caught instanceof ApiError) {
+        setFieldErrors(caught.fieldErrors);
+        setError(caught.message);
+      } else {
+        setError((caught as Error).message);
+      }
+    } finally {
+      setPending(false);
+    }
+  };
+
+  const errorFor = (field: string) =>
+    fieldErrors[field]?.[0] ??
+    fieldErrors[field.charAt(0).toUpperCase() + field.slice(1)]?.[0] ??
+    null;
+
+  return (
+    <div className="grid min-h-screen lg:grid-cols-2">
+      <div className="flex items-center justify-center bg-paper px-6 py-32">
+        <div className="w-full max-w-md">
+          <p className="eyebrow">Kayıt</p>
+          <h1 className="mt-6 font-display text-huge font-light leading-[0.95] text-ink">
+            <SplitLine text="salona katıl" />
+          </h1>
+
+          <form onSubmit={submit} className="mt-12 space-y-8">
+            <div>
+              <label htmlFor="displayName" className="eyebrow mb-3 block">
+                Görünen ad
+              </label>
+              <input
+                id="displayName"
+                required
+                value={form.displayName}
+                onChange={(event) => setForm({ ...form, displayName: event.target.value })}
+                className="field"
+                placeholder="Ad Soyad"
+              />
+              {errorFor("displayName") && (
+                <p className="mt-2 font-sans text-xs text-sand-deep">{errorFor("displayName")}</p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="reg-email" className="eyebrow mb-3 block">
+                E-posta
+              </label>
+              <input
+                id="reg-email"
+                type="email"
+                required
+                autoComplete="email"
+                value={form.email}
+                onChange={(event) => setForm({ ...form, email: event.target.value })}
+                className="field"
+                placeholder="ornek@eposta.com"
+              />
+              {errorFor("email") && (
+                <p className="mt-2 font-sans text-xs text-sand-deep">{errorFor("email")}</p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="reg-password" className="eyebrow mb-3 block">
+                Parola
+              </label>
+              <input
+                id="reg-password"
+                type="password"
+                required
+                autoComplete="new-password"
+                value={form.password}
+                onChange={(event) => setForm({ ...form, password: event.target.value })}
+                className="field"
+                placeholder="En az 10 karakter"
+              />
+              <p className="mt-2 font-sans text-xs text-stone">
+                En az 10 karakter; bir büyük harf, bir küçük harf ve bir rakam içermeli.
+              </p>
+              {errorFor("password") && (
+                <p className="mt-2 font-sans text-xs text-sand-deep">{errorFor("password")}</p>
+              )}
+            </div>
+
+            <div>
+              <span className="eyebrow mb-4 block">Rolün</span>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {ROLES.map((role) => (
+                  <button
+                    key={role.value}
+                    type="button"
+                    onClick={() => setForm({ ...form, role: role.value })}
+                    className={`border p-5 text-left transition-all duration-500 ease-editorial ${
+                      form.role === role.value
+                        ? "border-ink bg-ink text-paper"
+                        : "border-ink/15 text-ink hover:border-ink/40"
+                    }`}
+                  >
+                    <span className="block font-display text-lg font-light">{role.label}</span>
+                    <span
+                      className={`mt-1.5 block font-sans text-xs leading-relaxed ${
+                        form.role === role.value ? "text-paper/60" : "text-stone"
+                      }`}
+                    >
+                      {role.hint}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {error && (
+              <p className="border-l-2 border-sand-deep pl-4 font-sans text-sm leading-relaxed text-ink/70">
+                {error}
+              </p>
+            )}
+
+            <button type="submit" disabled={pending} className="btn-primary w-full">
+              {pending ? "Hesap açılıyor…" : "Hesap aç"}
+            </button>
+          </form>
+
+          <p className="mt-8 font-sans text-sm text-ink/55">
+            Zaten hesabın var mı?{" "}
+            <Link to="/login" className="text-sand-deep underline underline-offset-4">
+              Giriş yap
+            </Link>
+          </p>
+        </div>
+      </div>
+
+      <div className="relative hidden lg:block">
+        <img src={VISUALS.concurrency} alt="" aria-hidden className="h-full w-full object-cover" />
+        <div className="absolute inset-0 bg-ink/20" />
+      </div>
+    </div>
+  );
+}

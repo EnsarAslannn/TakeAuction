@@ -479,3 +479,20 @@ desktop.ini
 # Agent tooling (skills are installed globally, never in this repo)
 .claude/
 .agents/
+
+# Frontend
+node_modules/
+dist/
+.vite/
+*.local
+.env
+.env.*
+!.env.example
+
+# Source auction assets (3D models, reference video, palette) - never published
+Auction Models/
+auction-models/
+src/TakeAuction.Web/public/models/
+src/TakeAuction.Web/public/visuals/
+*.glb
+*.gltf
