@@ -22,6 +22,15 @@ public static class ShowcaseCatalog
             1_000m,
             72),
         new(
+            "iphone-17",
+            "iPhone 17 Pro Max — Mühürlü Kutu",
+            "Mühürlü kutusunda, hiç aktifleştirilmemiş iPhone 17 Pro Max. Titanyum gövde, "
+            + "gümüş renk seçeneği ve tam kapasite batarya. Kutu içeriği eksiksiz; "
+            + "fatura ve üretici garantisi kazanan teklif sahibine devredilir.",
+            84_000m,
+            500m,
+            60),
+        new(
             "canon-5d",
             "Canon EOS 5D Mark IV — Stüdyo Seti",
             "Stüdyo bakımlı Canon EOS 5D Mark IV gövde, 40.000 deklanşörün altında. "

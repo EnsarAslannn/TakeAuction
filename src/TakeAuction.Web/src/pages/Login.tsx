@@ -41,7 +41,7 @@ export function Login() {
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
       <div className="relative hidden lg:block">
-        <img src={VISUALS.vault} alt="" aria-hidden className="h-full w-full object-cover" />
+        <img src={VISUALS.login} alt="" aria-hidden className="h-full w-full object-cover" />
         <div className="absolute inset-0 bg-ink/25" />
         <div className="absolute bottom-14 left-14 right-14">
           <p className="font-display text-4xl font-light leading-tight text-paper">

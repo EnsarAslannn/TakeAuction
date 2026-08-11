@@ -30,6 +30,18 @@ export const SHOWCASE: ShowcaseModel[] = [
     spin: -0.5,
   },
   {
+    slug: "iphone-17",
+    title: "iPhone 17 Pro Max — Mühürlü Kutu",
+    shortLabel: "iPhone 17 Pro Max",
+    category: "Teknoloji",
+    provenance: "Mühürlü kutu · Aktifleştirilmemiş",
+    model: "/models/iphone-17.glb",
+    card: "/cards/iphone-17.webp",
+    scale: 1.0,
+    lift: 0,
+    spin: 0.6,
+  },
+  {
     slug: "canon-5d",
     title: "Canon EOS 5D Mark IV — Stüdyo Seti",
     shortLabel: "EOS 5D IV",
@@ -107,6 +119,7 @@ export function showcaseForAuction(auction: { id: string; title: string }): Show
 
 export const VISUALS = {
   hero: "/visuals/hero-atrium.jpg",
+  login: "/visuals/login-hall.webp",
   concurrency: "/visuals/concurrency-lattice.jpg",
   realtime: "/visuals/realtime-signal.jpg",
   vault: "/visuals/vault-archive.jpg",
