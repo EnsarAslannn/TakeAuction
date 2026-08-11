@@ -7,6 +7,7 @@ import { AuctionModel } from "@/three/AuctionModel";
 import { useDragRotate } from "@/three/useDragRotate";
 import { Studio } from "@/three/Studio";
 import { BidPanel } from "@/components/BidPanel";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { showcaseForAuction } from "@/content/catalog";
 import { useAuctionChannel, useConnectionState } from "@/realtime/useAuctionHub";
 import { STATUS_LABEL, formatCountdown, formatDateTime, formatMoney } from "@/lib/format";
@@ -27,6 +28,7 @@ export function AuctionDetail() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [flash, setFlash] = useState(false);
+  const [modelFailed, setModelFailed] = useState(false);
 
   const now = useNow(1000);
   const reducedMotion = usePrefersReducedMotion();
@@ -145,19 +147,30 @@ export function AuctionDetail() {
               >
                 <Suspense fallback={null}>
                   <Studio float={!reducedMotion} shadowOpacity={0.5}>
-                    <AuctionModel
-                      url={showcase.model}
-                      fit={2.9}
-                      lift={showcase.lift}
-                      spin={showcase.spin}
-                      autoRotate={!reducedMotion}
-                      rotationSpeed={0.14}
-                      drag={dragState}
-                      onDecay={decay}
-                    />
+                    <ErrorBoundary
+                      resetKey={showcase.slug}
+                      onError={() => setModelFailed(true)}
+                    >
+                      <AuctionModel
+                        url={showcase.model}
+                        fit={2.9}
+                        lift={showcase.lift}
+                        spin={showcase.spin}
+                        autoRotate={!reducedMotion}
+                        rotationSpeed={0.14}
+                        drag={dragState}
+                        onDecay={decay}
+                      />
+                    </ErrorBoundary>
                   </Studio>
                 </Suspense>
               </Canvas>
+
+              {modelFailed && (
+                <p className="pointer-events-none absolute inset-0 flex items-center justify-center font-mono text-eyebrow uppercase text-paper/35">
+                  3B model yüklenemedi
+                </p>
+              )}
 
               <div
                 {...handlers}

@@ -1,8 +1,9 @@
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { AdaptiveDpr, Preload } from "@react-three/drei";
 import { AuctionModel } from "./AuctionModel";
 import { Studio } from "./Studio";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useIsCompact, usePrefersReducedMotion } from "@/lib/hooks";
 import type { DragState } from "./useDragRotate";
 import type { ShowcaseModel } from "@/content/catalog";
@@ -22,6 +23,9 @@ export function ShowcaseCanvas({ item, drag, onDecay, className }: ShowcaseCanva
   const reducedMotion = usePrefersReducedMotion();
   const compact = useIsCompact();
   const [ready, setReady] = useState(false);
+  const [modelFailed, setModelFailed] = useState(false);
+
+  useEffect(() => setModelFailed(false), [item.slug]);
 
   return (
     <div className={className}>
@@ -38,23 +42,33 @@ export function ShowcaseCanvas({ item, drag, onDecay, className }: ShowcaseCanva
             {/* On narrow screens the stage shares its height with the caption,
                 so the model shrinks and rides higher to stay clear of it. */}
             <group position={[0, compact ? 1.15 : -0.15, 0]}>
-              <AuctionModel
-                key={item.slug}
-                url={item.model}
-                fit={(compact ? 1.7 : 2.9) * item.scale}
-                lift={item.lift}
-                spin={item.spin}
-                autoRotate={!reducedMotion}
-                rotationSpeed={0.18}
-                drag={drag}
-                onDecay={onDecay}
-              />
+              {/* Scoped to the model alone so a lot that fails to load leaves
+                  the renderer and its lighting rig standing. */}
+              <ErrorBoundary resetKey={item.slug} onError={() => setModelFailed(true)}>
+                <AuctionModel
+                  key={item.slug}
+                  url={item.model}
+                  fit={(compact ? 1.7 : 2.9) * item.scale}
+                  lift={item.lift}
+                  spin={item.spin}
+                  autoRotate={!reducedMotion}
+                  rotationSpeed={0.18}
+                  drag={drag}
+                  onDecay={onDecay}
+                />
+              </ErrorBoundary>
             </group>
           </Studio>
           <Preload all />
         </Suspense>
         <AdaptiveDpr pixelated />
       </Canvas>
+
+      {modelFailed && (
+        <p className="pointer-events-none absolute inset-0 flex items-center justify-center font-mono text-eyebrow uppercase text-paper/35">
+          3B model yüklenemedi
+        </p>
+      )}
     </div>
   );
 }
