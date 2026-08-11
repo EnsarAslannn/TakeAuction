@@ -23,6 +23,7 @@ try
     builder.Host.UseTakeAuctionSerilog();
 
     builder.Services.AddTakeAuctionForwardedHeaders(builder.Configuration);
+    builder.Services.AddTakeAuctionCors(builder.Configuration);
     builder.Services.AddTakeAuctionApiVersioning();
     builder.Services.AddTakeAuctionSwagger();
     builder.Services.AddTakeAuctionRateLimiting(builder.Configuration);
@@ -52,6 +53,8 @@ try
     }
 
     app.UseRouting();
+    app.UseCors(CorsExtensions.PolicyName);
+    app.UseTakeAuctionCsrfProtection();
     app.UseAuthentication();
     app.UseAuthorization();
     app.UseRateLimiter();

@@ -17,9 +17,13 @@ public static class AuthenticationExtensions
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
+        services.AddOptions<AuthCookieOptions>()
+            .Bind(configuration.GetSection(AuthCookieOptions.SectionName));
+
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
         services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
+        services.AddSingleton<AuthCookieWriter>();
 
         var jwtSection = configuration.GetSection(JwtOptions.SectionName);
         var issuer = jwtSection[nameof(JwtOptions.Issuer)];
