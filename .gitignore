@@ -494,5 +494,6 @@ Auction Models/
 auction-models/
 src/TakeAuction.Web/public/models/
 src/TakeAuction.Web/public/visuals/
+src/TakeAuction.Web/public/cards/
 *.glb
 *.gltf

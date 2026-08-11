@@ -11,6 +11,21 @@ export function useNow(intervalMs = 1000): number {
   return now;
 }
 
+/** True on narrow viewports, where the 3D stage shares height with the caption. */
+export function useIsCompact(breakpoint = 768): boolean {
+  const [compact, setCompact] = useState(() => window.innerWidth < breakpoint);
+
+  useEffect(() => {
+    const query = window.matchMedia(`(max-width: ${breakpoint - 1}px)`);
+    const listener = (event: MediaQueryListEvent) => setCompact(event.matches);
+    setCompact(query.matches);
+    query.addEventListener("change", listener);
+    return () => query.removeEventListener("change", listener);
+  }, [breakpoint]);
+
+  return compact;
+}
+
 export function usePrefersReducedMotion(): boolean {
   const [reduced, setReduced] = useState(
     () => window.matchMedia("(prefers-reduced-motion: reduce)").matches

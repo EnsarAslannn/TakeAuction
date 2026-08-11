@@ -6,6 +6,8 @@ export interface ShowcaseModel {
   category: string;
   provenance: string;
   model: string;
+  /** Product photo used on the hero carousel card. */
+  card: string;
   /** Uniform scale applied after auto-centering. */
   scale: number;
   /** Extra Y offset in normalised units, applied after centering. */
@@ -22,6 +24,7 @@ export const SHOWCASE: ShowcaseModel[] = [
     category: "Otomotiv",
     provenance: "Tek sahipli · Tam servis geçmişi",
     model: "/models/bmw-m5.glb",
+    card: "/cards/bmw-m5.webp",
     scale: 1.0,
     lift: 0,
     spin: -0.5,
@@ -33,6 +36,7 @@ export const SHOWCASE: ShowcaseModel[] = [
     category: "Optik",
     provenance: "Stüdyo bakımlı · 40 bin altı deklanşör",
     model: "/models/canon-5d.glb",
+    card: "/cards/canon-5d.webp",
     scale: 1.0,
     lift: 0,
     spin: 0.7,
@@ -44,6 +48,7 @@ export const SHOWCASE: ShowcaseModel[] = [
     category: "Mobilya",
     provenance: "Mid-century · Orijinal patina",
     model: "/models/sofa.glb",
+    card: "/cards/sofa.webp",
     scale: 1.0,
     lift: 0,
     spin: -0.35,
@@ -55,6 +60,7 @@ export const SHOWCASE: ShowcaseModel[] = [
     category: "Ses Sistemi",
     provenance: "Stüdyo referansı · Bi-wiring destekli",
     model: "/models/satellite.glb",
+    card: "/cards/satellite.webp",
     scale: 1.0,
     lift: 0,
     spin: 0.9,
@@ -66,6 +72,7 @@ export const SHOWCASE: ShowcaseModel[] = [
     category: "Beyaz Eşya",
     provenance: "Teşhir ünitesi · Garantili",
     model: "/models/fridge.glb",
+    card: "/cards/fridge.webp",
     scale: 1.0,
     lift: 0,
     spin: 0.25,

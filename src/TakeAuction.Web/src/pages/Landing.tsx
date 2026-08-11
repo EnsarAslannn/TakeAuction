@@ -3,7 +3,7 @@ import { getAuctions } from "@/api/auctions";
 import { SHOWCASE, preload } from "@/content/preload";
 import { Hero } from "@/sections/Hero";
 import { LiveTicker } from "@/sections/LiveTicker";
-import { ShowcaseScroll } from "@/sections/ShowcaseScroll";
+import { Showcase } from "@/sections/Showcase";
 import { Manifesto } from "@/sections/Manifesto";
 import { HowItWorks } from "@/sections/HowItWorks";
 import { Capabilities } from "@/sections/Capabilities";
@@ -34,9 +34,9 @@ export function Landing() {
 
   return (
     <>
-      <Hero />
+      <Hero auctions={auctions} />
       <LiveTicker />
-      <ShowcaseScroll auctions={auctions} />
+      <Showcase auctions={auctions} />
       <Manifesto />
       <HowItWorks />
       <Capabilities />

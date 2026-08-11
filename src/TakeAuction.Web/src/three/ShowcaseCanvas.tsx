@@ -3,7 +3,7 @@ import { Canvas } from "@react-three/fiber";
 import { AdaptiveDpr, Preload } from "@react-three/drei";
 import { AuctionModel } from "./AuctionModel";
 import { Studio } from "./Studio";
-import { usePrefersReducedMotion } from "@/lib/hooks";
+import { useIsCompact, usePrefersReducedMotion } from "@/lib/hooks";
 import type { DragState } from "./useDragRotate";
 import type { ShowcaseModel } from "@/content/catalog";
 
@@ -20,6 +20,7 @@ interface ShowcaseCanvasProps {
  */
 export function ShowcaseCanvas({ item, drag, onDecay, className }: ShowcaseCanvasProps) {
   const reducedMotion = usePrefersReducedMotion();
+  const compact = useIsCompact();
   const [ready, setReady] = useState(false);
 
   return (
@@ -34,11 +35,13 @@ export function ShowcaseCanvas({ item, drag, onDecay, className }: ShowcaseCanva
       >
         <Suspense fallback={null}>
           <Studio float={!reducedMotion}>
-            <group position={[0, -0.15, 0]}>
+            {/* On narrow screens the stage shares its height with the caption,
+                so the model shrinks and rides higher to stay clear of it. */}
+            <group position={[0, compact ? 1.15 : -0.15, 0]}>
               <AuctionModel
                 key={item.slug}
                 url={item.model}
-                fit={2.9 * item.scale}
+                fit={(compact ? 1.7 : 2.9) * item.scale}
                 lift={item.lift}
                 spin={item.spin}
                 autoRotate={!reducedMotion}

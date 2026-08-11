@@ -5,6 +5,22 @@
 @layer base {
   :root {
     --shell-pad: clamp(1.25rem, 4vw, 4.5rem);
+    --card-w: 10.5rem;
+    --card-h: 14.5rem;
+  }
+
+  @media (min-width: 640px) {
+    :root {
+      --card-w: 12.5rem;
+      --card-h: 17.5rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    :root {
+      --card-w: 14rem;
+      --card-h: 20rem;
+    }
   }
 
   * {
