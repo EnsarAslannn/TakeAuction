@@ -11,6 +11,8 @@ public sealed record AuctionDetailResponse(
     decimal StartingPrice,
     decimal CurrentPrice,
     decimal MinimumBidIncrement,
+    decimal MinimumAcceptableBid,
+    int BidCount,
     string Status,
     DateTimeOffset StartsAtUtc,
     DateTimeOffset EndsAtUtc,

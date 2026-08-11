@@ -6,6 +6,8 @@ public sealed class SeedOptions
 
     public bool Enabled { get; init; } = true;
 
+    public bool SeedAuctions { get; init; } = true;
+
     public string DefaultPassword { get; init; } = "TakeAuction!2026";
 
     public string AdminEmail { get; init; } = "admin@takeauction.local";

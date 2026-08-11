@@ -62,6 +62,8 @@ public sealed class InvalidateAuctionCacheOnAuctionEndedTests
         100m,
         250m,
         5m,
+        255m,
+        3,
         "Active",
         TestHarness.Now.AddDays(-2),
         TestHarness.Now,
