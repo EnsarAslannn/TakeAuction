@@ -36,8 +36,10 @@ export function SplitLine({ text, className = "", delay = 0 }: SplitLineProps) {
   const { ref, inView } = useInView<HTMLSpanElement>();
   const words = text.split(" ");
 
+  // No display utility of its own: callers stack lines by passing `block`, and a
+  // hardcoded `inline-block` here would win on stylesheet order and run them together.
   return (
-    <span ref={ref} className={`inline-block ${className}`}>
+    <span ref={ref} className={className}>
       {words.map((word, index) => (
         <span key={`${word}-${index}`} className="inline-block overflow-hidden align-bottom">
           <span
