@@ -19,7 +19,7 @@ export function Nav() {
   const logout = useAuthStore((state) => state.logout);
   const navigate = useNavigate();
   const location = useLocation();
-  const theme = useNavTheme();
+  const theme = useNavTheme(location.pathname);
   const dark = theme === "dark";
 
   useEffect(() => {

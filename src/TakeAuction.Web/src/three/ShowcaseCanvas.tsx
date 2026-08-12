@@ -12,6 +12,8 @@ interface ShowcaseCanvasProps {
   item: ShowcaseModel;
   drag: React.MutableRefObject<DragState>;
   onDecay: () => void;
+  /** Drives the render loop. False parks the renderer while the stage is off-screen. */
+  active: boolean;
   className?: string;
 }
 
@@ -19,7 +21,7 @@ interface ShowcaseCanvasProps {
  * One persistent WebGL context for the whole showcase. Swapping `item` swaps the
  * loaded model inside the same canvas, so switching never tears down the renderer.
  */
-export function ShowcaseCanvas({ item, drag, onDecay, className }: ShowcaseCanvasProps) {
+export function ShowcaseCanvas({ item, drag, onDecay, active, className }: ShowcaseCanvasProps) {
   const reducedMotion = usePrefersReducedMotion();
   const compact = useIsCompact();
   const [ready, setReady] = useState(false);
@@ -31,7 +33,10 @@ export function ShowcaseCanvas({ item, drag, onDecay, className }: ShowcaseCanva
     <div className={className}>
       <Canvas
         shadows
-        dpr={[1, 1.8]}
+        // Parked while off-screen: the model auto-rotates and casts shadows every
+        // frame, and that competes with scrolling for the whole rest of the page.
+        frameloop={active ? "always" : "never"}
+        dpr={[1, 1.5]}
         gl={{ antialias: true, alpha: true, preserveDrawingBuffer: false }}
         camera={{ position: [0, 0.4, 6.4], fov: 34, near: 0.1, far: 60 }}
         onCreated={() => setReady(true)}

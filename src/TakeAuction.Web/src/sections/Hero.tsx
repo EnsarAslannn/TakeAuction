@@ -13,7 +13,7 @@ interface HeroProps {
 }
 
 const BACKGROUND = "/visuals/auction-hall.webp";
-const BACKGROUND_FALLBACK = "/visuals/hero-atrium.jpg";
+const BACKGROUND_FALLBACK = "/visuals/hero-atrium.webp";
 
 const FAN = {
   /** Card-width fraction each step is offset by, before rotation adds its own spread. */
@@ -244,10 +244,11 @@ export function Hero({ auctions }: HeroProps) {
               }}
             >
               <ul
-                className="absolute inset-0 will-change-transform"
+                className="absolute inset-0"
                 style={{
                   transform: `translate3d(${offset}px, 0, 0)`,
                   transition: dragging ? "none" : "transform 700ms cubic-bezier(0.16,1,0.3,1)",
+                  willChange: dragging ? "transform" : "auto",
                 }}
               >
                 {SHOWCASE.map((entry, entryIndex) => (
@@ -256,7 +257,7 @@ export function Hero({ auctions }: HeroProps) {
                     ref={(node) => {
                       cardRefs.current[entryIndex] = node;
                     }}
-                    className="absolute left-1/2 top-3 will-change-transform md:top-6"
+                    className="absolute left-1/2 top-3 md:top-6"
                     style={{ width: "var(--card-w)" }}
                   >
                     <CarouselCard

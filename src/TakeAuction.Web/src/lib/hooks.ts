@@ -41,6 +41,30 @@ export function usePrefersReducedMotion(): boolean {
   return reduced;
 }
 
+/**
+ * Tracks visibility continuously, unlike `useInView` which latches on first entry.
+ * Drives work that must stop again once the element leaves the viewport.
+ */
+export function useIsVisible<T extends HTMLElement>(rootMargin = "0px") {
+  const ref = useRef<T | null>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setVisible(entry.isIntersecting),
+      { rootMargin }
+    );
+
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [rootMargin]);
+
+  return { ref, visible };
+}
+
 /** Fires once when the element first crosses into view. */
 export function useInView<T extends HTMLElement>(rootMargin = "-12% 0px") {
   const ref = useRef<T | null>(null);

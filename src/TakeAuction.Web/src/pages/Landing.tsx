@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { getAuctions } from "@/api/auctions";
-import { SHOWCASE, preload } from "@/content/preload";
 import { Hero } from "@/sections/Hero";
 import { LiveTicker } from "@/sections/LiveTicker";
 import { Showcase } from "@/sections/Showcase";
@@ -16,10 +15,6 @@ export function Landing() {
     getAuctions({ pageSize: 50 })
       .then((result) => setAuctions(result.items))
       .catch(() => setAuctions([]));
-  }, []);
-
-  useEffect(() => {
-    preload(SHOWCASE.map((item) => item.model));
   }, []);
 
   useEffect(() => {

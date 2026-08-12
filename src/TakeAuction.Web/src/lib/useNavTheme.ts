@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
  * fixed header, so the nav can invert instead of laying a pale bar over dark artwork.
  * The observer root is collapsed to a thin band at the top of the viewport.
  */
-export function useNavTheme(): "light" | "dark" {
+export function useNavTheme(routeKey: string): "light" | "dark" {
   const [theme, setTheme] = useState<"light" | "dark">("light");
 
   useEffect(() => {
@@ -30,7 +30,9 @@ export function useNavTheme(): "light" | "dark" {
 
     targets.forEach((target) => observer.observe(target));
     return () => observer.disconnect();
-  });
+    // Re-scanned per route: the nav outlives the page under it, so the dark
+    // sections it watches are swapped out from underneath it on navigation.
+  }, [routeKey]);
 
   return theme;
 }

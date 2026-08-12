@@ -27,7 +27,7 @@ export function Studio({ children, shadowOpacity = 0.42, float = true }: StudioP
         intensity={2.2}
         color="#FFF6E8"
         castShadow
-        shadow-mapSize={[2048, 2048]}
+        shadow-mapSize={[1024, 1024]}
         shadow-bias={-0.0004}
       >
         <orthographicCamera attach="shadow-camera" args={[-7, 7, 7, -7, 0.1, 32]} />
@@ -87,7 +87,7 @@ export function Studio({ children, shadowOpacity = 0.42, float = true }: StudioP
         scale={13}
         blur={2.8}
         far={5}
-        resolution={1024}
+        resolution={512}
         color="#52443D"
       />
     </>

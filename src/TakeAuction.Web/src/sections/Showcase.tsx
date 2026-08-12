@@ -1,10 +1,17 @@
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { SHOWCASE, showcaseForTitle } from "@/content/catalog";
-import { ShowcaseCanvas } from "@/three/ShowcaseCanvas";
 import { useDragRotate } from "@/three/useDragRotate";
+import { useIsVisible } from "@/lib/hooks";
 import { formatMoney } from "@/lib/format";
 import type { AuctionListItem } from "@/api/types";
+
+// three.js, R3F and drei are the heaviest dependency in the app by a wide margin.
+// Loading them lazily keeps them out of the landing page's critical path entirely —
+// a visitor who never scrolls to the stage never pays for them.
+const ShowcaseCanvas = lazy(() =>
+  import("@/three/ShowcaseCanvas").then((module) => ({ default: module.ShowcaseCanvas }))
+);
 
 interface ShowcaseProps {
   auctions: AuctionListItem[];
@@ -18,9 +25,33 @@ interface ShowcaseProps {
 export function Showcase({ auctions }: ShowcaseProps) {
   const [index, setIndex] = useState(0);
   const { state: dragState, dragging, reset, decay, handlers } = useDragRotate();
+  const { ref: stageRef, visible } = useIsVisible<HTMLElement>();
+
+  // Mounting the canvas is what pulls the first ~6MB model and opens the WebGL
+  // context, so it waits until the stage is actually reached. It never unmounts
+  // again — tearing the context down would re-download everything on the way back.
+  const [armed, setArmed] = useState(false);
+  useEffect(() => {
+    if (visible) setArmed(true);
+  }, [visible]);
 
   // A fresh model should start from its authored angle, not the previous one's.
   useEffect(() => reset(), [index, reset]);
+
+  // The catalogue is ~28MB of geometry, so only the neighbours of the current lot
+  // are warmed, and only after the current one has had a head start on the network.
+  useEffect(() => {
+    if (!visible) return;
+
+    const neighbours = [index + 1, index - 1]
+      .filter((target) => target >= 0 && target < SHOWCASE.length)
+      .map((target) => SHOWCASE[target].model);
+
+    const id = window.setTimeout(() => {
+      void import("@/three/AuctionModel").then((module) => module.preloadShowcase(neighbours));
+    }, 1500);
+    return () => window.clearTimeout(id);
+  }, [visible, index]);
 
   const goTo = useCallback(
     (target: number) => setIndex(Math.min(SHOWCASE.length - 1, Math.max(0, target))),
@@ -35,6 +66,7 @@ export function Showcase({ auctions }: ShowcaseProps) {
   return (
     <section
       id="showcase"
+      ref={stageRef}
       data-nav-theme="dark"
       className="relative h-[100svh] overflow-hidden bg-ink text-paper"
     >
@@ -47,7 +79,17 @@ export function Showcase({ auctions }: ShowcaseProps) {
         }}
       />
 
-      <ShowcaseCanvas item={item} drag={dragState} onDecay={decay} className="absolute inset-0" />
+      {armed && (
+        <Suspense fallback={null}>
+          <ShowcaseCanvas
+            item={item}
+            drag={dragState}
+            onDecay={decay}
+            active={visible}
+            className="absolute inset-0"
+          />
+        </Suspense>
+      )}
 
       {/* Drag surface. `pan-y` keeps vertical page scrolling available on touch
           while horizontal drags rotate the model. */}
