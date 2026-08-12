@@ -3,7 +3,7 @@ import { Reveal, SplitLine } from "@/motion/Reveal";
 
 export function Manifesto() {
   return (
-    <section id="about" className="relative overflow-hidden bg-paper py-28 md:py-40">
+    <section id="about" className="relative overflow-hidden bg-paper-warm py-28 md:py-40">
       <div className="shell mx-auto max-w-shell">
         <div className="flex items-baseline justify-between gap-8">
           <p className="eyebrow">01 — Salon</p>
