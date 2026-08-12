@@ -13,20 +13,24 @@ public sealed class GetCurrentUserEndpoint : IEndpoint
                 ISender sender,
                 CancellationToken cancellationToken) =>
             {
-                var user = await sender.Send(new GetCurrentUserQuery(principal.GetUserId()), cancellationToken);
+                var userId = principal.GetUserId();
+
+                if (userId == Guid.Empty)
+                {
+                    return Results.NoContent();
+                }
+
+                var user = await sender.Send(new GetCurrentUserQuery(userId), cancellationToken);
 
                 return user is null
-                    ? Results.Problem(
-                        title: "Account not found",
-                        detail: "The authenticated principal no longer maps to an active account.",
-                        statusCode: StatusCodes.Status401Unauthorized)
+                    ? Results.NoContent()
                     : Results.Ok(user);
             })
-            .RequireAuthorization()
+            .AllowAnonymous()
             .WithName("GetCurrentUser")
             .WithTags("Auth")
-            .WithSummary("Returns the profile behind the current session cookie.")
+            .WithSummary("Returns the profile behind the current session cookie, or 204 when there is no session.")
             .Produces<CurrentUserResponse>()
-            .ProducesProblem(StatusCodes.Status401Unauthorized);
+            .Produces(StatusCodes.Status204NoContent);
     }
 }

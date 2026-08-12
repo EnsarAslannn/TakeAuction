@@ -20,7 +20,7 @@ export async function logout(): Promise<void> {
   await http.post("/auth/logout");
 }
 
-export async function getCurrentUser(): Promise<CurrentUser> {
-  const { data } = await http.get<CurrentUser>("/auth/me");
-  return data;
+export async function getCurrentUser(): Promise<CurrentUser | null> {
+  const { status, data } = await http.get<CurrentUser>("/auth/me");
+  return status === 204 ? null : data;
 }

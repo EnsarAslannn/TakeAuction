@@ -20,19 +20,28 @@ interface AuthState {
   clearError: () => void;
 }
 
+let sessionProbe: Promise<void> | null = null;
+
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   status: "idle",
   error: null,
 
-  bootstrap: async () => {
+  bootstrap: () => {
+    if (sessionProbe) return sessionProbe;
+
     set({ status: "loading" });
-    try {
-      const user = await authApi.getCurrentUser();
-      set({ user, status: "ready", error: null });
-    } catch {
-      set({ user: null, status: "ready" });
-    }
+
+    sessionProbe = (async () => {
+      try {
+        const user = await authApi.getCurrentUser();
+        set({ user, status: "ready", error: null });
+      } catch {
+        set({ user: null, status: "ready" });
+      }
+    })();
+
+    return sessionProbe;
   },
 
   login: async (email, password) => {
