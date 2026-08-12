@@ -69,9 +69,9 @@ export function CreateAuction() {
         </h1>
 
         <p className="mt-8 max-w-[52ch] font-sans text-base leading-relaxed text-ink/65">
-          Parçanı ne kadar iyi anlatırsan o kadar iyi teklif alırsın. Açık artırma en az 5 dakika,
+          Parçanızı ne kadar iyi anlatırsanız o kadar iyi teklif alırsınız. Açık artırma en az 5 dakika,
           en fazla 30 gün sürebilir; başlangıç zamanı geçmişte olamaz. Yayınladıktan sonra kapanışla
-          ilgilenmen gerekmez — süre dolduğunda salon kendiliğinden kapanır.
+          ilgilenmeniz gerekmez — süre dolduğunda salon kendiliğinden kapanır.
         </p>
 
         <form onSubmit={submit} className="mt-14 space-y-10">
@@ -197,7 +197,7 @@ export function CreateAuction() {
           )}
 
           <button type="submit" disabled={pending} className="btn-primary">
-            {pending ? "Yayınlanıyor…" : "İlanı yayınla"}
+            {pending ? "Yayınlanıyor…" : "İlanı yayınlayın"}
           </button>
         </form>
       </div>

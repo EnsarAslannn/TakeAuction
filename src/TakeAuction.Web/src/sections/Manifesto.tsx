@@ -32,7 +32,7 @@ export function Manifesto() {
             <Reveal delay={80}>
               <p className="font-sans text-2xl font-light leading-[1.5] text-ink md:text-[1.75rem]">
                 Buraya her gün yüzlerce ilan girmez. Salona alınan her parça tek tek seçilir —
-                sayısı azdır, bu yüzden karşındaki rekabet gerçektir.
+                sayısı azdır, bu yüzden karşınızdaki rekabet gerçektir.
               </p>
             </Reveal>
 

@@ -207,7 +207,7 @@ export function Hero({ auctions }: HeroProps) {
 
             <div className="mt-9 flex flex-wrap items-center gap-4">
               <Link to="/auctions" className="btn bg-sand text-ink hover:bg-paper">
-                Salona gir
+                Salona girin
               </Link>
               <a
                 href="#how-it-works"
@@ -297,7 +297,7 @@ export function Hero({ auctions }: HeroProps) {
                 to={`/auctions/${active.id}`}
                 className="btn ml-1 whitespace-nowrap border border-paper/25 px-5 text-paper hover:border-sand hover:bg-sand hover:text-ink md:ml-2 md:px-7"
               >
-                Teklif ver
+                Teklif verin
                 <span className="hidden sm:inline"> · {formatMoney(active.currentPrice)}</span>
               </Link>
             ) : (
@@ -345,7 +345,7 @@ function CarouselCard({
       type="button"
       onClick={onSelect}
       aria-current={isActive}
-      aria-label={`${item.shortLabel} parçasını seç`}
+      aria-label={`${item.shortLabel} parçasını seçin`}
       className={`group relative block h-[var(--card-h)] w-full overflow-hidden rounded-2xl bg-ink text-left transition-shadow duration-700 ease-editorial ${
         isActive
           ? "shadow-[0_38px_90px_-34px_rgba(0,0,0,0.95)] ring-1 ring-sand/50"

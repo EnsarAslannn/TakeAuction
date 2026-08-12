@@ -7,8 +7,8 @@ import { SplitLine } from "@/motion/Reveal";
 import type { UserRole } from "@/api/types";
 
 const ROLES: { value: Exclude<UserRole, "Admin">; label: string; hint: string }[] = [
-  { value: "Bidder", label: "Alıcı", hint: "Açık artırmalara teklif ver" },
-  { value: "Seller", label: "Satıcı", hint: "Kendi ilanlarını aç ve yönet" },
+  { value: "Bidder", label: "Alıcı", hint: "Açık artırmalara teklif verin" },
+  { value: "Seller", label: "Satıcı", hint: "Kendi ilanlarınızı açın ve yönetin" },
 ];
 
 export function Register() {
@@ -57,7 +57,7 @@ export function Register() {
         <div className="w-full max-w-md">
           <p className="eyebrow">Kayıt</p>
           <h1 className="mt-6 font-display text-huge font-light leading-[0.95] text-ink">
-            <SplitLine text="salona katıl" />
+            <SplitLine text="salona katılın" />
           </h1>
 
           <form onSubmit={submit} className="mt-12 space-y-8">
@@ -120,7 +120,7 @@ export function Register() {
             </div>
 
             <div>
-              <span className="eyebrow mb-4 block">Rolün</span>
+              <span className="eyebrow mb-4 block">Rolünüz</span>
               <div className="grid gap-3 sm:grid-cols-2">
                 {ROLES.map((role) => (
                   <button
@@ -153,14 +153,14 @@ export function Register() {
             )}
 
             <button type="submit" disabled={pending} className="btn-primary w-full">
-              {pending ? "Hesap açılıyor…" : "Hesap aç"}
+              {pending ? "Hesap açılıyor…" : "Hesap açın"}
             </button>
           </form>
 
           <p className="mt-8 font-sans text-sm text-ink/55">
-            Zaten hesabın var mı?{" "}
+            Zaten hesabınız var mı?{" "}
             <Link to="/login" className="text-sand-deep underline underline-offset-4">
-              Giriş yap
+              Giriş yapın
             </Link>
           </p>
         </div>

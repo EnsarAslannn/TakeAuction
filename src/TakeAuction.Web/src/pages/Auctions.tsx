@@ -115,7 +115,7 @@ export function Auctions() {
                 setSearch(event.target.value);
                 setPage(1);
               }}
-              placeholder="Parça ara…"
+              placeholder="Parça arayın…"
               className="field"
             />
           </div>
@@ -126,7 +126,7 @@ export function Auctions() {
             <p className="font-display text-xl font-light text-ink">Liste yüklenemedi</p>
             <p className="mt-2 font-sans text-sm text-ink/60">{error}</p>
             <button type="button" onClick={load} className="btn-ghost mt-6">
-              Tekrar dene
+              Tekrar deneyin
             </button>
           </div>
         )}
@@ -144,9 +144,9 @@ export function Auctions() {
 
         {result && result.items.length === 0 && !loading && (
           <div className="mt-20 text-center">
-            <p className="font-display text-3xl font-light text-ink">Aradığın parça salonda yok</p>
+            <p className="font-display text-3xl font-light text-ink">Aradığınız parça salonda yok</p>
             <p className="mt-3 font-sans text-sm text-ink/55">
-              Filtreyi değiştir ya da aramayı temizle.
+              Filtreyi değiştirin ya da aramayı temizleyin.
             </p>
           </div>
         )}

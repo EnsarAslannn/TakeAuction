@@ -5,19 +5,19 @@ const CAPABILITIES = [
   {
     label: "Alıcı olarak",
     items: [
-      "Salondaki parçaları ara, filtrele ve kalan süreye göre gez",
-      "Bazı parçaları üç boyutlu çevirip her açıdan incele",
-      "Teklifini ver, alt sınırı ekranda gör",
-      "Biri seni geçtiğinde sayfa yenilemeden anında öğren",
+      "Salondaki parçaları arayın, filtreleyin ve kalan süreye göre gezin",
+      "Bazı parçaları üç boyutlu çevirip her açıdan inceleyin",
+      "Teklifinizi verin, alt sınırı ekranda görün",
+      "Biri sizi geçtiğinde sayfa yenilemeden anında öğrenin",
     ],
   },
   {
     label: "Satıcı olarak",
     items: [
-      "Başlangıç fiyatını ve teklif adımını kendin belirle",
-      "Açılış ve kapanış saatini dakikası dakikasına planla",
-      "Teklifleri geldikçe canlı izle",
-      "Kapanışta kazananı bekleme — sistem kendisi belirler",
+      "Başlangıç fiyatını ve teklif adımını kendiniz belirleyin",
+      "Açılış ve kapanış saatini dakikası dakikasına planlayın",
+      "Teklifleri geldikçe canlı izleyin",
+      "Kapanışta kazananı beklemeyin — sistem kendisi belirler",
     ],
   },
 ];
@@ -37,7 +37,7 @@ export function Capabilities() {
             <Reveal delay={160}>
               <p className="mt-8 max-w-[38ch] font-sans text-base leading-relaxed text-ink/65">
                 Aynı salon hem koleksiyonundan bir parça çıkarmak isteyene, hem de o parçanın
-                peşinde olana açık. Hangi taraftan gireceğini kayıt olurken seçersin.
+                peşinde olana açık. Hangi taraftan gireceğinizi kayıt olurken seçersiniz.
               </p>
             </Reveal>
 

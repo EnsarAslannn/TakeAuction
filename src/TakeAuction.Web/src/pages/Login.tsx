@@ -57,7 +57,7 @@ export function Login() {
         <div className="w-full max-w-md">
           <p className="eyebrow">Giriş</p>
           <h1 className="mt-6 font-display text-huge font-light leading-[0.95] text-ink">
-            <SplitLine text="tekrar hoş geldin" />
+            <SplitLine text="tekrar hoş geldiniz" />
           </h1>
 
           <form onSubmit={submit} className="mt-12 space-y-8">
@@ -100,7 +100,7 @@ export function Login() {
             )}
 
             <button type="submit" disabled={pending} className="btn-primary w-full">
-              {pending ? "Giriş yapılıyor…" : "Giriş yap"}
+              {pending ? "Giriş yapılıyor…" : "Giriş yapın"}
             </button>
           </form>
 
@@ -124,9 +124,9 @@ export function Login() {
           </div>
 
           <p className="mt-8 font-sans text-sm text-ink/55">
-            Hesabın yok mu?{" "}
+            Hesabınız yok mu?{" "}
             <Link to="/register" className="text-sand-deep underline underline-offset-4">
-              Kaydol
+              Kaydolun
             </Link>
           </p>
         </div>

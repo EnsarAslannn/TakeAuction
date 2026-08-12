@@ -41,7 +41,7 @@ export function BidPanel({ auction, minimumNextBid, isLive, onAccepted }: BidPan
 
     const parsed = Number(amount);
     if (!Number.isFinite(parsed) || parsed <= 0) {
-      setFeedback({ kind: "error", message: "Geçerli bir tutar gir." });
+      setFeedback({ kind: "error", message: "Geçerli bir tutar girin." });
       return;
     }
 
@@ -59,7 +59,7 @@ export function BidPanel({ auction, minimumNextBid, isLive, onAccepted }: BidPan
         setFeedback({
           kind: "outbid",
           message:
-            "Sen tutarı yazarken başka biri öne geçti. Güncel fiyat yukarıda güncellendi — üzerine çıkıp tekrar dene.",
+            "Siz tutarı yazarken başka biri öne geçti. Güncel fiyat yukarıda güncellendi — üzerine çıkıp tekrar deneyin.",
         });
       } else {
         setFeedback({ kind: "error", message: error.message });
@@ -72,15 +72,15 @@ export function BidPanel({ auction, minimumNextBid, isLive, onAccepted }: BidPan
       <div className="border border-ink/15 bg-paper-pure p-8">
         <p className="eyebrow mb-4">Teklif vermek için</p>
         <p className="font-sans text-base leading-relaxed text-ink/70">
-          Salona girmen yeterli. Hesap açmak bir dakika sürer; sonrasında bu parçaya ve
-          salondaki diğer her şeye teklif verebilirsin.
+          Salona girmeniz yeterli. Hesap açmak bir dakika sürer; sonrasında bu parçaya ve
+          salondaki diğer her şeye teklif verebilirsiniz.
         </p>
         <div className="mt-7 flex flex-wrap gap-3">
           <Link to="/login" className="btn-primary">
-            Giriş yap
+            Giriş yapın
           </Link>
           <Link to="/register" className="btn-ghost">
-            Hesap aç
+            Hesap açın
           </Link>
         </div>
       </div>
@@ -90,10 +90,10 @@ export function BidPanel({ auction, minimumNextBid, isLive, onAccepted }: BidPan
   if (isOwnAuction) {
     return (
       <div className="border border-ink/15 bg-paper-pure p-8">
-        <p className="eyebrow mb-4">Bu parça senin</p>
+        <p className="eyebrow mb-4">Bu parça sizin</p>
         <p className="font-sans text-base leading-relaxed text-ink/70">
-          Kendi ilanına teklif veremezsin. Kapanışta en yüksek teklifi veren alıcı otomatik
-          olarak belirlenir; senin bir şey yapman gerekmez.
+          Kendi ilanınıza teklif veremezsiniz. Kapanışta en yüksek teklifi veren alıcı otomatik
+          olarak belirlenir; sizin bir şey yapmanız gerekmez.
         </p>
       </div>
     );
@@ -115,7 +115,7 @@ export function BidPanel({ auction, minimumNextBid, isLive, onAccepted }: BidPan
   return (
     <form onSubmit={submit} className="border border-ink/15 bg-paper-pure p-8">
       <div className="flex items-baseline justify-between gap-4">
-        <p className="eyebrow">Teklifin</p>
+        <p className="eyebrow">Teklifiniz</p>
         <p className="font-mono text-eyebrow uppercase text-stone">
           en az {formatMoneyPrecise(minimumNextBid)}
         </p>
@@ -155,12 +155,12 @@ export function BidPanel({ auction, minimumNextBid, isLive, onAccepted }: BidPan
         disabled={feedback.kind === "pending"}
         className="btn-primary mt-7 w-full"
       >
-        {feedback.kind === "pending" ? "Gönderiliyor…" : "Teklifi gönder"}
+        {feedback.kind === "pending" ? "Gönderiliyor…" : "Teklifi gönderin"}
       </button>
 
       {feedback.kind === "accepted" && (
         <p className="mt-5 animate-veil-up font-sans text-sm leading-relaxed text-sand-deep">
-          {formatMoneyPrecise(feedback.amount)} tutarındaki teklifin kabul edildi. Şu an öndesin.
+          {formatMoneyPrecise(feedback.amount)} tutarındaki teklifiniz kabul edildi. Şu an öndesiniz.
         </p>
       )}
 

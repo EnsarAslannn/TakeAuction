@@ -4,18 +4,18 @@ import { Reveal, SplitLine } from "@/motion/Reveal";
 const STEPS = [
   {
     number: "01",
-    title: "Hesabını aç",
-    body: "Bir e-posta ve parola yeter. Alıcı olarak girersen salondaki her parçaya teklif verebilirsin; satıcı olarak girersen kendi parçanı sergilemeye hemen başlarsın.",
+    title: "Hesabınızı açın",
+    body: "Bir e-posta ve parola yeter. Alıcı olarak girerseniz salondaki her parçaya teklif verebilirsiniz; satıcı olarak girerseniz kendi parçanızı sergilemeye hemen başlarsınız.",
   },
   {
     number: "02",
-    title: "Parçayı incele",
-    body: "Her ilanda güncel fiyatı, o ana kadar kaç teklif geldiğini ve kapanışa ne kadar kaldığını görürsün. Bazı parçaları üç boyutlu olarak çevirip her açıdan inceleyebilirsin.",
+    title: "Parçayı inceleyin",
+    body: "Her ilanda güncel fiyatı, o ana kadar kaç teklif geldiğini ve kapanışa ne kadar kaldığını görürsünüz. Bazı parçaları üç boyutlu olarak çevirip her açıdan inceleyebilirsiniz.",
   },
   {
     number: "03",
-    title: "Teklifini ver",
-    body: "Teklifin, güncel fiyatın belirli bir tutar üzerinde olmalı — bu alt sınır ilanda yazar. Teklifin kabul edildiği anda salondaki herkesin ekranında fiyat değişir; sayfayı yenilemene gerek kalmaz.",
+    title: "Teklifinizi verin",
+    body: "Teklifiniz, güncel fiyatın belirli bir tutar üzerinde olmalı — bu alt sınır ilanda yazar. Teklifiniz kabul edildiği anda salondaki herkesin ekranında fiyat değişir; sayfayı yenilemenize gerek kalmaz.",
   },
   {
     number: "04",
@@ -49,7 +49,7 @@ export function HowItWorks() {
         </div>
 
         <h2 className="mt-10 max-w-[16ch] font-display text-giant font-light leading-[0.9]">
-          <SplitLine text="teklif ver." className="block" />
+          <SplitLine text="teklif verin." className="block" />
           <SplitLine text="anında yayılır." className="block text-sand" delay={100} />
         </h2>
 

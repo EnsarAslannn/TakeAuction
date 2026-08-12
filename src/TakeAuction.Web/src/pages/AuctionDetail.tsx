@@ -105,7 +105,7 @@ export function AuctionDetail() {
         <p className="font-display text-4xl font-light text-ink">Bu parça salonda değil</p>
         <p className="max-w-[40ch] font-sans text-sm text-ink/60">{error}</p>
         <Link to="/auctions" className="btn-ghost">
-          Salona dön
+          Salona dönün
         </Link>
       </div>
     );
@@ -175,7 +175,7 @@ export function AuctionDetail() {
               <div
                 {...handlers}
                 role="application"
-                aria-label={`${auction.title} — sürükleyerek döndür`}
+                aria-label={`${auction.title} — sürükleyerek döndürün`}
                 className={`absolute inset-0 ${dragging ? "cursor-grabbing" : "cursor-grab"}`}
                 style={{ touchAction: "pan-y" }}
               />
@@ -185,7 +185,7 @@ export function AuctionDetail() {
                   dragging ? "opacity-0" : "opacity-100"
                 }`}
               >
-                Sürükleyerek döndür
+                Sürükleyerek döndürün
               </p>
             </div>
 
@@ -289,7 +289,7 @@ export function AuctionDetail() {
                 <p className="eyebrow mb-5">Canlı teklif akışı</p>
                 {feed.length === 0 ? (
                   <p className="font-sans text-sm text-ink/45">
-                    Sen buradayken henüz teklif gelmedi. Yeni teklifler anında bu listeye düşer.
+                    Siz buradayken henüz teklif gelmedi. Yeni teklifler anında bu listeye düşer.
                   </p>
                 ) : (
                   <ul className="space-y-0">

@@ -5,14 +5,14 @@ const LINKS = [
   { to: "/auctions", label: "Salondaki parçalar" },
   { to: "/#how-it-works", label: "Nasıl çalışır" },
   { to: "/#capabilities", label: "Alıcı ve satıcı" },
-  { to: "/register", label: "Hesap aç" },
+  { to: "/register", label: "Hesap açın" },
 ];
 
 const RULES = [
-  "Teklifin, güncel fiyatın en az bir adım üzerinde olmalı — alt sınır her ilanda yazar.",
+  "Teklifiniz, güncel fiyatın en az bir adım üzerinde olmalı — alt sınır her ilanda yazar.",
   "Açık artırma bitiş saatinde kendiliğinden kapanır; en yüksek teklif kazanır.",
-  "Kendi ilanına teklif veremezsin.",
-  "Biri seni geçtiğinde sayfayı yenilemene gerek kalmadan haberin olur.",
+  "Kendi ilanınıza teklif veremezsiniz.",
+  "Biri sizi geçtiğinde sayfayı yenilemenize gerek kalmadan haberiniz olur.",
 ];
 
 export function Footer() {
@@ -31,7 +31,7 @@ export function Footer() {
       <div className="shell relative z-10 mx-auto max-w-shell py-24 md:py-32">
         <div className="flex flex-col gap-14 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="eyebrow mb-8 text-paper/40">Salona gir</p>
+            <p className="eyebrow mb-8 text-paper/40">Salona girin</p>
             <h2 className="font-display text-giant font-light leading-[0.88]">
               take<span className="text-sand">auction</span>
             </h2>
@@ -45,7 +45,7 @@ export function Footer() {
               Açık artırmalar
             </Link>
             <Link to="/register" className="btn bg-paper text-ink hover:bg-sand">
-              Hesap aç
+              Hesap açın
             </Link>
           </div>
         </div>

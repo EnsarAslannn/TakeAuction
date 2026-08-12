@@ -96,14 +96,14 @@ export function Showcase({ auctions }: ShowcaseProps) {
       <div
         {...handlers}
         role="application"
-        aria-label={`${item.shortLabel} — sürükleyerek döndür`}
+        aria-label={`${item.shortLabel} — sürükleyerek döndürün`}
         className={`absolute inset-0 z-10 ${dragging ? "cursor-grabbing" : "cursor-grab"}`}
         style={{ touchAction: "pan-y" }}
       />
 
       <div className="shell pointer-events-none relative z-20 mx-auto flex h-full max-w-shell flex-col justify-between py-10 md:py-14">
         <div className="flex items-start justify-between gap-6">
-          <p className="eyebrow text-paper/45">Yakından incele</p>
+          <p className="eyebrow text-paper/45">Yakından inceleyin</p>
           <p className="font-mono text-eyebrow uppercase tracking-[0.22em] text-paper/45">
             {String(index + 1).padStart(2, "0")} / {String(SHOWCASE.length).padStart(2, "0")}
           </p>
@@ -127,7 +127,7 @@ export function Showcase({ auctions }: ShowcaseProps) {
               <span aria-hidden className="text-sand/60">
                 ↔
               </span>
-              Sürükleyerek döndür
+              Sürükleyerek döndürün
             </p>
           </div>
 
@@ -144,7 +144,7 @@ export function Showcase({ auctions }: ShowcaseProps) {
                   to={`/auctions/${live.id}`}
                   className="btn border border-paper/25 text-paper transition-colors hover:border-sand hover:bg-sand hover:text-ink"
                 >
-                  Teklif ver
+                  Teklif verin
                 </Link>
               </>
             ) : (
@@ -162,7 +162,7 @@ export function Showcase({ auctions }: ShowcaseProps) {
                 key={entry.slug}
                 type="button"
                 onClick={() => goTo(entryIndex)}
-                aria-label={`${entry.shortLabel} parçasını göster`}
+                aria-label={`${entry.shortLabel} parçasını gösterin`}
                 aria-current={entryIndex === index}
                 className="pointer-events-auto group h-4 flex-1 pt-[7px]"
               >

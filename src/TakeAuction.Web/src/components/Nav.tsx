@@ -87,7 +87,7 @@ export function Nav() {
                         : "border-ink/20 text-ink hover:border-ink hover:bg-ink hover:text-paper"
                     }`}
                   >
-                    İlan aç
+                    İlan açın
                   </Link>
                 )}
                 <span
@@ -112,7 +112,7 @@ export function Nav() {
                   Giriş
                 </Link>
                 <Link to="/register" className={ctaClass(dark)}>
-                  Kaydol
+                  Kaydolun
                 </Link>
               </>
             )}
@@ -155,7 +155,7 @@ export function Nav() {
             <>
               {canSell(user) && (
                 <Link to="/auctions/new" className="font-display text-2xl font-light text-ink">
-                  İlan aç
+                  İlan açın
                 </Link>
               )}
               <button
@@ -163,7 +163,7 @@ export function Nav() {
                 onClick={handleLogout}
                 className="text-left font-display text-2xl font-light text-sand-deep"
               >
-                Çıkış yap
+                Çıkış yapın
               </button>
             </>
           ) : (
@@ -172,7 +172,7 @@ export function Nav() {
                 Giriş
               </Link>
               <Link to="/register" className="font-display text-2xl font-light text-sand-deep">
-                Kaydol
+                Kaydolun
               </Link>
             </>
           )}
