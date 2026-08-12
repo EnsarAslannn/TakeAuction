@@ -118,10 +118,11 @@ export function showcaseForAuction(auction: { id: string; title: string }): Show
 }
 
 export const VISUALS = {
-  hero: "/visuals/hero-atrium.jpg",
+  hero: "/visuals/hero-atrium.webp",
   login: "/visuals/login-hall.webp",
-  concurrency: "/visuals/concurrency-lattice.jpg",
-  realtime: "/visuals/realtime-signal.jpg",
-  vault: "/visuals/vault-archive.jpg",
-  plaster: "/visuals/texture-plaster.jpg",
+  gallery: "/visuals/gallery-vitrine.webp",
+  capabilities: "/visuals/capabilities-room.webp",
+  realtime: "/visuals/realtime-signal.webp",
+  vault: "/visuals/vault-archive.webp",
+  plaster: "/visuals/texture-plaster.webp",
 } as const;

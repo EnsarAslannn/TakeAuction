@@ -4,23 +4,23 @@ import { Reveal, SplitLine } from "@/motion/Reveal";
 const STEPS = [
   {
     number: "01",
-    title: "Kaydol ve salona gir",
-    body: "Alıcı ya da satıcı olarak hesap açarsın. Oturum, JavaScript'in okuyamadığı HttpOnly bir çerezde taşınır; her yazma isteği ayrıca CSRF çift-gönderim doğrulamasından geçer.",
+    title: "Hesabını aç",
+    body: "Bir e-posta ve parola yeter. Alıcı olarak girersen salondaki her parçaya teklif verebilirsin; satıcı olarak girersen kendi parçanı sergilemeye hemen başlarsın.",
   },
   {
     number: "02",
-    title: "Teklifini bırak",
-    body: "Teklifin sunucuya gider ve açık artırma satırının sürüm numarasıyla birlikte yazılır. Aynı anda başkası kazandıysa senin isteğin reddedilir, sistem otomatik yeniden dener.",
+    title: "Parçayı incele",
+    body: "Her ilanda güncel fiyatı, o ana kadar kaç teklif geldiğini ve kapanışa ne kadar kaldığını görürsün. Bazı parçaları üç boyutlu olarak çevirip her açıdan inceleyebilirsin.",
   },
   {
     number: "03",
-    title: "Herkes aynı anda görür",
-    body: "Kabul edilen teklif bir domain olayı yayar. SignalR bunu o açık artırmayı izleyen herkese anında iletir — sayfa yenilemek yok, sorgulama (polling) yok.",
+    title: "Teklifini ver",
+    body: "Teklifin, güncel fiyatın belirli bir tutar üzerinde olmalı — bu alt sınır ilanda yazar. Teklifin kabul edildiği anda salondaki herkesin ekranında fiyat değişir; sayfayı yenilemene gerek kalmaz.",
   },
   {
     number: "04",
-    title: "Süre dolunca otomatik kapanır",
-    body: "Arka planda çalışan Hangfire işi süresi biten açık artırmaları kapatır, kazananı belirler ve sonucu RabbitMQ üzerinden dış sistemlere duyurur. Kimsenin butona basması gerekmez.",
+    title: "Sayaç sıfırlanır, kazanan belli olur",
+    body: "Süre dolduğu anda açık artırma kendiliğinden kapanır ve en yüksek teklif kazanır. Son saniyede gelen teklifler de sıraya doğru girer; kimsenin bir butona basması gerekmez.",
   },
 ];
 

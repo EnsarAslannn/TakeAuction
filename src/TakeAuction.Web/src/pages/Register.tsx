@@ -169,7 +169,7 @@ export function Register() {
       <div className="relative hidden lg:block">
         <div aria-hidden className="absolute inset-0 bg-gradient-to-br from-stone-dark via-ink-soft to-ink" />
         <img
-          src={VISUALS.concurrency}
+          src={VISUALS.gallery}
           alt=""
           aria-hidden
           className="absolute inset-0 h-full w-full object-cover"

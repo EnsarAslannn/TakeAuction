@@ -51,11 +51,6 @@ export function Login() {
           className="absolute inset-0 h-full w-full object-cover"
         />
         <div className="absolute inset-0 bg-ink/25" />
-        <div className="absolute bottom-14 left-14 right-14">
-          <p className="font-display text-4xl font-light leading-tight text-paper">
-            Oturumun HttpOnly çerezde. JavaScript token'a dokunamaz.
-          </p>
-        </div>
       </div>
 
       <div className="flex items-center justify-center bg-paper px-6 py-32">

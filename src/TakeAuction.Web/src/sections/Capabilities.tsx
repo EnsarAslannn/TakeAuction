@@ -20,15 +20,6 @@ const CAPABILITIES = [
       "Kapanış ve kazanan tespiti tamamen otomatik",
     ],
   },
-  {
-    label: "Altyapı tarafında",
-    items: [
-      "PostgreSQL iyimser eşzamanlılık ile yarış koşulu çözümü",
-      "Redis üzerinde önbellek ve SignalR backplane",
-      "RabbitMQ ile dış sistemlere olay yayını",
-      "Hangfire ile otonom açık artırma kapanışı",
-    ],
-  },
 ];
 
 export function Capabilities() {
@@ -54,8 +45,8 @@ export function Capabilities() {
             <Reveal delay={240}>
               <div className="mt-12 aspect-[16/10] overflow-hidden">
                 <img
-                  src={VISUALS.concurrency}
-                  alt="Tek bir düğümde birleşen paralel çubuklardan oluşan kafes"
+                  src={VISUALS.capabilities}
+                  alt="Spot ışıkları altında, kaide üzerinde sergilenen altın bir saat"
                   loading="lazy"
                   className="h-full w-full object-cover"
                 />
