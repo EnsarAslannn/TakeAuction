@@ -102,7 +102,7 @@ export function AuctionDetail() {
   if (error || !auction) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-paper px-6 text-center">
-        <p className="font-display text-4xl font-light text-ink">Kayıt bulunamadı</p>
+        <p className="font-display text-4xl font-light text-ink">Bu parça salonda değil</p>
         <p className="max-w-[40ch] font-sans text-sm text-ink/60">{error}</p>
         <Link to="/auctions" className="btn-ghost">
           Salona dön
@@ -242,18 +242,26 @@ export function AuctionDetail() {
                 </div>
               </div>
 
-              <div className="mt-4 flex items-center gap-2.5">
-                <span
-                  className={`h-1.5 w-1.5 rounded-full ${
-                    connection === "connected" ? "animate-pulse bg-sand-deep" : "bg-stone-light"
-                  }`}
-                />
-                <span className="font-mono text-eyebrow uppercase text-stone">
-                  {connection === "connected"
-                    ? "Canlı bağlantı açık"
-                    : connection === "reconnecting"
-                      ? "Yeniden bağlanıyor"
-                      : "Bağlantı bekleniyor"}
+              <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2">
+                <span className="flex items-center gap-2.5">
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full ${
+                      connection === "connected" ? "animate-pulse bg-sand-deep" : "bg-stone-light"
+                    }`}
+                  />
+                  <span className="font-mono text-eyebrow uppercase text-stone">
+                    {connection === "connected"
+                      ? "Salon canlı"
+                      : connection === "reconnecting"
+                        ? "Yeniden bağlanıyor"
+                        : "Bağlantı bekleniyor"}
+                  </span>
+                </span>
+
+                <span className="font-mono text-eyebrow uppercase tabular-nums text-stone">
+                  {auction.bidCount === 0
+                    ? "Henüz teklif yok"
+                    : `${auction.bidCount} teklif verildi`}
                 </span>
               </div>
 
@@ -281,7 +289,7 @@ export function AuctionDetail() {
                 <p className="eyebrow mb-5">Canlı teklif akışı</p>
                 {feed.length === 0 ? (
                   <p className="font-sans text-sm text-ink/45">
-                    Bu oturumda henüz teklif gelmedi. Yeni teklifler buraya anında düşer.
+                    Sen buradayken henüz teklif gelmedi. Yeni teklifler anında bu listeye düşer.
                   </p>
                 ) : (
                   <ul className="space-y-0">

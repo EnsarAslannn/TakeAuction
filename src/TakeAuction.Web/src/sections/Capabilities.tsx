@@ -5,19 +5,19 @@ const CAPABILITIES = [
   {
     label: "Alıcı olarak",
     items: [
-      "Canlı açık artırmaları filtrele, ara ve sayfa sayfa gez",
-      "Minimum artış kuralına uyan teklifler ver",
-      "Başkası seni geçtiğinde anında bildirim al",
-      "Kalan süreyi saniye saniye izle",
+      "Salondaki parçaları ara, filtrele ve kalan süreye göre gez",
+      "Bazı parçaları üç boyutlu çevirip her açıdan incele",
+      "Teklifini ver, alt sınırı ekranda gör",
+      "Biri seni geçtiğinde sayfa yenilemeden anında öğren",
     ],
   },
   {
     label: "Satıcı olarak",
     items: [
-      "Başlangıç fiyatı ve minimum artış belirleyerek ilan aç",
-      "Başlangıç ve bitiş zamanını dakikası dakikasına planla",
-      "Kendi ilanına teklif verilmesi otomatik engellenir",
-      "Kapanış ve kazanan tespiti tamamen otomatik",
+      "Başlangıç fiyatını ve teklif adımını kendin belirle",
+      "Açılış ve kapanış saatini dakikası dakikasına planla",
+      "Teklifleri geldikçe canlı izle",
+      "Kapanışta kazananı bekleme — sistem kendisi belirler",
     ],
   },
 ];
@@ -28,7 +28,7 @@ export function Capabilities() {
       <div className="shell mx-auto max-w-shell">
         <div className="grid gap-16 md:grid-cols-12 md:gap-8">
           <div className="md:col-span-5">
-            <p className="eyebrow">03 — Yapabildiklerin</p>
+            <p className="eyebrow">03 — İki taraf</p>
             <h2 className="mt-10 font-display text-giant font-light leading-[0.9] text-ink">
               <SplitLine text="iki taraf," className="block" />
               <SplitLine text="tek salon" className="block text-sand-deep" delay={90} />
@@ -36,9 +36,8 @@ export function Capabilities() {
 
             <Reveal delay={160}>
               <p className="mt-8 max-w-[38ch] font-sans text-base leading-relaxed text-ink/65">
-                Aynı platform hem koleksiyonundan bir parça çıkarmak isteyen satıcıya, hem de o
-                parçanın peşindeki alıcıya hizmet eder. Roller kayıt anında belirlenir ve yetkiler
-                sunucu tarafında zorlanır.
+                Aynı salon hem koleksiyonundan bir parça çıkarmak isteyene, hem de o parçanın
+                peşinde olana açık. Hangi taraftan gireceğini kayıt olurken seçersin.
               </p>
             </Reveal>
 

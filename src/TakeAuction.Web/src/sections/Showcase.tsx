@@ -149,7 +149,7 @@ export function Showcase({ auctions }: ShowcaseProps) {
               </>
             ) : (
               <p className="max-w-[24ch] font-sans text-sm text-paper/40 md:text-right">
-                Bu parça için canlı kayıt yükleniyor.
+                Bu parçanın açık artırması yükleniyor.
               </p>
             )}
           </div>

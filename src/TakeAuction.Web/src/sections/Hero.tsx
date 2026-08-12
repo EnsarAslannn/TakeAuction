@@ -201,8 +201,8 @@ export function Hero({ auctions }: HeroProps) {
             </h1>
 
             <p className="mt-6 max-w-[38ch] font-sans text-sm leading-relaxed text-paper/60">
-              Seçilmiş, sınırlı sayıda parça tek bir salonda toplanır. Her teklif veritabanı
-              seviyesinde çözülür — kaybolan teklif yok, yanlış kazanan yok.
+              Seçilmiş, sınırlı sayıda parça tek bir salonda toplanır. Her teklif geldiği anda
+              sıraya girer — kaybolan teklif yok, yanlış kazanan yok.
             </p>
 
             <div className="mt-9 flex flex-wrap items-center gap-4">

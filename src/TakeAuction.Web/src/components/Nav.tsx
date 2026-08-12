@@ -4,9 +4,9 @@ import { canSell, useAuthStore } from "@/store/authStore";
 import { useNavTheme } from "@/lib/useNavTheme";
 
 const LINKS = [
-  { to: "/auctions", label: "Açık artırmalar" },
+  { to: "/auctions", label: "Salon" },
   { to: "/#how-it-works", label: "Nasıl çalışır" },
-  { to: "/#capabilities", label: "Neler yapabilirsin" },
+  { to: "/#capabilities", label: "Alıcı ve satıcı" },
 ];
 
 const ctaClass = (dark: boolean) =>

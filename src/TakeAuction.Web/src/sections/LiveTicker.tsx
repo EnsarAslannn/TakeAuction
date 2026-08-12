@@ -35,11 +35,11 @@ export function LiveTicker() {
 
   const label =
     state === "connected"
-      ? "Canlı yayın açık"
+      ? "Salon canlı"
       : state === "reconnecting"
         ? "Yeniden bağlanıyor"
         : state === "connecting"
-          ? "Bağlanıyor"
+          ? "Salona bağlanılıyor"
           : "Bağlantı yok";
 
   return (

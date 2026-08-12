@@ -69,8 +69,9 @@ export function CreateAuction() {
         </h1>
 
         <p className="mt-8 max-w-[52ch] font-sans text-base leading-relaxed text-ink/65">
-          Açık artırma en az 5 dakika, en fazla 30 gün sürebilir. Başlangıç zamanı geçmişte olamaz.
-          Bu kurallar sunucuda FluentValidation ile doğrulanır.
+          Parçanı ne kadar iyi anlatırsan o kadar iyi teklif alırsın. Açık artırma en az 5 dakika,
+          en fazla 30 gün sürebilir; başlangıç zamanı geçmişte olamaz. Yayınladıktan sonra kapanışla
+          ilgilenmen gerekmez — süre dolduğunda salon kendiliğinden kapanır.
         </p>
 
         <form onSubmit={submit} className="mt-14 space-y-10">

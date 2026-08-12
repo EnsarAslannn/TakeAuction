@@ -59,7 +59,7 @@ export function BidPanel({ auction, minimumNextBid, isLive, onAccepted }: BidPan
         setFeedback({
           kind: "outbid",
           message:
-            "Sen yazarken başkası öne geçti. Bu tam olarak iyimser eşzamanlılık kontrolünün devreye girdiği an — tutarı güncelleyip tekrar dene.",
+            "Sen tutarı yazarken başka biri öne geçti. Güncel fiyat yukarıda güncellendi — üzerine çıkıp tekrar dene.",
         });
       } else {
         setFeedback({ kind: "error", message: error.message });
@@ -72,7 +72,8 @@ export function BidPanel({ auction, minimumNextBid, isLive, onAccepted }: BidPan
       <div className="border border-ink/15 bg-paper-pure p-8">
         <p className="eyebrow mb-4">Teklif vermek için</p>
         <p className="font-sans text-base leading-relaxed text-ink/70">
-          Teklif verebilmek için oturum açman gerekiyor. Oturumun HttpOnly çerezde tutulur.
+          Salona girmen yeterli. Hesap açmak bir dakika sürer; sonrasında bu parçaya ve
+          salondaki diğer her şeye teklif verebilirsin.
         </p>
         <div className="mt-7 flex flex-wrap gap-3">
           <Link to="/login" className="btn-primary">
@@ -89,10 +90,10 @@ export function BidPanel({ auction, minimumNextBid, isLive, onAccepted }: BidPan
   if (isOwnAuction) {
     return (
       <div className="border border-ink/15 bg-paper-pure p-8">
-        <p className="eyebrow mb-4">Bu ilan senin</p>
+        <p className="eyebrow mb-4">Bu parça senin</p>
         <p className="font-sans text-base leading-relaxed text-ink/70">
-          Satıcılar kendi açık artırmalarına teklif veremez. Bu kural sunucu tarafında domain
-          seviyesinde zorlanır.
+          Kendi ilanına teklif veremezsin. Kapanışta en yüksek teklifi veren alıcı otomatik
+          olarak belirlenir; senin bir şey yapman gerekmez.
         </p>
       </div>
     );
@@ -104,8 +105,8 @@ export function BidPanel({ auction, minimumNextBid, isLive, onAccepted }: BidPan
         <p className="eyebrow mb-4">Teklif kapalı</p>
         <p className="font-sans text-base leading-relaxed text-ink/70">
           {auction.status === "Scheduled"
-            ? "Bu açık artırma henüz başlamadı."
-            : "Bu açık artırma sona erdi."}
+            ? "Bu parça henüz açık artırmaya çıkmadı. Başlama saati aşağıda yazıyor."
+            : "Bu açık artırma kapandı. Salonda başka parçalar var."}
         </p>
       </div>
     );
@@ -116,7 +117,7 @@ export function BidPanel({ auction, minimumNextBid, isLive, onAccepted }: BidPan
       <div className="flex items-baseline justify-between gap-4">
         <p className="eyebrow">Teklifin</p>
         <p className="font-mono text-eyebrow uppercase text-stone">
-          min. {formatMoneyPrecise(minimumNextBid)}
+          en az {formatMoneyPrecise(minimumNextBid)}
         </p>
       </div>
 

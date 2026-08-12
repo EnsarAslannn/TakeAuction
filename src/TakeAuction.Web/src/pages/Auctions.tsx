@@ -144,7 +144,7 @@ export function Auctions() {
 
         {result && result.items.length === 0 && !loading && (
           <div className="mt-20 text-center">
-            <p className="font-display text-3xl font-light text-ink">Eşleşen kayıt yok</p>
+            <p className="font-display text-3xl font-light text-ink">Aradığın parça salonda yok</p>
             <p className="mt-3 font-sans text-sm text-ink/55">
               Filtreyi değiştir ya da aramayı temizle.
             </p>
