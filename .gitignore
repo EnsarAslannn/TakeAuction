@@ -489,11 +489,11 @@ dist/
 .env.*
 !.env.example
 
-# Source auction assets (3D models, reference video, palette) - never published
+# Source auction assets (masters, reference video, palette) - never published
 Auction Models/
 auction-models/
+
+# Built 3D models stay out: ~28MB of binary geometry that would bloat every clone.
 src/TakeAuction.Web/public/models/
-src/TakeAuction.Web/public/visuals/
-src/TakeAuction.Web/public/cards/
 *.glb
 *.gltf
