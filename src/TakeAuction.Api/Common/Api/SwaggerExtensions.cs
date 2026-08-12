@@ -48,6 +48,16 @@ public static class SwaggerExtensions
             }
 
             options.DocumentTitle = "TakeAuction API";
+
+            // Cookies ignore the port, so an SPA session on :5173 is also sent with
+            // Swagger's requests on :5080 and trips the CSRF double-submit check.
+            // Reading the token back out of the cookie makes Swagger a first-party
+            // client rather than exempting the endpoints from the check.
+            // Must stay on one line: Swashbuckle embeds this in a JS string literal
+            // that is then JSON.parse'd, and a newline breaks the parse.
+            options.UseRequestInterceptor(
+                "(request) => { const m = document.cookie.match(/(?:^|; )takeauction_csrf=([^;]*)/);"
+                + " if (m) { request.headers['X-CSRF-TOKEN'] = decodeURIComponent(m[1]); } return request; }");
         });
 
         return app;
