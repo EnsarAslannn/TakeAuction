@@ -8,6 +8,7 @@ public sealed record AuctionDetailResponse(
     Guid Id,
     string Title,
     string Description,
+    string? ImageUrl,
     decimal StartingPrice,
     decimal CurrentPrice,
     decimal MinimumBidIncrement,

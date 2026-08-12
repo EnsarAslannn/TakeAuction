@@ -29,6 +29,7 @@ public sealed record GetAuctionsQuery(
 public sealed record AuctionListItem(
     Guid Id,
     string Title,
+    string? ImageUrl,
     decimal StartingPrice,
     decimal CurrentPrice,
     string Status,

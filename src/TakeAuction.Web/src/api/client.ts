@@ -12,10 +12,11 @@ function readCookie(name: string): string | null {
   return match ? decodeURIComponent(match[1]) : null;
 }
 
+// No default Content-Type: axios already sets application/json for object bodies,
+// and a hardcoded default would override the multipart boundary on file uploads.
 export const http = axios.create({
   baseURL: API_BASE,
   withCredentials: true,
-  headers: { "Content-Type": "application/json" },
 });
 
 http.interceptors.request.use((config) => {

@@ -11,6 +11,7 @@ using TakeAuction.Api.Common.Persistence;
 using TakeAuction.Api.Common.RealTime;
 using TakeAuction.Api.Common.Security;
 using TakeAuction.Api.Features.Auctions;
+using TakeAuction.Api.Features.Media;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -36,6 +37,7 @@ try
     builder.Services.AddTakeAuctionJobs(builder.Configuration, Assembly.GetExecutingAssembly());
     builder.Services.AddTakeAuctionEndpoints(Assembly.GetExecutingAssembly());
     builder.Services.AddAuctionsFeature();
+    builder.Services.AddMediaFeature(builder.Configuration);
     builder.Services.AddProblemDetails();
     builder.Services.AddExceptionHandler<ValidationExceptionHandler>();
 
@@ -45,6 +47,7 @@ try
     app.UseTakeAuctionRequestLogging();
     app.UseExceptionHandler();
     app.UseStatusCodePages();
+    app.UseTakeAuctionMedia();
 
     if (app.Environment.IsDevelopment())
     {

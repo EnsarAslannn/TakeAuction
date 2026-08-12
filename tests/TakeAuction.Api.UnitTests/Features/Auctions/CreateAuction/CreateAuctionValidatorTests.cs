@@ -141,6 +141,38 @@ public sealed class CreateAuctionValidatorTests
         Assert.True(result.IsValid);
     }
 
+    [Fact]
+    public async Task Missing_image_url_is_allowed()
+    {
+        var result = await _validator.ValidateAsync(Valid() with { ImageUrl = null });
+
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public async Task Uploaded_image_path_passes()
+    {
+        var result = await _validator.ValidateAsync(Valid() with
+        {
+            ImageUrl = "/uploads/auctions/0199ff31170679578e0d09183f6ee566.webp"
+        });
+
+        Assert.True(result.IsValid);
+    }
+
+    [Theory]
+    [InlineData("https://evil.example/pixel.png")]
+    [InlineData("/uploads/auctions/../../appsettings.json")]
+    [InlineData("/uploads/auctions/not-a-guid.png")]
+    [InlineData("/uploads/auctions/0199ff31170679578e0d09183f6ee566.svg")]
+    [InlineData("javascript:alert(1)")]
+    public async Task Image_url_outside_the_upload_folder_fails(string imageUrl)
+    {
+        var result = await _validator.ValidateAsync(Valid() with { ImageUrl = imageUrl });
+
+        AssertFailedOn(result, nameof(CreateAuctionCommand.ImageUrl));
+    }
+
     private static CreateAuctionCommand Valid() => new(
         Guid.CreateVersion7(),
         "Vintage mechanical watch",

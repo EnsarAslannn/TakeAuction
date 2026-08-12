@@ -22,7 +22,8 @@ public sealed class CreateAuctionEndpoint : IEndpoint
                     request.StartingPrice,
                     request.MinimumBidIncrement,
                     request.StartsAtUtc,
-                    request.EndsAtUtc);
+                    request.EndsAtUtc,
+                    request.ImageUrl);
 
                 var response = await sender.Send(command, cancellationToken);
 

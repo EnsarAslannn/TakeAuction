@@ -6,6 +6,7 @@ public sealed class Auction
     public Guid SellerId { get; private set; }
     public string Title { get; private set; } = null!;
     public string Description { get; private set; } = null!;
+    public string? ImageUrl { get; private set; }
     public decimal StartingPrice { get; private set; }
     public decimal CurrentPrice { get; private set; }
     public decimal MinimumBidIncrement { get; private set; }
@@ -30,7 +31,8 @@ public sealed class Auction
         decimal minimumBidIncrement,
         DateTimeOffset startsAtUtc,
         DateTimeOffset endsAtUtc,
-        DateTimeOffset nowUtc)
+        DateTimeOffset nowUtc,
+        string? imageUrl = null)
     {
         if (sellerId == Guid.Empty)
         {
@@ -58,6 +60,7 @@ public sealed class Auction
             SellerId = sellerId,
             Title = title.Trim(),
             Description = description.Trim(),
+            ImageUrl = string.IsNullOrWhiteSpace(imageUrl) ? null : imageUrl.Trim(),
             StartingPrice = startingPrice,
             CurrentPrice = startingPrice,
             MinimumBidIncrement = minimumBidIncrement,

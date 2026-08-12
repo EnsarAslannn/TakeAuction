@@ -1,14 +1,10 @@
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Canvas } from "@react-three/fiber";
 import { getAuctionById } from "@/api/auctions";
 import { toApiError } from "@/api/client";
-import { AuctionModel } from "@/three/AuctionModel";
-import { useDragRotate } from "@/three/useDragRotate";
-import { Studio } from "@/three/Studio";
+import { AuctionStage } from "@/components/AuctionStage";
 import { BidPanel } from "@/components/BidPanel";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { showcaseForAuction } from "@/content/catalog";
+import { SELLER_LISTING_CATEGORY, showcaseForAuction } from "@/content/catalog";
 import { useAuctionChannel, useConnectionState } from "@/realtime/useAuctionHub";
 import { STATUS_LABEL, formatCountdown, formatDateTime, formatMoney } from "@/lib/format";
 import { useNow, usePrefersReducedMotion } from "@/lib/hooks";
@@ -28,12 +24,10 @@ export function AuctionDetail() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [flash, setFlash] = useState(false);
-  const [modelFailed, setModelFailed] = useState(false);
 
   const now = useNow(1000);
   const reducedMotion = usePrefersReducedMotion();
   const connection = useConnectionState();
-  const { state: dragState, dragging, decay, handlers } = useDragRotate();
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -130,64 +124,12 @@ export function AuctionDetail() {
 
         <div className="mt-10 grid gap-14 lg:grid-cols-12 lg:gap-10">
           <div className="lg:col-span-7">
-            <div className="relative aspect-square overflow-hidden bg-ink lg:aspect-[4/3]">
-              <div
-                aria-hidden
-                className="pointer-events-none absolute inset-0"
-                style={{
-                  background:
-                    "radial-gradient(65% 55% at 50% 45%, rgba(192,160,112,0.22) 0%, transparent 72%)",
-                }}
-              />
-              <Canvas
-                shadows
-                dpr={[1, 1.8]}
-                camera={{ position: [0, 0.5, 6.2], fov: 35 }}
-                gl={{ antialias: true, alpha: true }}
-              >
-                <Suspense fallback={null}>
-                  <Studio float={!reducedMotion} shadowOpacity={0.5}>
-                    <ErrorBoundary
-                      resetKey={showcase.slug}
-                      onError={() => setModelFailed(true)}
-                    >
-                      <AuctionModel
-                        url={showcase.model}
-                        fit={2.9}
-                        lift={showcase.lift}
-                        spin={showcase.spin}
-                        autoRotate={!reducedMotion}
-                        rotationSpeed={0.14}
-                        drag={dragState}
-                        onDecay={decay}
-                      />
-                    </ErrorBoundary>
-                  </Studio>
-                </Suspense>
-              </Canvas>
-
-              {modelFailed && (
-                <p className="pointer-events-none absolute inset-0 flex items-center justify-center font-mono text-eyebrow uppercase text-paper/35">
-                  3B model yüklenemedi
-                </p>
-              )}
-
-              <div
-                {...handlers}
-                role="application"
-                aria-label={`${auction.title} — sürükleyerek döndürün`}
-                className={`absolute inset-0 ${dragging ? "cursor-grabbing" : "cursor-grab"}`}
-                style={{ touchAction: "pan-y" }}
-              />
-
-              <p
-                className={`pointer-events-none absolute bottom-5 left-5 font-mono text-eyebrow uppercase text-paper/40 transition-opacity duration-500 ${
-                  dragging ? "opacity-0" : "opacity-100"
-                }`}
-              >
-                Sürükleyerek döndürün
-              </p>
-            </div>
+            <AuctionStage
+              title={auction.title}
+              imageUrl={auction.imageUrl}
+              showcase={showcase}
+              reducedMotion={reducedMotion}
+            />
 
             <div className="mt-12">
               <p className="eyebrow">Açıklama</p>
@@ -199,7 +141,7 @@ export function AuctionDetail() {
             <dl className="mt-12 grid grid-cols-2 gap-x-8 gap-y-8 border-t border-ink/12 pt-10 md:grid-cols-4">
               {[
                 { label: "Satıcı", value: auction.sellerDisplayName },
-                { label: "Kategori", value: showcase.category },
+                { label: "Kategori", value: showcase?.category ?? SELLER_LISTING_CATEGORY },
                 { label: "Başlangıç", value: formatMoney(auction.startingPrice) },
                 { label: "Min. artış", value: formatMoney(auction.minimumBidIncrement) },
                 { label: "Başlama", value: formatDateTime(auction.startsAtUtc) },
@@ -215,7 +157,7 @@ export function AuctionDetail() {
 
           <div className="lg:col-span-5">
             <div className="lg:sticky lg:top-28">
-              <p className="eyebrow">{showcase.category}</p>
+              <p className="eyebrow">{showcase?.category ?? SELLER_LISTING_CATEGORY}</p>
               <h1 className="mt-5 font-display text-huge font-light leading-[0.95] text-ink">
                 {auction.title}
               </h1>

@@ -9,7 +9,8 @@ public sealed record CreateAuctionCommand(
     decimal StartingPrice,
     decimal MinimumBidIncrement,
     DateTimeOffset StartsAtUtc,
-    DateTimeOffset EndsAtUtc) : IRequest<CreateAuctionResponse>;
+    DateTimeOffset EndsAtUtc,
+    string? ImageUrl = null) : IRequest<CreateAuctionResponse>;
 
 public sealed record CreateAuctionRequest(
     string Title,
@@ -17,11 +18,13 @@ public sealed record CreateAuctionRequest(
     decimal StartingPrice,
     decimal MinimumBidIncrement,
     DateTimeOffset StartsAtUtc,
-    DateTimeOffset EndsAtUtc);
+    DateTimeOffset EndsAtUtc,
+    string? ImageUrl = null);
 
 public sealed record CreateAuctionResponse(
     Guid Id,
     string Status,
     DateTimeOffset StartsAtUtc,
     DateTimeOffset EndsAtUtc,
-    DateTimeOffset CreatedAtUtc);
+    DateTimeOffset CreatedAtUtc,
+    string? ImageUrl);

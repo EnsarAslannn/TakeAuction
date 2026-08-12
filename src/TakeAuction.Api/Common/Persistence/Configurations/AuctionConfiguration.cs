@@ -27,6 +27,9 @@ public sealed class AuctionConfiguration : IEntityTypeConfiguration<Auction>
             .HasMaxLength(4000)
             .IsRequired();
 
+        builder.Property(a => a.ImageUrl)
+            .HasMaxLength(512);
+
         builder.Property(a => a.StartingPrice)
             .HasPrecision(18, 2)
             .IsRequired();
