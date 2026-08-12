@@ -5,6 +5,7 @@ export type UserRole = "Bidder" | "Seller" | "Admin";
 export interface AuctionListItem {
   id: string;
   title: string;
+  imageUrl: string | null;
   startingPrice: number;
   currentPrice: number;
   status: AuctionStatus;
@@ -17,6 +18,7 @@ export interface AuctionDetail {
   id: string;
   title: string;
   description: string;
+  imageUrl: string | null;
   startingPrice: number;
   currentPrice: number;
   minimumBidIncrement: number;
@@ -72,6 +74,12 @@ export interface CreateAuctionResponse {
   startsAtUtc: string;
   endsAtUtc: string;
   createdAtUtc: string;
+  imageUrl: string | null;
+}
+
+export interface UploadImageResponse {
+  url: string;
+  sizeInBytes: number;
 }
 
 export interface BidPlacedNotification {

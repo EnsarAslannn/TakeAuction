@@ -1,8 +1,9 @@
+using System.Text.RegularExpressions;
 using FluentValidation;
 
 namespace TakeAuction.Api.Features.Auctions.CreateAuction;
 
-public sealed class CreateAuctionValidator : AbstractValidator<CreateAuctionCommand>
+public sealed partial class CreateAuctionValidator : AbstractValidator<CreateAuctionCommand>
 {
     public static readonly TimeSpan MinimumDuration = TimeSpan.FromMinutes(5);
     public static readonly TimeSpan MaximumDuration = TimeSpan.FromDays(30);
@@ -23,6 +24,12 @@ public sealed class CreateAuctionValidator : AbstractValidator<CreateAuctionComm
             .NotEmpty()
             .MinimumLength(10)
             .MaximumLength(4000);
+
+        RuleFor(command => command.ImageUrl)
+            .MaximumLength(512)
+            .Must(BeAnUploadedImagePath)
+            .WithMessage("'Image Url' must reference an image uploaded through this API.")
+            .When(command => !string.IsNullOrWhiteSpace(command.ImageUrl));
 
         RuleFor(command => command.StartingPrice)
             .GreaterThan(0m)
@@ -58,4 +65,10 @@ public sealed class CreateAuctionValidator : AbstractValidator<CreateAuctionComm
     }
 
     private static bool HaveAtMostTwoDecimals(decimal value) => decimal.Round(value, 2) == value;
+
+    private static bool BeAnUploadedImagePath(string? imageUrl) =>
+        imageUrl is not null && UploadedImagePath().IsMatch(imageUrl.Trim());
+
+    [GeneratedRegex(@"^/uploads/auctions/[a-f0-9]{32}\.(jpg|png|webp|avif)$", RegexOptions.IgnoreCase)]
+    private static partial Regex UploadedImagePath();
 }

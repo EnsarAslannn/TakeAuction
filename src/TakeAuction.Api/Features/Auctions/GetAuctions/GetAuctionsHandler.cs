@@ -74,6 +74,7 @@ public sealed class GetAuctionsHandler : IRequestHandler<GetAuctionsQuery, Paged
             {
                 auction.Id,
                 auction.Title,
+                auction.ImageUrl,
                 auction.StartingPrice,
                 auction.CurrentPrice,
                 auction.Status,
@@ -87,6 +88,7 @@ public sealed class GetAuctionsHandler : IRequestHandler<GetAuctionsQuery, Paged
             .Select(row => new AuctionListItem(
                 row.Id,
                 row.Title,
+                row.ImageUrl,
                 row.StartingPrice,
                 row.CurrentPrice,
                 row.Status.ToString(),

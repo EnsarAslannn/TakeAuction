@@ -60,6 +60,7 @@ public sealed class InvalidateAuctionCacheOnBidPlacedTests
         AuctionId,
         "Rare stamp collection",
         "A detailed description of the lot on offer.",
+        null,
         100m,
         100m,
         5m,

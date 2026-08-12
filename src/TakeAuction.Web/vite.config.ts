@@ -12,6 +12,7 @@ export default defineConfig({
     proxy: {
       "/api": { target: "http://localhost:5080", changeOrigin: false },
       "/hubs": { target: "http://localhost:5080", changeOrigin: false, ws: true },
+      "/uploads": { target: "http://localhost:5080", changeOrigin: false },
     },
   },
   build: {

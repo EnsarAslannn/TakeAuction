@@ -37,7 +37,8 @@ public sealed class CreateAuctionHandler : IRequestHandler<CreateAuctionCommand,
             command.MinimumBidIncrement,
             command.StartsAtUtc,
             command.EndsAtUtc,
-            now);
+            now,
+            command.ImageUrl);
 
         await _dbContext.Auctions.AddAsync(auction, cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -63,6 +64,7 @@ public sealed class CreateAuctionHandler : IRequestHandler<CreateAuctionCommand,
             auction.Status.ToString(),
             auction.StartsAtUtc,
             auction.EndsAtUtc,
-            auction.CreatedAtUtc);
+            auction.CreatedAtUtc,
+            auction.ImageUrl);
     }
 }

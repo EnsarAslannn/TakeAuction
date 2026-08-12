@@ -6,6 +6,7 @@ import type {
   CreateAuctionResponse,
   PagedResult,
   PlaceBidResponse,
+  UploadImageResponse,
 } from "./types";
 
 export interface GetAuctionsParams {
@@ -46,9 +47,23 @@ export interface CreateAuctionPayload {
   minimumBidIncrement: number;
   startsAtUtc: string;
   endsAtUtc: string;
+  imageUrl?: string | null;
 }
 
 export async function createAuction(payload: CreateAuctionPayload): Promise<CreateAuctionResponse> {
   const { data } = await http.post<CreateAuctionResponse>("/auctions", payload);
+  return data;
+}
+
+export const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif"];
+export const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
+
+export async function uploadAuctionImage(file: File): Promise<UploadImageResponse> {
+  const body = new FormData();
+  body.append("file", file);
+
+  // Content-Type is left unset on purpose: the browser has to add the multipart boundary.
+  const { data } = await http.post<UploadImageResponse>("/media/images", body);
+
   return data;
 }

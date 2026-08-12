@@ -102,24 +102,21 @@ export function showcaseForSlug(slug: string): ShowcaseModel | undefined {
   return BY_SLUG.get(slug);
 }
 
-/**
- * Auctions the user creates themselves have no bespoke model, so they fall back to
- * a deterministic pick keyed off the auction id — stable across renders and reloads.
- */
-export function showcaseForAuction(auction: { id: string; title: string }): ShowcaseModel {
-  const exact = showcaseForTitle(auction.title);
-  if (exact) return exact;
+export const SELLER_LISTING_CATEGORY = "Satıcı ilanı";
 
-  let hash = 0;
-  for (let i = 0; i < auction.id.length; i += 1) {
-    hash = (hash * 31 + auction.id.charCodeAt(i)) >>> 0;
-  }
-  return SHOWCASE[hash % SHOWCASE.length];
+/**
+ * Only the seeded showroom lots have a bespoke 3D model. Seller-created auctions
+ * return undefined so the UI shows the seller's own photo — or an empty plate —
+ * instead of an unrelated product.
+ */
+export function showcaseForAuction(auction: { title: string }): ShowcaseModel | undefined {
+  return showcaseForTitle(auction.title);
 }
 
 export const VISUALS = {
   hero: "/visuals/hero-atrium.webp",
   login: "/visuals/login-hall.webp",
+  create: "/visuals/create-vitrine.webp",
   gallery: "/visuals/gallery-vitrine.webp",
   capabilities: "/visuals/capabilities-room.webp",
   realtime: "/visuals/realtime-signal.webp",

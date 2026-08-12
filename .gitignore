@@ -493,6 +493,10 @@ dist/
 Auction Models/
 auction-models/
 
+# Seller-uploaded auction images are runtime data, not source.
+src/TakeAuction.Api/App_Data/uploads/auctions/*
+!src/TakeAuction.Api/App_Data/uploads/auctions/.gitkeep
+
 # Raw 3D models stay out; the Draco-compressed web build under public/models ships.
 *.glb
 *.gltf
