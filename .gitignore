@@ -493,7 +493,8 @@ dist/
 Auction Models/
 auction-models/
 
-# Built 3D models stay out: ~28MB of binary geometry that would bloat every clone.
-src/TakeAuction.Web/public/models/
+# Raw 3D models stay out; the Draco-compressed web build under public/models ships.
 *.glb
 *.gltf
+!src/TakeAuction.Web/public/models/*.glb
+!src/TakeAuction.Web/public/models/*.gltf
