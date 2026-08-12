@@ -9,15 +9,10 @@ export function useNavTheme(routeKey: string): "light" | "dark" {
   const [theme, setTheme] = useState<"light" | "dark">("light");
 
   useEffect(() => {
-    const targets = Array.from(document.querySelectorAll<HTMLElement>("[data-nav-theme='dark']"));
-    if (targets.length === 0) {
-      setTheme("light");
-      return;
-    }
-
     const visible = new Set<Element>();
+    const observed = new Set<Element>();
 
-    const observer = new IntersectionObserver(
+    const intersection = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) visible.add(entry.target);
@@ -28,8 +23,37 @@ export function useNavTheme(routeKey: string): "light" | "dark" {
       { rootMargin: "0px 0px -94% 0px", threshold: 0 }
     );
 
-    targets.forEach((target) => observer.observe(target));
-    return () => observer.disconnect();
+    const sync = () => {
+      const targets = new Set<Element>(document.querySelectorAll("[data-nav-theme='dark']"));
+
+      observed.forEach((target) => {
+        if (targets.has(target)) return;
+        intersection.unobserve(target);
+        observed.delete(target);
+        visible.delete(target);
+      });
+
+      targets.forEach((target) => {
+        if (observed.has(target)) return;
+        intersection.observe(target);
+        observed.add(target);
+      });
+
+      setTheme(visible.size > 0 ? "dark" : "light");
+    };
+
+    sync();
+
+    // Auth-guarded and lazily loaded routes mount their dark sections well after this
+    // effect first runs, so a one-shot query would never see them. Text-only updates
+    // (countdowns, live bids) are characterData mutations and do not trigger this.
+    const mutations = new MutationObserver(sync);
+    mutations.observe(document.body, { childList: true, subtree: true });
+
+    return () => {
+      mutations.disconnect();
+      intersection.disconnect();
+    };
     // Re-scanned per route: the nav outlives the page under it, so the dark
     // sections it watches are swapped out from underneath it on navigation.
   }, [routeKey]);
