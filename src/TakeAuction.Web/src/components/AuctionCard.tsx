@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { showcaseForAuction } from "@/content/catalog";
 import { STATUS_LABEL, formatMoney, formatCountdown } from "@/lib/format";
@@ -16,6 +17,7 @@ export function AuctionCard({ auction, index }: { auction: AuctionListItem; inde
   const showcase = showcaseForAuction(auction);
   const remaining = new Date(auction.endsAtUtc).getTime() - now;
   const isLive = auction.status === "Active" && remaining > 0;
+  const [thumbFailed, setThumbFailed] = useState(false);
 
   return (
     <Link
@@ -27,11 +29,28 @@ export function AuctionCard({ auction, index }: { auction: AuctionListItem; inde
           {String(index + 1).padStart(2, "0")}
         </span>
 
-        <div className="min-w-0 md:col-span-4 md:pr-8">
-          <h3 className="text-balance font-display text-2xl font-light leading-tight text-ink transition-transform duration-700 ease-editorial group-hover:translate-x-2 md:text-[1.6rem]">
-            {auction.title}
-          </h3>
-          <p className="mt-2 font-mono text-eyebrow uppercase text-stone">{showcase.category}</p>
+        <div className="flex min-w-0 items-center gap-5 transition-transform duration-700 ease-editorial group-hover:translate-x-2 md:col-span-5 md:pr-8">
+          <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-ink/[0.06] md:h-20 md:w-20">
+            {thumbFailed ? (
+              <div className="h-full w-full bg-gradient-to-br from-stone-light/40 to-ink/10" />
+            ) : (
+              <img
+                src={showcase.card}
+                alt=""
+                aria-hidden
+                loading="lazy"
+                onError={() => setThumbFailed(true)}
+                className="h-full w-full object-cover transition-transform duration-[1200ms] ease-editorial group-hover:scale-105"
+              />
+            )}
+          </div>
+
+          <div className="min-w-0">
+            <h3 className="text-balance font-display text-2xl font-light leading-tight text-ink md:text-[1.6rem]">
+              {auction.title}
+            </h3>
+            <p className="mt-2 font-mono text-eyebrow uppercase text-stone">{showcase.category}</p>
+          </div>
         </div>
 
         <div className="md:col-span-2">
@@ -52,7 +71,7 @@ export function AuctionCard({ auction, index }: { auction: AuctionListItem; inde
           </p>
         </div>
 
-        <div className="flex items-center justify-between md:col-span-3 md:justify-end md:gap-6">
+        <div className="flex items-center justify-between md:col-span-2 md:justify-end md:gap-4">
           {isLive && (
             <span className="flex items-center gap-2">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-sand-deep" />
