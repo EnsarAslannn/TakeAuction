@@ -15,21 +15,6 @@ public sealed class ApiSurfaceContractTests : IAsyncLifetime
     public Task DisposeAsync() => Task.CompletedTask;
 
     [Fact]
-    public async Task The_health_probe_answers_without_authentication()
-    {
-        using var client = _fixture.CreateRawClient();
-
-        var response = await client.GetAsync("/health");
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-
-        var body = JsonAssert.Root(await response.Content.ReadAsStringAsync());
-
-        Assert.Equal("healthy", body.GetProperty("status").GetString());
-        Assert.Equal("TakeAuction.Api", body.GetProperty("service").GetString());
-    }
-
-    [Fact]
     public async Task The_diagnostics_endpoint_reports_the_resolved_version()
     {
         using var client = _fixture.CreateRawClient();

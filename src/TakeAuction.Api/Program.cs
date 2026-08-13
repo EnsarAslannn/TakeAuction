@@ -36,6 +36,7 @@ try
     builder.Services.AddTakeAuctionRealTime(builder.Configuration);
     builder.Services.AddTakeAuctionJobs(builder.Configuration, Assembly.GetExecutingAssembly());
     builder.Services.AddTakeAuctionEndpoints(Assembly.GetExecutingAssembly());
+    builder.Services.AddTakeAuctionHealthChecks(builder.Configuration);
     builder.Services.AddAuctionsFeature();
     builder.Services.AddMediaFeature(builder.Configuration);
     builder.Services.AddProblemDetails();
@@ -89,16 +90,7 @@ try
     app.MapTakeAuctionRealTime();
     app.UseTakeAuctionRecurringJobs();
 
-    app.MapGet("/health", () => Results.Ok(new
-    {
-        status = "healthy",
-        service = "TakeAuction.Api",
-        environment = app.Environment.EnvironmentName,
-        timestamp = DateTimeOffset.UtcNow
-    }))
-    .WithName("HealthCheck")
-    .WithTags("Diagnostics")
-    .DisableRateLimiting();
+    app.MapTakeAuctionHealthChecks();
 
     if (app.Environment.IsDevelopment())
     {

@@ -40,7 +40,9 @@ export default defineConfig({
     {
       command: `dotnet run --no-launch-profile --project "${path.join(repoRoot, "src", "TakeAuction.Api", "TakeAuction.Api.csproj")}"`,
       cwd: repoRoot,
-      url: `${API_URL}/health`,
+      // Readiness, not liveness: the specs seed data over the API on their first line, so
+      // waiting for the process to answer is not enough — its stores have to be reachable.
+      url: `${API_URL}/health/ready`,
       reuseExistingServer: !process.env.CI,
       timeout: 300_000,
       stdout: "pipe",
