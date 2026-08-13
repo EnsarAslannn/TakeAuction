@@ -139,6 +139,35 @@ jobs:
           path: artifacts/test-results
           if-no-files-found: ignore
 
+  container-stack:
+    name: Container stack
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the application images
+        run: docker compose build api web
+
+      # Booting the whole stack is what catches the wiring the Dockerfiles alone cannot:
+      # gateway routes, container-to-container hostnames and the readiness probe.
+      - name: Boot the stack
+        run: docker compose up --detach --wait
+
+      - name: Smoke test through the gateway
+        run: |
+          curl --fail --silent --show-error http://localhost:8080/health/ready
+          curl --fail --silent --show-error "http://localhost:8080/api/v1/auctions?pageSize=1" > /dev/null
+          curl --fail --silent --show-error http://localhost:8080/ | grep -q "<!doctype html>"
+
+      - name: Collect service logs
+        if: failure()
+        run: docker compose logs --no-color --tail 200
+
+      - name: Tear down
+        if: always()
+        run: docker compose down --volumes --remove-orphans
+
   e2e-tests:
     name: Playwright E2E
     runs-on: ubuntu-latest

@@ -1,0 +1,29 @@
+# The build context is the repository root, so everything the images do not need is kept
+# out of it — an unfiltered context ships the whole working tree to the daemon.
+
+.git/
+.github/
+.vs/
+.vscode/
+.idea/
+
+**/bin/
+**/obj/
+**/node_modules/
+**/dist/
+**/.vite/
+
+tests/
+docs/
+**/playwright-report/
+**/test-results/
+**/blob-report/
+
+**/*.md
+
+**/.env
+**/.env.*
+**/*.user
+**/*.log
+
+src/TakeAuction.Api/App_Data/
