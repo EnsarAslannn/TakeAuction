@@ -1,0 +1,203 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_VERSION: "10.0.x"
+  NODE_VERSION: "22.x"
+  DOTNET_NOLOGO: "true"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "true"
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "true"
+
+jobs:
+  format:
+    name: Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Verify formatting
+        run: dotnet format TakeAuction.slnx --verify-no-changes --verbosity minimal
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: src/TakeAuction.Web/package-lock.json
+
+      - name: Restore
+        run: dotnet restore TakeAuction.slnx
+
+      - name: Build solution
+        run: dotnet build TakeAuction.slnx --configuration Release --no-restore
+
+      - name: Install web dependencies
+        working-directory: src/TakeAuction.Web
+        run: npm ci
+
+      - name: Type-check and build the web client
+        working-directory: src/TakeAuction.Web
+        run: npm run build
+
+  unit-tests:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Run unit tests
+        run: >
+          dotnet test tests/TakeAuction.Api.UnitTests/TakeAuction.Api.UnitTests.csproj
+          --configuration Release
+          --logger "trx;LogFileName=unit-tests.trx"
+          --results-directory artifacts/test-results
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: unit-test-results
+          path: artifacts/test-results
+          if-no-files-found: ignore
+
+  integration-tests:
+    name: Integration tests
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      # Testcontainers starts PostgreSQL, Redis and RabbitMQ itself over the Docker socket
+      # that GitHub-hosted runners already expose, so no service containers are declared here.
+      - name: Run integration tests
+        run: >
+          dotnet test tests/TakeAuction.Api.IntegrationTests/TakeAuction.Api.IntegrationTests.csproj
+          --configuration Release
+          --logger "trx;LogFileName=integration-tests.trx"
+          --results-directory artifacts/test-results
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-test-results
+          path: artifacts/test-results
+          if-no-files-found: ignore
+
+  api-tests:
+    name: API contract tests
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Run API contract tests
+        run: >
+          dotnet test tests/TakeAuction.Api.ApiTests/TakeAuction.Api.ApiTests.csproj
+          --configuration Release
+          --logger "trx;LogFileName=api-tests.trx"
+          --results-directory artifacts/test-results
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: api-test-results
+          path: artifacts/test-results
+          if-no-files-found: ignore
+
+  e2e-tests:
+    name: Playwright E2E
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: |
+            src/TakeAuction.Web/package-lock.json
+            tests/TakeAuction.E2E/package-lock.json
+
+      # The browser talks to a real API, so the real backing services have to be up first.
+      # Compose's --wait blocks until every declared healthcheck reports healthy.
+      - name: Start infrastructure
+        run: docker compose up --detach --wait postgres redis rabbitmq
+
+      - name: Install web dependencies
+        working-directory: src/TakeAuction.Web
+        run: npm ci
+
+      - name: Install E2E dependencies
+        working-directory: tests/TakeAuction.E2E
+        run: npm ci
+
+      - name: Install Playwright browsers
+        working-directory: tests/TakeAuction.E2E
+        run: npx playwright install --with-deps chromium
+
+      # Prebuilding keeps `dotnet run` inside the webServer start-up budget instead of
+      # spending it on a cold restore while Playwright waits on /health.
+      - name: Prebuild the API
+        run: dotnet build src/TakeAuction.Api/TakeAuction.Api.csproj
+
+      - name: Run Playwright specs
+        working-directory: tests/TakeAuction.E2E
+        run: npm test
+
+      - name: Collect service logs
+        if: failure()
+        run: docker compose logs --no-color --tail 200
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: |
+            tests/TakeAuction.E2E/playwright-report
+            tests/TakeAuction.E2E/test-results
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Tear down infrastructure
+        if: always()
+        run: docker compose down --volumes --remove-orphans

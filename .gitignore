@@ -449,6 +449,10 @@ blob-report/
 test-results/
 playwright/.cache/
 
+# The E2E project's folder name matches the Visual Studio trace-file rule (*.e2e) above,
+# which would otherwise drop the entire suite from the repository.
+!tests/TakeAuction.E2E/
+
 # Coverage
 coverage/
 coverage*.json
