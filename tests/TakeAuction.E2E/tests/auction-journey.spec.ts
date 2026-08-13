@@ -86,6 +86,27 @@ test.describe("Salondan teklife giden yol", () => {
     expect(persisted.currentPrice).toBe(1000);
   });
 
+  test("teklif akışı sayfa yenilendikten sonra da dolu kalır", async ({ page, context, request }) => {
+    const auction = await seedOpenAuction(request, { startingPrice: 1000, minimumBidIncrement: 50 });
+
+    await registerBidder(context.request);
+
+    const detail = new AuctionDetailPage(page, auction.id);
+    await detail.goto();
+    await detail.waitForLiveConnection();
+
+    expect((await detail.bid(1200)).kind).toBe("accepted");
+    await expect(detail.liveFeedItems).toHaveCount(1);
+
+    // Before the history endpoint existed the feed lived only in memory, so a reload made a
+    // busy lot read as though nobody had ever bid on it.
+    await page.reload();
+
+    await expect(detail.liveFeedItems).toHaveCount(1);
+    await expect(detail.liveFeedItems.first()).toContainText(amountPattern(1200));
+    await expect(detail.liveFeedItems.first()).toContainText("sizin");
+  });
+
   test("satıcı kendi parçasına teklif veremez", async ({ page, context, request }) => {
     const seller = await registerSeller(context.request);
     const auction = await createOpenAuction(context.request, {

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { getAuctionById } from "@/api/auctions";
+import { getAuctionBids, getAuctionById } from "@/api/auctions";
 import { toApiError } from "@/api/client";
+import { useAuthStore } from "@/store/authStore";
 import { AuctionStage } from "@/components/AuctionStage";
 import { BidPanel } from "@/components/BidPanel";
 import { SELLER_LISTING_CATEGORY, showcaseForAuction } from "@/content/catalog";
@@ -10,11 +11,13 @@ import { STATUS_LABEL, formatCountdown, formatDateTime, formatMoney } from "@/li
 import { useNow, usePrefersReducedMotion } from "@/lib/hooks";
 import type { AuctionDetail as AuctionDetailModel, BidPlacedNotification } from "@/api/types";
 
+const FEED_LENGTH = 12;
+
 interface BidFeedItem {
   id: string;
   amount: number;
   at: string;
-  isMine?: boolean;
+  bidderId: string;
 }
 
 export function AuctionDetail() {
@@ -28,13 +31,28 @@ export function AuctionDetail() {
   const now = useNow(1000);
   const reducedMotion = usePrefersReducedMotion();
   const connection = useConnectionState();
+  const user = useAuthStore((state) => state.user);
 
   const load = useCallback(async () => {
     if (!id) return;
     setLoading(true);
     try {
-      const data = await getAuctionById(id);
+      // The history seeds the feed so a reload does not read as "no bids yet" on a lot that
+      // has drawn plenty. Live notifications carry on from there.
+      const [data, history] = await Promise.all([
+        getAuctionById(id),
+        getAuctionBids(id, { pageSize: FEED_LENGTH }).catch(() => null),
+      ]);
+
       setAuction(data);
+      setFeed(
+        (history?.items ?? []).map((bid) => ({
+          id: bid.id,
+          amount: bid.amount,
+          at: bid.placedAtUtc,
+          bidderId: bid.bidderId,
+        }))
+      );
       setError(null);
     } catch (caught) {
       setError(toApiError(caught).message);
@@ -69,10 +87,17 @@ export function AuctionDetail() {
         };
       });
       setFeed((previous) =>
-        [
-          { id: notification.bidId, amount: notification.amount, at: notification.occurredAtUtc },
-          ...previous,
-        ].slice(0, 12)
+        previous.some((entry) => entry.id === notification.bidId)
+          ? previous
+          : [
+              {
+                id: notification.bidId,
+                amount: notification.amount,
+                at: notification.occurredAtUtc,
+                bidderId: notification.bidderId,
+              },
+              ...previous,
+            ].slice(0, FEED_LENGTH)
       );
       setFlash(true);
       window.setTimeout(() => setFlash(false), 700);
@@ -240,7 +265,7 @@ export function AuctionDetail() {
                 <p className="eyebrow mb-5">Canlı teklif akışı</p>
                 {feed.length === 0 ? (
                   <p className="font-sans text-sm text-ink/45">
-                    Siz buradayken henüz teklif gelmedi. Yeni teklifler anında bu listeye düşer.
+                    Bu parçaya henüz teklif verilmedi. İlk teklifi siz verebilirsiniz.
                   </p>
                 ) : (
                   <ul className="space-y-0">
@@ -249,8 +274,15 @@ export function AuctionDetail() {
                         key={entry.id}
                         className="flex animate-veil-up items-center justify-between border-b border-ink/8 py-3"
                       >
-                        <span className="font-mono text-eyebrow uppercase text-stone">
-                          {new Date(entry.at).toLocaleTimeString("tr-TR")}
+                        <span className="flex items-center gap-3">
+                          <span className="font-mono text-eyebrow uppercase text-stone">
+                            {new Date(entry.at).toLocaleTimeString("tr-TR")}
+                          </span>
+                          {user?.id === entry.bidderId && (
+                            <span className="font-mono text-eyebrow uppercase text-sand-deep">
+                              sizin
+                            </span>
+                          )}
                         </span>
                         <span className="font-display text-lg font-light tabular-nums text-ink">
                           {formatMoney(entry.amount)}

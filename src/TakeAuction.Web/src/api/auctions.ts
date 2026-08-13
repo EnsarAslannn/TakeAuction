@@ -1,5 +1,6 @@
 import { http } from "./client";
 import type {
+  AuctionBidItem,
   AuctionDetail,
   AuctionListItem,
   AuctionStatus,
@@ -65,5 +66,15 @@ export async function uploadAuctionImage(file: File): Promise<UploadImageRespons
   // Content-Type is left unset on purpose: the browser has to add the multipart boundary.
   const { data } = await http.post<UploadImageResponse>("/media/images", body);
 
+  return data;
+}
+
+export async function getAuctionBids(
+  auctionId: string,
+  params: { page?: number; pageSize?: number } = {}
+): Promise<PagedResult<AuctionBidItem>> {
+  const { data } = await http.get<PagedResult<AuctionBidItem>>(`/auctions/${auctionId}/bids`, {
+    params: { page: params.page ?? 1, pageSize: params.pageSize ?? 20 },
+  });
   return data;
 }

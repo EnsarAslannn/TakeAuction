@@ -109,3 +109,10 @@ export interface ProblemDetails {
   detail?: string;
   errors?: Record<string, string[]>;
 }
+
+export interface AuctionBidItem {
+  id: string;
+  amount: number;
+  placedAtUtc: string;
+  bidderId: string;
+}
