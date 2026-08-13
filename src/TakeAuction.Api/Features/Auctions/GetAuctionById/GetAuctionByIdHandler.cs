@@ -18,12 +18,20 @@ public sealed class GetAuctionByIdHandler : IRequestHandler<GetAuctionByIdQuery,
         _auctionCache = auctionCache;
     }
 
-    public Task<AuctionDetailResponse?> Handle(GetAuctionByIdQuery query, CancellationToken cancellationToken) =>
-        _cache.GetOrCreateAsync(
-            AuctionCache.DetailKey(query.AuctionId),
+    public async Task<AuctionDetailResponse?> Handle(
+        GetAuctionByIdQuery query,
+        CancellationToken cancellationToken)
+    {
+        // The generation is read before the load so that a bid landing mid-flight moves the
+        // key out from under this reader instead of letting it publish a stale snapshot.
+        var generation = await _auctionCache.GetDetailGenerationAsync(query.AuctionId, cancellationToken);
+
+        return await _cache.GetOrCreateAsync(
+            AuctionCache.DetailKey(query.AuctionId, generation),
             _auctionCache.DetailTtl,
             token => LoadAsync(query.AuctionId, token),
             cancellationToken);
+    }
 
     private async Task<AuctionDetailResponse?> LoadAsync(Guid auctionId, CancellationToken cancellationToken)
     {

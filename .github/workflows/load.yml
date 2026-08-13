@@ -1,0 +1,60 @@
+name: Load
+
+# Deliberately not on pull requests: a two-minute contention run against a stack sharing the
+# runner's two cores tells you about the runner, not about the change. It runs on a schedule
+# to catch drift, and on demand when the bidding path has been touched.
+on:
+  workflow_dispatch:
+    inputs:
+      peak_vus:
+        description: Virtual users at the peak stage
+        required: false
+        default: "100"
+      stage_duration:
+        description: Duration of each ramp stage
+        required: false
+        default: "20s"
+  schedule:
+    - cron: "0 2 * * 1"
+
+concurrency:
+  group: load-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bidding-contention:
+    name: Bidding contention
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      # The overlay lifts the rate limiter, without which the run measures the limiter.
+      - name: Boot the stack
+        run: docker compose -f docker-compose.yml -f docker-compose.load.yml up --detach --wait
+
+      - name: Run the contention scenario
+        run: |
+          docker run --rm \
+            --network takeauction_takeauction-network \
+            -v "$PWD/tests/TakeAuction.LoadTests:/scripts" \
+            -e BASE_URL=http://nginx \
+            -e PEAK_VUS=${{ inputs.peak_vus || '100' }} \
+            -e STAGE_DURATION=${{ inputs.stage_duration || '20s' }} \
+            -e K6_SUMMARY_EXPORT=/scripts/summary.json \
+            grafana/k6 run /scripts/bidding-contention.js
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: load-summary
+          path: tests/TakeAuction.LoadTests/summary.json
+          if-no-files-found: ignore
+
+      - name: Collect service logs
+        if: failure()
+        run: docker compose logs --no-color --tail 200
+
+      - name: Tear down
+        if: always()
+        run: docker compose down --volumes --remove-orphans

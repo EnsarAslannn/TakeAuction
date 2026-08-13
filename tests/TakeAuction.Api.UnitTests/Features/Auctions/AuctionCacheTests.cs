@@ -82,11 +82,59 @@ public sealed class AuctionCacheTests
     }
 
     [Fact]
-    public void Detail_keys_are_scoped_to_the_auction()
+    public void Detail_keys_are_scoped_to_the_auction_and_its_generation()
     {
         var auctionId = Guid.CreateVersion7();
 
-        Assert.Equal($"auctions:detail:{auctionId}", AuctionCache.DetailKey(auctionId));
-        Assert.NotEqual(AuctionCache.DetailKey(auctionId), AuctionCache.DetailKey(Guid.CreateVersion7()));
+        Assert.Equal($"auctions:detail:{auctionId}:g1", AuctionCache.DetailKey(auctionId, "g1"));
+        Assert.NotEqual(AuctionCache.DetailKey(auctionId, "g1"), AuctionCache.DetailKey(Guid.CreateVersion7(), "g1"));
+        Assert.NotEqual(AuctionCache.DetailKey(auctionId, "g1"), AuctionCache.DetailKey(auctionId, "g2"));
+    }
+
+    /// <summary>
+    /// The property that closes the stale-write race: once a bid has invalidated the detail,
+    /// readers look at a different key, so anything an in-flight reader publishes under the
+    /// old one can never be served again.
+    /// </summary>
+    [Fact]
+    public async Task Invalidating_the_detail_moves_readers_to_a_new_key()
+    {
+        var auctionId = Guid.CreateVersion7();
+
+        var before = AuctionCache.DetailKey(
+            auctionId,
+            await _auctionCache.GetDetailGenerationAsync(auctionId, CancellationToken.None));
+
+        await _auctionCache.InvalidateDetailAsync(auctionId, CancellationToken.None);
+
+        var after = AuctionCache.DetailKey(
+            auctionId,
+            await _auctionCache.GetDetailGenerationAsync(auctionId, CancellationToken.None));
+
+        Assert.NotEqual(before, after);
+    }
+
+    [Fact]
+    public async Task A_detail_generation_is_stable_until_something_invalidates_it()
+    {
+        var auctionId = Guid.CreateVersion7();
+
+        var first = await _auctionCache.GetDetailGenerationAsync(auctionId, CancellationToken.None);
+        var second = await _auctionCache.GetDetailGenerationAsync(auctionId, CancellationToken.None);
+
+        Assert.Equal(first, second);
+    }
+
+    [Fact]
+    public async Task Detail_generations_are_independent_between_auctions()
+    {
+        var first = Guid.CreateVersion7();
+        var second = Guid.CreateVersion7();
+
+        var untouched = await _auctionCache.GetDetailGenerationAsync(second, CancellationToken.None);
+
+        await _auctionCache.InvalidateDetailAsync(first, CancellationToken.None);
+
+        Assert.Equal(untouched, await _auctionCache.GetDetailGenerationAsync(second, CancellationToken.None));
     }
 }

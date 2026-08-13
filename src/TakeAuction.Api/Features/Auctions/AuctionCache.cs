@@ -25,26 +25,42 @@ public sealed class AuctionCache
 
     public TimeSpan DetailTtl => TimeSpan.FromSeconds(_options.AuctionDetailTtlSeconds);
 
-    public static string DetailKey(Guid auctionId) => $"auctions:detail:{auctionId}";
+    public static string DetailKey(Guid auctionId, string generation) =>
+        $"auctions:detail:{auctionId}:{generation}";
 
-    public async Task<string> GetListGenerationAsync(CancellationToken cancellationToken)
+    public static string DetailGenerationKey(Guid auctionId) => $"auctions:detail:generation:{auctionId}";
+
+    public Task<string> GetListGenerationAsync(CancellationToken cancellationToken) =>
+        GetGenerationAsync(GenerationKey, cancellationToken);
+
+    public Task<string> GetDetailGenerationAsync(Guid auctionId, CancellationToken cancellationToken) =>
+        GetGenerationAsync(DetailGenerationKey(auctionId), cancellationToken);
+
+    public Task InvalidateListsAsync(CancellationToken cancellationToken) =>
+        _cache.SetAsync(GenerationKey, NewGenerationToken(), GenerationTtl, cancellationToken);
+
+    /// <summary>
+    /// Rolls the generation rather than deleting the entry. Deleting loses a race that a busy
+    /// lot runs constantly: a reader that missed the cache, went to the database and has not
+    /// written back yet will happily store its now-stale snapshot over the deletion, and
+    /// every later reader sees that stale price until the TTL runs out. Moving the generation
+    /// leaves the late writer stranded on a key nobody will ever ask for again.
+    /// </summary>
+    public Task InvalidateDetailAsync(Guid auctionId, CancellationToken cancellationToken) =>
+        _cache.SetAsync(DetailGenerationKey(auctionId), NewGenerationToken(), GenerationTtl, cancellationToken);
+
+    private async Task<string> GetGenerationAsync(string key, CancellationToken cancellationToken)
     {
-        var generation = await _cache.GetAsync<string>(GenerationKey, cancellationToken);
+        var generation = await _cache.GetAsync<string>(key, cancellationToken);
         if (!string.IsNullOrEmpty(generation))
         {
             return generation;
         }
 
         var created = NewGenerationToken();
-        await _cache.SetAsync(GenerationKey, created, GenerationTtl, cancellationToken);
+        await _cache.SetAsync(key, created, GenerationTtl, cancellationToken);
         return created;
     }
-
-    public Task InvalidateListsAsync(CancellationToken cancellationToken) =>
-        _cache.SetAsync(GenerationKey, NewGenerationToken(), GenerationTtl, cancellationToken);
-
-    public Task InvalidateDetailAsync(Guid auctionId, CancellationToken cancellationToken) =>
-        _cache.RemoveAsync(DetailKey(auctionId), cancellationToken);
 
     public static string ListKey(
         string generation,

@@ -24,14 +24,24 @@ public sealed class InvalidateAuctionCacheOnBidPlacedTests
     }
 
     [Fact]
-    public async Task Drops_the_cached_auction_detail()
+    public async Task Moves_the_cached_auction_detail_out_of_reach()
     {
-        var key = AuctionCache.DetailKey(AuctionId);
-        await _cache.SetAsync(key, StaleDetail(), TimeSpan.FromMinutes(5), CancellationToken.None);
+        var stale = AuctionCache.DetailKey(
+            AuctionId,
+            await _auctionCache.GetDetailGenerationAsync(AuctionId, CancellationToken.None));
+
+        await _cache.SetAsync(stale, StaleDetail(), TimeSpan.FromMinutes(5), CancellationToken.None);
 
         await _handler.Handle(Event(), CancellationToken.None);
 
-        Assert.Null(await _cache.GetAsync<AuctionDetailResponse>(key, CancellationToken.None));
+        // The old entry is left to expire on its own. What matters is that the key readers
+        // now compute is a different one, and it is empty.
+        var current = AuctionCache.DetailKey(
+            AuctionId,
+            await _auctionCache.GetDetailGenerationAsync(AuctionId, CancellationToken.None));
+
+        Assert.NotEqual(stale, current);
+        Assert.Null(await _cache.GetAsync<AuctionDetailResponse>(current, CancellationToken.None));
     }
 
     [Fact]
@@ -48,7 +58,10 @@ public sealed class InvalidateAuctionCacheOnBidPlacedTests
     [Fact]
     public async Task Leaves_other_auctions_cached()
     {
-        var otherKey = AuctionCache.DetailKey(Guid.CreateVersion7());
+        var otherId = Guid.CreateVersion7();
+        var otherKey = AuctionCache.DetailKey(
+            otherId,
+            await _auctionCache.GetDetailGenerationAsync(otherId, CancellationToken.None));
         await _cache.SetAsync(otherKey, StaleDetail(), TimeSpan.FromMinutes(5), CancellationToken.None);
 
         await _handler.Handle(Event(), CancellationToken.None);

@@ -55,7 +55,9 @@ public sealed class GetAuctionByIdHandlerTests : IDisposable
         await _handler.Handle(new GetAuctionByIdQuery(auctionId), CancellationToken.None);
 
         var cached = await _cache.GetAsync<AuctionDetailResponse>(
-            AuctionCache.DetailKey(auctionId),
+            AuctionCache.DetailKey(
+                auctionId,
+                await _auctionCache.GetDetailGenerationAsync(auctionId, CancellationToken.None)),
             CancellationToken.None);
 
         Assert.NotNull(cached);
@@ -102,7 +104,9 @@ public sealed class GetAuctionByIdHandlerTests : IDisposable
         await _handler.Handle(new GetAuctionByIdQuery(unknownId), CancellationToken.None);
 
         var cached = await _cache.GetAsync<AuctionDetailResponse>(
-            AuctionCache.DetailKey(unknownId),
+            AuctionCache.DetailKey(
+                unknownId,
+                await _auctionCache.GetDetailGenerationAsync(unknownId, CancellationToken.None)),
             CancellationToken.None);
 
         Assert.Null(cached);
