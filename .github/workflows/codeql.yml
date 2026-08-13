@@ -1,0 +1,55 @@
+name: CodeQL
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Weekly, so newly published rules reach the existing code without waiting for a commit.
+    - cron: "0 4 * * 1"
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: Analyze ${{ matrix.language }}
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: csharp
+            build-mode: manual
+          - language: javascript-typescript
+            build-mode: none
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        if: matrix.language == 'csharp'
+        with:
+          dotnet-version: "10.0.x"
+
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+
+      # Autobuild cannot be trusted to pick the right SDK for a solution this new, so the
+      # C# database is built from an explicit restore and build.
+      - name: Build the solution
+        if: matrix.language == 'csharp'
+        run: |
+          dotnet restore TakeAuction.slnx
+          dotnet build TakeAuction.slnx --configuration Release --no-restore
+
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: /language:${{ matrix.language }}

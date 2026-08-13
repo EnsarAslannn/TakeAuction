@@ -78,6 +78,7 @@ jobs:
           dotnet test tests/TakeAuction.Api.UnitTests/TakeAuction.Api.UnitTests.csproj
           --configuration Release
           --logger "trx;LogFileName=unit-tests.trx"
+          --collect:"XPlat Code Coverage"
           --results-directory artifacts/test-results
 
       - uses: actions/upload-artifact@v4
@@ -105,6 +106,7 @@ jobs:
           dotnet test tests/TakeAuction.Api.IntegrationTests/TakeAuction.Api.IntegrationTests.csproj
           --configuration Release
           --logger "trx;LogFileName=integration-tests.trx"
+          --collect:"XPlat Code Coverage"
           --results-directory artifacts/test-results
 
       - uses: actions/upload-artifact@v4
@@ -130,6 +132,7 @@ jobs:
           dotnet test tests/TakeAuction.Api.ApiTests/TakeAuction.Api.ApiTests.csproj
           --configuration Release
           --logger "trx;LogFileName=api-tests.trx"
+          --collect:"XPlat Code Coverage"
           --results-directory artifacts/test-results
 
       - uses: actions/upload-artifact@v4

@@ -1,0 +1,51 @@
+version: 2
+
+# Updates are grouped so a quiet week produces one reviewable pull request per ecosystem
+# rather than a dozen. Major bumps stay separate: those need reading, not rubber-stamping.
+updates:
+  - package-ecosystem: nuget
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      dotnet-minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: npm
+    directory: /src/TakeAuction.Web
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      web-minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: npm
+    directory: /tests/TakeAuction.E2E
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    groups:
+      e2e-minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      actions:
+        update-types: [minor, patch]
+
+  - package-ecosystem: docker
+    directories:
+      - /src/TakeAuction.Api
+      - /src/TakeAuction.Web
+    schedule:
+      interval: weekly
+      day: monday

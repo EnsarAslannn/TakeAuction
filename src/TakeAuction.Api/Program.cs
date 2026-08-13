@@ -53,7 +53,6 @@ try
     if (app.Environment.IsDevelopment())
     {
         app.UseTakeAuctionSwagger();
-        app.UseTakeAuctionJobsDashboard();
     }
 
     app.UseRouting();
@@ -62,6 +61,13 @@ try
     app.UseAuthentication();
     app.UseAuthorization();
     app.UseRateLimiter();
+
+    // After authentication on purpose: the dashboard's authorization filter reads the
+    // signed-in principal, which does not exist yet earlier in the pipeline.
+    if (app.Environment.IsDevelopment())
+    {
+        app.UseTakeAuctionJobsDashboard();
+    }
 
     ApiVersionSet versionSet = app.NewApiVersionSet()
         .HasApiVersion(ApiVersioningExtensions.V1)

@@ -72,7 +72,8 @@ public static class JobsExtensions
         app.UseHangfireDashboard(DashboardRoute, new DashboardOptions
         {
             DisplayStorageConnectionString = false,
-            DarkModeEnabled = true
+            DarkModeEnabled = true,
+            Authorization = [new AdminOnlyDashboardFilter()]
         });
 
         return app;

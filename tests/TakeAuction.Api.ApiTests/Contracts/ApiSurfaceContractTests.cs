@@ -54,6 +54,20 @@ public sealed class ApiSurfaceContractTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
+    /// <summary>
+    /// The job dashboard is mapped only in Development. This suite runs in Production, so a
+    /// hit here would mean the environment gate had quietly come off.
+    /// </summary>
+    [Fact]
+    public async Task The_job_dashboard_is_not_exposed_outside_development()
+    {
+        using var client = _fixture.CreateRawClient();
+
+        var response = await client.GetAsync("/hangfire");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
     [Fact]
     public async Task An_unknown_route_is_a_plain_not_found()
     {
