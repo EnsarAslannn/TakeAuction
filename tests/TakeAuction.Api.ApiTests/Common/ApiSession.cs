@@ -14,15 +14,23 @@ public sealed class ApiSession : IDisposable
 {
     public const string AccessTokenCookieName = "takeauction_access_token";
     public const string CsrfCookieName = "takeauction_csrf";
+    public const string RefreshCookieName = "takeauction_refresh_token";
     public const string CsrfHeaderName = "X-CSRF-TOKEN";
 
+    private readonly ApiTestFixture _fixture;
     private readonly HttpClient _client;
 
-    public ApiSession(HttpClient client) => _client = client;
+    public ApiSession(ApiTestFixture fixture, HttpClient client)
+    {
+        _fixture = fixture;
+        _client = client;
+    }
 
     public string? CsrfToken { get; private set; }
 
     public string? AccessToken { get; private set; }
+
+    public string? RefreshToken { get; private set; }
 
     public AuthenticatedUserResponse? User { get; private set; }
 
@@ -89,6 +97,21 @@ public sealed class ApiSession : IDisposable
     public Task<HttpResponseMessage> LogoutAsync() =>
         PostAsync(ApiRoutes.Logout, new { });
 
+    /// <summary>
+    /// Refreshes with a specific token over a cookie-less client, which is how a replayed or
+    /// stolen credential would arrive. With no access cookie in play the CSRF double-submit
+    /// check does not apply, so this isolates the refresh rules themselves.
+    /// </summary>
+    public async Task<HttpResponseMessage> RefreshWithTokenAsync(string refreshToken)
+    {
+        using var client = _fixture.CreateRawClient();
+
+        var request = new HttpRequestMessage(HttpMethod.Post, ApiRoutes.Refresh);
+        request.Headers.Add("Cookie", $"{RefreshCookieName}={refreshToken}");
+
+        return await client.SendAsync(request);
+    }
+
     public async Task<CurrentUserResponse?> GetCurrentUserAsync()
     {
         var response = await GetAsync(ApiRoutes.Me);
@@ -118,9 +141,9 @@ public sealed class ApiSession : IDisposable
     /// A client that carries the session's JWT as a bearer header and no cookies at all —
     /// the shape a native or server-to-server caller uses, which is exempt from CSRF.
     /// </summary>
-    public HttpClient CreateBearerClient(ApiTestFixture fixture)
+    public HttpClient CreateBearerClient()
     {
-        var client = fixture.CreateRawClient();
+        var client = _fixture.CreateRawClient();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", AccessToken);
 
         return client;
@@ -144,6 +167,10 @@ public sealed class ApiSession : IDisposable
             else if (TryReadCookieValue(setCookie, AccessTokenCookieName, out var accessToken))
             {
                 AccessToken = accessToken;
+            }
+            else if (TryReadCookieValue(setCookie, RefreshCookieName, out var refreshToken))
+            {
+                RefreshToken = refreshToken;
             }
         }
     }
@@ -169,6 +196,7 @@ public static class ApiRoutes
     public const string Register = "/api/v1/auth/register";
     public const string Login = "/api/v1/auth/login";
     public const string Logout = "/api/v1/auth/logout";
+    public const string Refresh = "/api/v1/auth/refresh";
     public const string Me = "/api/v1/auth/me";
     public const string Auctions = "/api/v1/auctions";
 

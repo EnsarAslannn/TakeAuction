@@ -33,7 +33,7 @@ public sealed class LoginEndpoint : IEndpoint
                     };
                 }
 
-                cookieWriter.Write(httpContext, result.AccessToken!);
+                cookieWriter.Write(httpContext, result.Session!);
 
                 return Results.Ok(result.User);
             })

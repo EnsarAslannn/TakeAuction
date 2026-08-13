@@ -1,41 +1,11 @@
-import { expect, test, type Browser, type BrowserContext, type Page } from "@playwright/test";
-import {
-  getAuction,
-  placeBid,
-  registerBidder,
-  seedOpenAuction,
-  uniqueTitle,
-  type CreatedAuction,
-} from "../fixtures/api";
-import { AuctionDetailPage } from "../support/auctionDetailPage";
+import { expect, test } from "@playwright/test";
+import { getAuction, placeBid, registerBidder, seedOpenAuction, uniqueTitle } from "../fixtures/api";
+import { openBidder, type Bidder } from "../support/bidder";
 import { AuctionsPage } from "../support/auctionsPage";
 import { amountPattern } from "../support/money";
 
 const STARTING_PRICE = 1000;
 const INCREMENT = 50;
-
-interface Bidder {
-  context: BrowserContext;
-  page: Page;
-  panel: AuctionDetailPage;
-}
-
-/**
- * A browser context is its own cookie jar, so two of them are genuinely two signed-in
- * people rather than one session in two tabs.
- */
-async function openBidder(browser: Browser, auction: CreatedAuction): Promise<Bidder> {
-  const context = await browser.newContext();
-  await registerBidder(context.request);
-
-  const page = await context.newPage();
-  const panel = new AuctionDetailPage(page, auction.id);
-
-  await panel.goto();
-  await panel.waitForLiveConnection();
-
-  return { context, page, panel };
-}
 
 test.describe("Eşzamanlı teklif ve canlı fiyat", () => {
   test("aynı anda gelen iki eşit teklifden yalnızca biri kabul edilir", async ({ browser, request }) => {

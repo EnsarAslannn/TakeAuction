@@ -23,6 +23,8 @@ public static class AuthenticationExtensions
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
         services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
+        services.AddSingleton<IRefreshTokenGenerator, RefreshTokenGenerator>();
+        services.AddScoped<ISessionIssuer, SessionIssuer>();
         services.AddSingleton<AuthCookieWriter>();
 
         var jwtSection = configuration.GetSection(JwtOptions.SectionName);

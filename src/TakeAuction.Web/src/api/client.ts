@@ -1,4 +1,4 @@
-import axios, { AxiosError } from "axios";
+import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
 import type { ProblemDetails } from "./types";
 
 export const API_BASE = import.meta.env.VITE_API_BASE ?? "/api/v1";
@@ -66,7 +66,78 @@ export function toApiError(error: unknown): ApiError {
   return new ApiError(0, { title: "Beklenmeyen hata", detail: String(error) });
 }
 
+/**
+ * Routes that decide whether a session exists. A 401 from any of them is the answer, not a
+ * symptom — retrying them after a refresh would loop.
+ */
+const SESSION_ROUTES = ["/auth/login", "/auth/register", "/auth/refresh", "/auth/logout"];
+
+type SessionListener = () => void;
+
+let refreshed: SessionListener | null = null;
+let lost: SessionListener | null = null;
+
+/** Fires after the access token has been silently renewed. */
+export function onSessionRefreshed(listener: SessionListener): void {
+  refreshed = listener;
+}
+
+/** Fires when the session is gone for good and the UI has to fall back to signed-out. */
+export function onSessionLost(listener: SessionListener): void {
+  lost = listener;
+}
+
+// A bare instance: the refresh call must never pass through the interceptor that triggered it.
+async function requestRefresh(): Promise<void> {
+  const token = readCookie(CSRF_COOKIE);
+
+  await axios.post(`${API_BASE}/auth/refresh`, null, {
+    withCredentials: true,
+    headers: token ? { [CSRF_HEADER]: token } : undefined,
+  });
+}
+
+// One refresh serves every request that raced into a 401 together, so fifteen widgets waking
+// up to an expired token cost one rotation rather than fifteen competing ones.
+let inFlight: Promise<void> | null = null;
+
+function refreshSession(): Promise<void> {
+  inFlight ??= requestRefresh().finally(() => {
+    inFlight = null;
+  });
+
+  return inFlight;
+}
+
+type RetriableConfig = InternalAxiosRequestConfig & { sessionRetry?: boolean };
+
 http.interceptors.response.use(
   (response) => response,
-  (error) => Promise.reject(toApiError(error))
+  async (error) => {
+    const axiosError = error as AxiosError<ProblemDetails>;
+    const config = axiosError.config as RetriableConfig | undefined;
+
+    const worthRetrying =
+      axiosError.response?.status === 401 &&
+      config !== undefined &&
+      !config.sessionRetry &&
+      !SESSION_ROUTES.some((route) => (config.url ?? "").includes(route));
+
+    if (!worthRetrying) {
+      return Promise.reject(toApiError(error));
+    }
+
+    config.sessionRetry = true;
+
+    try {
+      await refreshSession();
+    } catch {
+      lost?.();
+      return Promise.reject(toApiError(error));
+    }
+
+    refreshed?.();
+
+    return http.request(config);
+  }
 );

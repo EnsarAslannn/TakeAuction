@@ -12,6 +12,8 @@ public sealed class AppDbContext : DbContext
 
     public DbSet<User> Users => Set<User>();
 
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+
     public DbSet<Auction> Auctions => Set<Auction>();
 
     public DbSet<Bid> Bids => Set<Bid>();

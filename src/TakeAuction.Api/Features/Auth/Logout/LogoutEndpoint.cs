@@ -1,3 +1,4 @@
+using MediatR;
 using TakeAuction.Api.Common.Api;
 using TakeAuction.Api.Common.Security;
 
@@ -7,8 +8,16 @@ public sealed class LogoutEndpoint : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder builder)
     {
-        builder.MapPost("/auth/logout", (HttpContext httpContext, AuthCookieWriter cookieWriter) =>
+        builder.MapPost("/auth/logout", async (
+                HttpContext httpContext,
+                ISender sender,
+                AuthCookieWriter cookieWriter,
+                CancellationToken cancellationToken) =>
             {
+                var presented = AuthCookieWriter.ReadRefreshToken(httpContext);
+
+                await sender.Send(new LogoutCommand(presented), cancellationToken);
+
                 cookieWriter.Clear(httpContext);
 
                 return Results.NoContent();
@@ -16,7 +25,7 @@ public sealed class LogoutEndpoint : IEndpoint
             .AllowAnonymous()
             .WithName("Logout")
             .WithTags("Auth")
-            .WithSummary("Clears the access token and CSRF cookies.")
+            .WithSummary("Revokes the session on the server and clears the auth cookies.")
             .Produces(StatusCodes.Status204NoContent);
     }
 }

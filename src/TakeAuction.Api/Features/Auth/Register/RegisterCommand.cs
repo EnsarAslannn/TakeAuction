@@ -17,11 +17,11 @@ public sealed record RegisterRequest(
 public sealed record RegisterResult(
     bool EmailAlreadyInUse,
     AuthenticatedUserResponse? User,
-    Common.Security.AccessToken? AccessToken)
+    Common.Security.IssuedSession? Session)
 {
     public static RegisterResult Conflict() => new(true, null, null);
 
     public static RegisterResult Created(
         AuthenticatedUserResponse user,
-        Common.Security.AccessToken accessToken) => new(false, user, accessToken);
+        Common.Security.IssuedSession session) => new(false, user, session);
 }

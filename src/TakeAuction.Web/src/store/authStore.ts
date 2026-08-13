@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import * as authApi from "@/api/auth";
-import { toApiError } from "@/api/client";
+import { onSessionLost, onSessionRefreshed, toApiError } from "@/api/client";
 import { auctionHub } from "@/realtime/hub";
 import type { CurrentUser, UserRole } from "@/api/types";
 
@@ -83,5 +83,18 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   clearError: () => set({ error: null }),
 }));
+
+// A refresh rotates the CSRF cookie too, and the hub bakes that header in when it connects.
+// Without a reset the socket keeps working but its next reconnect would negotiate with a
+// token the server no longer recognises.
+onSessionRefreshed(() => {
+  void auctionHub.reset();
+});
+
+onSessionLost(() => {
+  sessionProbe = null;
+  useAuthStore.setState({ user: null, status: "ready", error: null });
+  void auctionHub.reset();
+});
 
 export const canSell = (user: CurrentUser | null) => user?.role === "Seller" || user?.role === "Admin";

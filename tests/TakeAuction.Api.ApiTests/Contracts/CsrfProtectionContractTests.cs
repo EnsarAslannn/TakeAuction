@@ -84,7 +84,7 @@ public sealed class CsrfProtectionContractTests : IAsyncLifetime
     {
         using var seller = await _fixture.CreateSellerAsync();
 
-        using var bearer = seller.CreateBearerClient(_fixture);
+        using var bearer = seller.CreateBearerClient();
 
         var response = await bearer.PostAsJsonAsync(ApiRoutes.Auctions, ApiTestFixture.OpenAuctionRequest());
 

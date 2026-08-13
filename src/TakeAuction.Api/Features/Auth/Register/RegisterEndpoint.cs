@@ -32,7 +32,7 @@ public sealed class RegisterEndpoint : IEndpoint
                         statusCode: StatusCodes.Status409Conflict);
                 }
 
-                cookieWriter.Write(httpContext, result.AccessToken!);
+                cookieWriter.Write(httpContext, result.Session!);
 
                 return Results.Created($"/api/v1/auth/me", result.User);
             })

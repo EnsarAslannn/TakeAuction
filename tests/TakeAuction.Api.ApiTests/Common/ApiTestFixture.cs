@@ -59,7 +59,7 @@ public sealed class ApiTestFixture : IAsyncLifetime
             _rabbitMq.DisposeAsync().AsTask());
     }
 
-    public ApiSession CreateSession() => new(_factory.CreateClient());
+    public ApiSession CreateSession() => new(this, _factory.CreateClient());
 
     public HttpClient CreateRawClient() =>
         _factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = false });
@@ -134,7 +134,7 @@ public sealed class ApiTestFixture : IAsyncLifetime
         {
             var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             await dbContext.Database.ExecuteSqlRawAsync(
-                """TRUNCATE TABLE "bids", "auctions", "users" RESTART IDENTITY CASCADE;""");
+                """TRUNCATE TABLE "bids", "auctions", "refresh_tokens", "users" RESTART IDENTITY CASCADE;""");
         }
 
         await _redis.ExecAsync(["redis-cli", "FLUSHALL"]);

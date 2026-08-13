@@ -15,4 +15,13 @@ public sealed class JobOptions
     public string ExpireAuctionsCron { get; set; } = "* * * * *";
 
     public int ExpireAuctionsBatchSize { get; set; } = 200;
+
+    public string PurgeRefreshTokensCron { get; set; } = "0 3 * * *";
+
+    /// <summary>
+    /// How long an expired refresh token is kept before it is deleted. Reuse of a stolen
+    /// token is only detectable while its row still exists, so the sweep does not run tight
+    /// against expiry.
+    /// </summary>
+    public int RefreshTokenRetentionDays { get; set; } = 7;
 }

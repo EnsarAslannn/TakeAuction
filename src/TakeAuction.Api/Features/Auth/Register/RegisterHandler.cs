@@ -10,18 +10,18 @@ public sealed class RegisterHandler : IRequestHandler<RegisterCommand, RegisterR
 {
     private readonly AppDbContext _dbContext;
     private readonly IPasswordHasher _passwordHasher;
-    private readonly IJwtTokenGenerator _tokenGenerator;
+    private readonly ISessionIssuer _sessionIssuer;
     private readonly ILogger<RegisterHandler> _logger;
 
     public RegisterHandler(
         AppDbContext dbContext,
         IPasswordHasher passwordHasher,
-        IJwtTokenGenerator tokenGenerator,
+        ISessionIssuer sessionIssuer,
         ILogger<RegisterHandler> logger)
     {
         _dbContext = dbContext;
         _passwordHasher = passwordHasher;
-        _tokenGenerator = tokenGenerator;
+        _sessionIssuer = sessionIssuer;
         _logger = logger;
     }
 
@@ -61,7 +61,7 @@ public sealed class RegisterHandler : IRequestHandler<RegisterCommand, RegisterR
 
         _logger.LogInformation("User {UserId} registered with role {Role}", user.Id, user.Role);
 
-        var accessToken = _tokenGenerator.Generate(user);
+        var session = await _sessionIssuer.StartAsync(user, cancellationToken);
 
         return RegisterResult.Created(
             new AuthenticatedUserResponse(
@@ -69,8 +69,8 @@ public sealed class RegisterHandler : IRequestHandler<RegisterCommand, RegisterR
                 user.Email,
                 user.DisplayName,
                 user.Role.ToString(),
-                accessToken.ExpiresAtUtc),
-            accessToken);
+                session.AccessToken.ExpiresAtUtc),
+            session);
     }
 
     private static bool IsUniqueViolation(DbUpdateException exception) =>

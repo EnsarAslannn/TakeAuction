@@ -10,12 +10,12 @@ public sealed record LoginRequest(string Email, string Password);
 public sealed record LoginResult(
     LoginRejection Rejection,
     AuthenticatedUserResponse? User,
-    AccessToken? AccessToken)
+    IssuedSession? Session)
 {
     public bool Succeeded => Rejection == LoginRejection.None;
 
-    public static LoginResult Accepted(AuthenticatedUserResponse user, AccessToken accessToken) =>
-        new(LoginRejection.None, user, accessToken);
+    public static LoginResult Accepted(AuthenticatedUserResponse user, IssuedSession session) =>
+        new(LoginRejection.None, user, session);
 
     public static LoginResult Rejected(LoginRejection rejection) => new(rejection, null, null);
 }

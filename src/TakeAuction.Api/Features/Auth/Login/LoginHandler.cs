@@ -9,18 +9,18 @@ public sealed class LoginHandler : IRequestHandler<LoginCommand, LoginResult>
 {
     private readonly AppDbContext _dbContext;
     private readonly IPasswordHasher _passwordHasher;
-    private readonly IJwtTokenGenerator _tokenGenerator;
+    private readonly ISessionIssuer _sessionIssuer;
     private readonly ILogger<LoginHandler> _logger;
 
     public LoginHandler(
         AppDbContext dbContext,
         IPasswordHasher passwordHasher,
-        IJwtTokenGenerator tokenGenerator,
+        ISessionIssuer sessionIssuer,
         ILogger<LoginHandler> logger)
     {
         _dbContext = dbContext;
         _passwordHasher = passwordHasher;
-        _tokenGenerator = tokenGenerator;
+        _sessionIssuer = sessionIssuer;
         _logger = logger;
     }
 
@@ -64,7 +64,7 @@ public sealed class LoginHandler : IRequestHandler<LoginCommand, LoginResult>
 
         _logger.LogInformation("User {UserId} signed in", user.Id);
 
-        var accessToken = _tokenGenerator.Generate(user);
+        var session = await _sessionIssuer.StartAsync(user, cancellationToken);
 
         return LoginResult.Accepted(
             new AuthenticatedUserResponse(
@@ -72,8 +72,8 @@ public sealed class LoginHandler : IRequestHandler<LoginCommand, LoginResult>
                 user.Email,
                 user.DisplayName,
                 user.Role.ToString(),
-                accessToken.ExpiresAtUtc),
-            accessToken);
+                session.AccessToken.ExpiresAtUtc),
+            session);
     }
 
     private const string DummyHash =
