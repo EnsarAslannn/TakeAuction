@@ -49,16 +49,25 @@ export function AuctionDetail() {
 
   useAuctionChannel(id, {
     onBidPlaced: (notification: BidPlacedNotification) => {
-      setAuction((previous) =>
-        previous
-          ? {
-              ...previous,
-              currentPrice: notification.amount,
-              bidCount: previous.bidCount + 1,
-              minimumAcceptableBid: notification.amount + previous.minimumBidIncrement,
-            }
-          : previous
-      );
+      setAuction((previous) => {
+        if (!previous) return previous;
+
+        // Simultaneous bids are broadcast from separate handlers, so notifications can reach
+        // us out of order — and a live auction's price never moves down. This also absorbs
+        // the echo of our own accepted bid, which onAccepted has already applied.
+        // The bidCount check matters: the opening bid is allowed to equal the starting price,
+        // and skipping it would leave the counter reading zero on a lot that has one.
+        if (previous.bidCount > 0 && notification.amount <= previous.currentPrice) {
+          return previous;
+        }
+
+        return {
+          ...previous,
+          currentPrice: notification.amount,
+          bidCount: previous.bidCount + 1,
+          minimumAcceptableBid: notification.amount + previous.minimumBidIncrement,
+        };
+      });
       setFeed((previous) =>
         [
           { id: notification.bidId, amount: notification.amount, at: notification.occurredAtUtc },
