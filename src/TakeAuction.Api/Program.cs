@@ -1,6 +1,7 @@
 using System.Reflection;
 using Asp.Versioning;
 using Asp.Versioning.Builder;
+using Microsoft.Extensions.Options;
 using Serilog;
 using TakeAuction.Api.Common.Api;
 using TakeAuction.Api.Common.Caching;
@@ -98,7 +99,7 @@ try
 
     app.MapTakeAuctionHealthChecks();
 
-    if (app.Environment.IsDevelopment())
+    if (app.Services.GetRequiredService<IOptions<DatabaseOptions>>().Value.MigrateOnStartup)
     {
         await app.MigrateAndSeedAsync();
     }

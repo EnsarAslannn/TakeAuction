@@ -14,12 +14,17 @@ public static class ForwardedHeadersExtensions
         var knownProxies = configuration.GetSection($"{ConfigurationSection}:KnownProxies").Get<string[]>() ?? [];
         var knownNetworks = configuration.GetSection($"{ConfigurationSection}:KnownNetworks").Get<string[]>() ?? [];
 
+        // One hop covers a single gateway in front of the API. Deployments that stack proxies
+        // — a CDN rewriting to a platform edge, say — have to raise this or the client IP the
+        // rate limiter partitions on collapses to the last proxy's address.
+        var forwardLimit = configuration.GetValue<int?>($"{ConfigurationSection}:ForwardLimit") ?? 1;
+
         services.Configure<ForwardedHeadersOptions>(options =>
         {
             options.ForwardedHeaders =
                 ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost;
 
-            options.ForwardLimit = 1;
+            options.ForwardLimit = forwardLimit;
 
             options.KnownProxies.Clear();
             options.KnownIPNetworks.Clear();

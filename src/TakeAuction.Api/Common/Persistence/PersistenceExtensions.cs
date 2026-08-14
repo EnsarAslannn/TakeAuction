@@ -14,6 +14,9 @@ public static class PersistenceExtensions
         services.AddOptions<SeedOptions>()
             .Bind(configuration.GetSection(SeedOptions.SectionName));
 
+        services.AddOptions<DatabaseOptions>()
+            .Bind(configuration.GetSection(DatabaseOptions.SectionName));
+
         var connectionString = configuration.GetConnectionString("Postgres")
             ?? throw new InvalidOperationException("Connection string 'Postgres' is not configured.");
 

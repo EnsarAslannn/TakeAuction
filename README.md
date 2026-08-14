@@ -41,6 +41,11 @@ npm --prefix tests/TakeAuction.E2E test         # Playwright, see tests/TakeAuct
 The integration and API suites start their own PostgreSQL, Redis and RabbitMQ through
 Testcontainers, so Docker has to be running but nothing needs to be up first.
 
+## Deploying
+
+The SPA goes to Vercel, the API and its Postgres and Redis go to Railway. Step by step in
+[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
 ## Configuration
 
 Secrets are never committed. `Jwt:SigningKey` has no default outside Development and the API
