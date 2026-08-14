@@ -51,3 +51,7 @@ The SPA goes to Vercel, the API and its Postgres and Redis go to Railway. Step b
 Secrets are never committed. `Jwt:SigningKey` has no default outside Development and the API
 refuses to start without one — supply it through `Jwt__SigningKey`, user secrets or your
 platform's secret store.
+
+Connection strings follow the same rule: the localhost values live in
+`appsettings.Development.json`, not the base file. Anywhere else they have to be supplied
+explicitly, so a missing one fails loudly instead of quietly dialling localhost.
