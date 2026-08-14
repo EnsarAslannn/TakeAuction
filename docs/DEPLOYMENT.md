@@ -55,7 +55,7 @@ renamed them before.
 | `Seed__DefaultPassword` | a real password — this one signs into the demo accounts |
 | `ReverseProxy__KnownNetworks__0` | `0.0.0.0/0` |
 | `ReverseProxy__KnownNetworks__1` | `::/0` |
-| `ReverseProxy__ForwardLimit` | `2` |
+| `RateLimiting__AuthPermitLimit` | `30`, see below |
 
 Generate the signing key with:
 
@@ -67,21 +67,35 @@ No `ConnectionStrings__RabbitMq` is set, so MassTransit falls back to its in-mem
 Integration events are still published and consumed in-process; they just do not leave it.
 Adding a RabbitMQ service later is one variable away.
 
-#### About the two forwarding variables
+#### The client IP behind the proxy
 
-`ForwardLimit=2` is what makes rate limiting work. Requests arrive having crossed two proxies —
-Vercel's edge, then Railway's — and with the default single hop the API would read Vercel's
-egress address as the client IP and put every anonymous visitor in one bucket. The login policy
-is 5 requests per minute per partition, so that single bucket would lock the whole world out
-after five sign-in attempts.
+Railway's edge *overwrites* `X-Forwarded-For` with the address that connected to it rather than
+appending to it — measured, not assumed: a forged `X-Forwarded-For` sent straight at the Railway
+domain is discarded and the real client address still comes through.
 
-The cost is that someone who calls the Railway URL directly, bypassing Vercel, can forge an
-`X-Forwarded-For` entry and choose which rate-limit partition they land in. For a public demo
-that is an acceptable trade; a deployment that cares should put the API behind a proxy that
-strips inbound forwarding headers, or restrict Railway to Vercel's egress ranges.
+Two things follow. Forwarding headers cannot be spoofed here, so `ForwardLimit` stays at its
+default of 1; raising it buys nothing, because the chain is never longer than one entry. And on
+requests that arrive through the Vercel rewrite, that one entry is Vercel's egress address — the
+original client IP is already gone by the time the API sees the request, and no `ForwardLimit`
+value brings it back.
 
-`KnownNetworks` has to trust everything because Railway's internal addresses are not fixed and
-its private network is IPv6, hence both the v4 and v6 entries.
+`KnownNetworks` still has to trust everything, because Railway's internal addresses are not fixed
+and its private network is IPv6, hence both the v4 and v6 entries.
+
+#### What that costs the rate limiter
+
+Signed-in callers partition on `user:{id}` and are unaffected. Anonymous ones partition on the
+client IP, which behind the rewrite is one of a handful of Vercel egress addresses — so every
+anonymous visitor shares a bucket.
+
+The login policy is the sharp edge, since sign-in requests are anonymous by definition. At its
+default of 5 per minute, one shared bucket means the sixth sign-in attempt anywhere locks
+everyone out, so this deployment raises `RateLimiting__AuthPermitLimit` to 30. That trades some
+brute-force headroom for a usable login; the slow password hash remains the primary defence.
+
+The real fix is a custom domain — `app.example.com` on Vercel, `api.example.com` on Railway.
+Same site, so the cookies stay first-party without a rewrite, the browser talks to the API
+directly, and real client addresses come back.
 
 ### Volume
 
@@ -133,8 +147,9 @@ curl https://<api>.up.railway.app/health/ready
 
 Then, from the deployed SPA:
 
-- `https://<app>.vercel.app/api/v1/diagnostics/info` — `clientIp` should be your own address. If
-  it is a Vercel or Railway address instead, `ReverseProxy__ForwardLimit` did not take effect.
+- `https://<api>.up.railway.app/api/v1/diagnostics/info` — called directly, `clientIp` should be
+  your own address. Through the Vercel rewrite the same endpoint reports a Vercel egress address
+  instead, which is expected and explained above.
 - Sign in as the seeded bidder. A `takeauction_access_token` cookie scoped to the Vercel host
   means the proxy is doing its job.
 - Open a lot in two tabs and bid in one. The other updating without a refresh means the hub
