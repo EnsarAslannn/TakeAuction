@@ -69,24 +69,37 @@ public sealed class PlaceBidHandler : IRequestHandler<PlaceBidCommand, PlaceBidR
 
             if (!outcome.Succeeded)
             {
-                return PlaceBidResult.Rejected(outcome.Rejection, auction.MinimumAcceptableBid);
+                return PlaceBidResult.Rejected(
+                    outcome.Rejection,
+                    auction.MinimumAcceptableBidFor(command.BidderId));
             }
 
             var bid = outcome.Bid!;
             await _dbContext.Bids.AddAsync(bid, cancellationToken);
 
+            if (outcome.AutomaticBid is { } automaticBid)
+            {
+                await _dbContext.Bids.AddAsync(automaticBid, cancellationToken);
+            }
+
+            // The event reports the lot, not the submission: when a proxy answered, the price
+            // on every watching screen is the leader's automatic bid, not the one just sent.
+            var priceSetter = outcome.PriceSetter!;
+            var leaderChanged = auction.LeadingBidderId != outbidBidderId;
+
             _outbox.Enqueue(
                 new BidPlacedIntegrationEvent(
                     auction.Id,
-                    bid.Id,
-                    bid.BidderId,
-                    bid.Amount,
+                    priceSetter.Id,
+                    priceSetter.BidderId,
+                    priceSetter.Amount,
+                    priceSetter.IsAutomatic,
                     previousPrice,
-                    outbidBidderId,
+                    leaderChanged ? outbidBidderId : null,
                     auction.EndsAtUtc,
                     outcome.Extended,
-                    bid.PlacedAtUtc),
-                bid.PlacedAtUtc);
+                    priceSetter.PlacedAtUtc),
+                priceSetter.PlacedAtUtc);
 
             try
             {
@@ -119,32 +132,38 @@ public sealed class PlaceBidHandler : IRequestHandler<PlaceBidCommand, PlaceBidR
             }
 
             _logger.LogInformation(
-                "Bid {BidId} of {Amount} accepted on auction {AuctionId} after {Attempt} attempt(s)",
+                "Bid {BidId} up to {MaxAmount} accepted on auction {AuctionId} after {Attempt} attempt(s); the lot stands at {CurrentPrice} to {LeaderId}",
                 bid.Id,
-                bid.Amount,
+                bid.MaxAmount,
                 auction.Id,
-                attempt);
+                attempt,
+                auction.CurrentPrice,
+                auction.LeadingBidderId);
 
             await _publisher.Publish(
                 new BidPlacedEvent(
                     auction.Id,
-                    bid.Id,
-                    bid.BidderId,
-                    bid.Amount,
+                    priceSetter.Id,
+                    priceSetter.BidderId,
+                    priceSetter.Amount,
+                    priceSetter.IsAutomatic,
                     previousPrice,
-                    outbidBidderId,
+                    leaderChanged ? outbidBidderId : null,
                     auction.EndsAtUtc,
                     outcome.Extended,
-                    bid.PlacedAtUtc),
+                    priceSetter.PlacedAtUtc),
                 cancellationToken);
 
             return PlaceBidResult.Accepted(new PlaceBidResponse(
                 bid.Id,
                 auction.Id,
                 bid.Amount,
+                bid.MaxAmount,
                 auction.CurrentPrice,
-                auction.MinimumAcceptableBid,
+                auction.MinimumAcceptableBidFor(command.BidderId),
                 auction.BidCount,
+                auction.LeadingBidderId == command.BidderId,
+                outcome.AutomaticBid is not null,
                 bid.PlacedAtUtc,
                 auction.EndsAtUtc,
                 outcome.Extended));
@@ -198,9 +217,12 @@ public sealed class PlaceBidHandler : IRequestHandler<PlaceBidCommand, PlaceBidR
             bid.Id,
             auction.Id,
             bid.Amount,
+            bid.MaxAmount,
             auction.CurrentPrice,
-            auction.MinimumAcceptableBid,
+            auction.MinimumAcceptableBidFor(bidderId),
             auction.BidCount,
+            auction.LeadingBidderId == bidderId,
+            AnsweredByProxy: false,
             bid.PlacedAtUtc,
             auction.EndsAtUtc,
             AuctionExtended: false));

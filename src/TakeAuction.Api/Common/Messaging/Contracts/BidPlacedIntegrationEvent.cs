@@ -5,6 +5,7 @@ public sealed record BidPlacedIntegrationEvent(
     Guid BidId,
     Guid BidderId,
     decimal Amount,
+    bool Automatic,
     decimal PreviousPrice,
     Guid? OutbidBidderId,
     DateTimeOffset EndsAtUtc,

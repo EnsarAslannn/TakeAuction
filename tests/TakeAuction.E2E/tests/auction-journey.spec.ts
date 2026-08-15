@@ -42,7 +42,11 @@ test.describe("Salondan teklife giden yol", () => {
     await expect(page.getByRole("link", { name: "Giriş yapın" })).toBeVisible();
   });
 
-  test("alıcı teklif verir, panel onaylar ve fiyat yükselir", async ({ page, context, request }) => {
+  test("alıcı sınırını verir, panel onaylar ve parça açılış fiyatında kalır", async ({
+    page,
+    context,
+    request,
+  }) => {
     const auction = await seedOpenAuction(request, { startingPrice: 1000, minimumBidIncrement: 50 });
 
     await registerBidder(context.request);
@@ -56,13 +60,56 @@ test.describe("Salondan teklife giden yol", () => {
 
     const outcome = await detail.bid(1200);
 
-    expect(outcome.kind, outcome.text).toBe("accepted");
-    await expect(detail.currentPrice).toHaveText(amountPattern(1200));
+    // Nobody to bid against, so the ceiling of 1200 stays sealed and the lot is taken at the
+    // asking price. What the bidder now has to clear is their own ceiling.
+    expect(outcome.kind, outcome.text).toBe("leading");
+    await expect(detail.currentPrice).toHaveText(amountPattern(1000));
 
     const persisted = await getAuction(request, auction.id);
-    expect(persisted.currentPrice).toBe(1200);
+    expect(persisted.currentPrice).toBe(1000);
     expect(persisted.bidCount).toBe(1);
-    expect(persisted.minimumAcceptableBid).toBe(1250);
+    expect(persisted.minimumAcceptableBid).toBe(1050);
+  });
+
+  test("rakip sınırı aşamayınca ev sahibi önde olan adına cevap verir", async ({
+    page,
+    context,
+    browser,
+    request,
+  }) => {
+    const auction = await seedOpenAuction(request, { startingPrice: 1000, minimumBidIncrement: 50 });
+
+    await registerBidder(context.request);
+
+    const leader = new AuctionDetailPage(page, auction.id);
+    await leader.goto();
+    await leader.waitForLiveConnection();
+    expect((await leader.bid(2000)).kind).toBe("leading");
+
+    const rivalContext = await browser.newContext();
+
+    try {
+      await registerBidder(rivalContext.request);
+
+      const rivalPage = await rivalContext.newPage();
+      const rival = new AuctionDetailPage(rivalPage, auction.id);
+      await rival.goto();
+      await rival.waitForLiveConnection();
+
+      const outcome = await rival.bid(1500);
+
+      expect(outcome.kind, outcome.text).toBe("answered");
+      await expect(rival.currentPrice).toHaveText(amountPattern(1550));
+
+      // The leader never touched the keyboard, and their lot went up on its own.
+      await expect(leader.currentPrice).toHaveText(amountPattern(1550));
+      await expect(leader.liveFeedItems.first()).toContainText("otomatik");
+
+      const persisted = await getAuction(request, auction.id);
+      expect(persisted.currentPrice).toBe(1550);
+    } finally {
+      await rivalContext.close();
+    }
   });
 
   test("tabanın altındaki tutar daha tarayıcıdan çıkamaz", async ({ page, context, request }) => {
@@ -95,7 +142,7 @@ test.describe("Salondan teklife giden yol", () => {
     await detail.goto();
     await detail.waitForLiveConnection();
 
-    expect((await detail.bid(1200)).kind).toBe("accepted");
+    expect((await detail.bid(1200)).kind).toBe("leading");
     await expect(detail.liveFeedItems).toHaveCount(1);
 
     // Before the history endpoint existed the feed lived only in memory, so a reload made a
@@ -103,7 +150,7 @@ test.describe("Salondan teklife giden yol", () => {
     await page.reload();
 
     await expect(detail.liveFeedItems).toHaveCount(1);
-    await expect(detail.liveFeedItems.first()).toContainText(amountPattern(1200));
+    await expect(detail.liveFeedItems.first()).toContainText(amountPattern(1000));
     await expect(detail.liveFeedItems.first()).toContainText("sizin");
   });
 

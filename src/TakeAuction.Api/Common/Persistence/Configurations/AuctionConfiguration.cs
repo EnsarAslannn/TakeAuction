@@ -55,6 +55,10 @@ public sealed class AuctionConfiguration : IEntityTypeConfiguration<Auction>
 
         builder.Property(a => a.LeadingBidderId);
 
+        builder.Property(a => a.LeadingMaxAmount)
+            .HasPrecision(18, 2)
+            .IsRequired();
+
         builder.Property(a => a.BidCount)
             .IsRequired();
 

@@ -1,6 +1,6 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 
-export type BidOutcomeKind = "accepted" | "outbid" | "error";
+export type BidOutcomeKind = "leading" | "answered" | "outbid" | "error";
 
 export interface BidOutcome {
   kind: BidOutcomeKind;
@@ -31,11 +31,11 @@ export class AuctionDetailPage {
     this.amountInput = page.locator("#bid-amount");
     this.bidForm = page.locator("form").filter({ has: this.amountInput });
     this.submitButton = this.bidForm.getByRole("button", {
-      name: /Teklifi gönderin|Gönderiliyor/,
+      name: /Sınırınızı gönderin|Gönderiliyor/,
     });
-    // The panel always renders two paragraphs (the label and the floor) and appends a third
-    // only once the server has answered, so its arrival is the "request settled" signal.
-    this.feedback = this.bidForm.locator("p").nth(2);
+    // The panel renders this paragraph only once the server has answered, so its arrival is
+    // the "request settled" signal.
+    this.feedback = this.bidForm.getByTestId("bid-feedback");
 
     this.currentPrice = page
       .getByText("Güncel teklif", { exact: true })
@@ -85,8 +85,13 @@ export class AuctionDetailPage {
 
     const text = (await this.feedback.innerText()).trim();
 
-    if (/kabul edildi/.test(text)) {
-      return { kind: "accepted", text };
+    if (/Öndesiniz/.test(text)) {
+      return { kind: "leading", text };
+    }
+
+    // Accepted, but the leader's sealed ceiling was higher, so the house answered for them.
+    if (/sınırınız yetmedi/.test(text)) {
+      return { kind: "answered", text };
     }
 
     if (/öne geçti/.test(text)) {

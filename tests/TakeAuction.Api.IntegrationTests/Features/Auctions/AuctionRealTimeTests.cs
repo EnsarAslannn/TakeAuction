@@ -74,8 +74,40 @@ public sealed class AuctionRealTimeTests : IAsyncLifetime
 
         Assert.Equal(_auctionId, notification.AuctionId);
         Assert.Equal(bidder.Id, notification.BidderId);
-        Assert.Equal(150m, notification.Amount);
+        Assert.Equal(StartingPrice, notification.Amount);
+        Assert.False(notification.Automatic);
         Assert.Equal(StartingPrice, notification.PreviousPrice);
+        Assert.Null(notification.OutbidBidderId);
+    }
+
+    [Fact]
+    public async Task A_proxy_answering_for_the_leader_reaches_watchers_as_an_automatic_bid()
+    {
+        var leader = await _fixture.CreateUserAsync(UserRole.Bidder);
+        var leaderClient = await _fixture.CreateClientAsAsync(leader);
+        (await leaderClient.PostAsJsonAsync(BidsUrl(_auctionId), new PlaceBidRequest(500m)))
+            .EnsureSuccessStatusCode();
+
+        await _fixture.WaitForOutboxDrainAsync();
+
+        await using var connection = _fixture.CreateHubConnection();
+        var received = Capture<BidPlacedNotification>(connection, nameof(IAuctionClient.BidPlaced));
+
+        await connection.StartAsync();
+        await connection.InvokeAsync(nameof(AuctionHub.SubscribeToAuction), _auctionId);
+
+        var challenger = await _fixture.CreateUserAsync(UserRole.Bidder);
+        var challengerClient = await _fixture.CreateClientAsAsync(challenger);
+        (await challengerClient.PostAsJsonAsync(BidsUrl(_auctionId), new PlaceBidRequest(300m)))
+            .EnsureSuccessStatusCode();
+
+        var notification = await received.Task.WaitAsync(DeliveryTimeout);
+
+        // Watchers see the lot, not the submission: the leader held it, so the broadcast is
+        // the answer placed on their behalf, and it says so.
+        Assert.Equal(leader.Id, notification.BidderId);
+        Assert.Equal(305m, notification.Amount);
+        Assert.True(notification.Automatic);
         Assert.Null(notification.OutbidBidderId);
     }
 
@@ -102,8 +134,9 @@ public sealed class AuctionRealTimeTests : IAsyncLifetime
 
         var notification = await received.Task.WaitAsync(DeliveryTimeout);
 
-        Assert.Equal(200m, notification.Amount);
-        Assert.Equal(150m, notification.PreviousPrice);
+        // 200 beats the ceiling of 150, so it takes the lot at one increment over it.
+        Assert.Equal(155m, notification.Amount);
+        Assert.Equal(StartingPrice, notification.PreviousPrice);
         Assert.Equal(first.Id, notification.OutbidBidderId);
     }
 
@@ -204,6 +237,7 @@ public sealed class AuctionRealTimeTests : IAsyncLifetime
             bidId,
             bidderId,
             275m,
+            false,
             250m,
             outbidBidderId,
             occurredAt.AddDays(1),

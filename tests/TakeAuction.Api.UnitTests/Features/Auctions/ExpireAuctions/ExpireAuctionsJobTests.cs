@@ -110,7 +110,7 @@ public sealed class ExpireAuctionsJobTests : IDisposable
                 && domainEvent.SellerId == _sellerId
                 && domainEvent.WinningBidderId == bidderId
                 && domainEvent.FinalPrice == 250m
-                && domainEvent.BidCount == 1
+                && domainEvent.BidCount == 3
                 && domainEvent.OccurredAtUtc == TestHarness.Now),
             Arg.Any<CancellationToken>());
     }
@@ -251,8 +251,10 @@ public sealed class ExpireAuctionsJobTests : IDisposable
 
         if (winningBid is { } bid)
         {
-            var outcome = auction.PlaceBid(bid.BidderId, bid.Amount, startsAt);
-            Assert.True(outcome.Succeeded);
+            // Two ceilings at the same figure leave the lot exactly there, held by the one
+            // that got in first: an unopposed bid would only ever buy the asking price.
+            Assert.True(auction.PlaceBid(bid.BidderId, bid.Amount, startsAt).Succeeded);
+            Assert.True(auction.PlaceBid(Guid.CreateVersion7(), bid.Amount, startsAt).Succeeded);
         }
 
         context.Auctions.Add(auction);

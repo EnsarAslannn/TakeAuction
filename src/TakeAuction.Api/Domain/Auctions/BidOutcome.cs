@@ -10,12 +10,22 @@ public enum BidRejection
     ConcurrencyConflict = 5
 }
 
-public sealed record BidOutcome(BidRejection Rejection, Bid? Bid, bool Extended = false)
+public sealed record BidOutcome(
+    BidRejection Rejection,
+    Bid? Bid,
+    Bid? AutomaticBid = null,
+    bool Extended = false)
 {
     public bool Succeeded => Rejection == BidRejection.None;
 
-    public static BidOutcome Accepted(Bid bid, bool extended = false) =>
-        new(BidRejection.None, bid, extended);
+    /// <summary>
+    /// The bid that left the lot at the price it now shows — the leader's automatic answer
+    /// when their proxy held the line, otherwise the one that was submitted.
+    /// </summary>
+    public Bid? PriceSetter => AutomaticBid ?? Bid;
+
+    public static BidOutcome Accepted(Bid bid, Bid? automaticBid = null, bool extended = false) =>
+        new(BidRejection.None, bid, automaticBid, extended);
 
     public static BidOutcome Rejected(BidRejection rejection) => new(rejection, null);
 }

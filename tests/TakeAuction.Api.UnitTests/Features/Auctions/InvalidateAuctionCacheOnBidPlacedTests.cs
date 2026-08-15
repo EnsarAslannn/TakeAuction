@@ -91,6 +91,7 @@ public sealed class InvalidateAuctionCacheOnBidPlacedTests
         Guid.CreateVersion7(),
         Guid.CreateVersion7(),
         150m,
+        false,
         100m,
         null,
         TestHarness.Now.AddDays(2),

@@ -20,6 +20,7 @@ interface BidFeedItem {
   amount: number;
   at: string;
   bidderId: string;
+  automatic: boolean;
 }
 
 export function AuctionDetail() {
@@ -54,6 +55,7 @@ export function AuctionDetail() {
           amount: bid.amount,
           at: bid.placedAtUtc,
           bidderId: bid.bidderId,
+          automatic: bid.isAutomatic,
         }))
       );
       setError(null);
@@ -107,6 +109,7 @@ export function AuctionDetail() {
                 amount: notification.amount,
                 at: notification.occurredAtUtc,
                 bidderId: notification.bidderId,
+                automatic: notification.automatic,
               },
               ...previous,
             ].slice(0, FEED_LENGTH)
@@ -308,6 +311,11 @@ export function AuctionDetail() {
                           {user?.id === entry.bidderId && (
                             <span className="font-mono text-eyebrow uppercase text-sand-deep">
                               sizin
+                            </span>
+                          )}
+                          {entry.automatic && (
+                            <span className="font-mono text-eyebrow uppercase text-stone">
+                              otomatik
                             </span>
                           )}
                         </span>

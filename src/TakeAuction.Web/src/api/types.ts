@@ -46,8 +46,11 @@ export interface PlaceBidResponse {
   auctionId: string;
   amount: number;
   currentPrice: number;
+  maxAmount: number;
   minimumNextBid: number;
   bidCount: number;
+  isLeading: boolean;
+  answeredByProxy: boolean;
   placedAtUtc: string;
   endsAtUtc: string;
   auctionExtended: boolean;
@@ -90,6 +93,7 @@ export interface BidPlacedNotification {
   bidderId: string;
   amount: number;
   previousPrice: number;
+  automatic: boolean;
   outbidBidderId: string | null;
   endsAtUtc: string;
   auctionExtended: boolean;
@@ -116,6 +120,7 @@ export interface ProblemDetails {
 export interface AuctionBidItem {
   id: string;
   amount: number;
+  isAutomatic: boolean;
   placedAtUtc: string;
   bidderId: string;
 }

@@ -81,7 +81,8 @@ public sealed class GetAuctionBidsContractTests : IAsyncLifetime
         var item = Assert.Single(page.Items);
 
         Assert.NotEqual(Guid.Empty, item.Id);
-        Assert.Equal(150m, item.Amount);
+        Assert.Equal(StartingPrice, item.Amount);
+        Assert.False(item.IsAutomatic);
         Assert.Equal(bidder.UserId, item.BidderId);
         Assert.True(item.PlacedAtUtc <= DateTimeOffset.UtcNow.AddSeconds(5));
     }
@@ -89,12 +90,14 @@ public sealed class GetAuctionBidsContractTests : IAsyncLifetime
     [Fact]
     public async Task The_ladder_comes_back_highest_first()
     {
+        // Each ceiling only pays one increment over the one before it, so the ladder the feed
+        // shows is not the ladder of ceilings that produced it.
         await PlaceLadderAsync(150m, 200m, 250m);
 
         using var session = _fixture.CreateSession();
         var page = await session.ReadAsync<PagedBids>(await session.GetAsync(ApiRoutes.Bids(_auctionId)));
 
-        Assert.Equal([250m, 200m, 150m], page.Items.Select(item => item.Amount));
+        Assert.Equal([210m, 160m, 100m], page.Items.Select(item => item.Amount));
         Assert.Equal(3, page.TotalCount);
     }
 
@@ -110,11 +113,11 @@ public sealed class GetAuctionBidsContractTests : IAsyncLifetime
         var last = await session.ReadAsync<PagedBids>(
             await session.GetAsync($"{ApiRoutes.Bids(_auctionId)}?page=3&pageSize=2"));
 
-        Assert.Equal([350m, 300m], first.Items.Select(item => item.Amount));
+        Assert.Equal([310m, 260m], first.Items.Select(item => item.Amount));
         Assert.Equal(3, first.TotalPages);
         Assert.True(first.HasNextPage);
 
-        Assert.Equal([150m], last.Items.Select(item => item.Amount));
+        Assert.Equal([100m], last.Items.Select(item => item.Amount));
         Assert.False(last.HasNextPage);
     }
 

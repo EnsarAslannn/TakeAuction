@@ -22,6 +22,13 @@ public sealed class BidConfiguration : IEntityTypeConfiguration<Bid>
             .HasPrecision(18, 2)
             .IsRequired();
 
+        builder.Property(b => b.MaxAmount)
+            .HasPrecision(18, 2)
+            .IsRequired();
+
+        builder.Property(b => b.IsAutomatic)
+            .IsRequired();
+
         builder.Property(b => b.PlacedAtUtc)
             .IsRequired();
 

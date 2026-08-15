@@ -16,7 +16,8 @@ interface BidPanelProps {
 type Feedback =
   | { kind: "idle" }
   | { kind: "pending" }
-  | { kind: "accepted"; amount: number }
+  | { kind: "leading"; price: number; max: number }
+  | { kind: "answered"; price: number; max: number }
   | { kind: "outbid"; message: string }
   | { kind: "error"; message: string };
 
@@ -65,7 +66,11 @@ export function BidPanel({ auction, minimumNextBid, isLive, onAccepted }: BidPan
     try {
       const response = await placeBid(auction.id, bid, keyFor(bid));
       pendingKey.current = null;
-      setFeedback({ kind: "accepted", amount: response.amount });
+      setFeedback(
+        response.isLeading
+          ? { kind: "leading", price: response.currentPrice, max: response.maxAmount }
+          : { kind: "answered", price: response.currentPrice, max: response.maxAmount }
+      );
       onAccepted(response);
       setAmount(response.minimumNextBid.toFixed(2));
     } catch (caught) {
@@ -131,15 +136,20 @@ export function BidPanel({ auction, minimumNextBid, isLive, onAccepted }: BidPan
   return (
     <form onSubmit={submit} className="border border-ink/15 bg-paper-pure p-8">
       <div className="flex items-baseline justify-between gap-4">
-        <p className="eyebrow">Teklifiniz</p>
+        <p className="eyebrow">Sınırınız</p>
         <p className="font-mono text-eyebrow uppercase text-stone">
           en az {formatMoneyPrecise(minimumNextBid)}
         </p>
       </div>
 
+      <p className="mt-4 font-sans text-sm leading-relaxed text-ink/60">
+        Ödeyeceğiniz en yüksek tutarı yazın. Bu rakamı kimse görmez; sizin adınıza yalnızca önde
+        kalmaya yetecek kadar artırırız.
+      </p>
+
       <div className="mt-6">
         <label htmlFor="bid-amount" className="sr-only">
-          Teklif tutarı
+          En yüksek teklif tutarınız
         </label>
         <input
           id="bid-amount"
@@ -171,23 +181,45 @@ export function BidPanel({ auction, minimumNextBid, isLive, onAccepted }: BidPan
         disabled={feedback.kind === "pending"}
         className="btn-primary mt-7 w-full"
       >
-        {feedback.kind === "pending" ? "Gönderiliyor…" : "Teklifi gönderin"}
+        {feedback.kind === "pending" ? "Gönderiliyor…" : "Sınırınızı gönderin"}
       </button>
 
-      {feedback.kind === "accepted" && (
-        <p className="mt-5 animate-veil-up font-sans text-sm leading-relaxed text-sand-deep">
-          {formatMoneyPrecise(feedback.amount)} tutarındaki teklifiniz kabul edildi. Şu an öndesiniz.
+      {feedback.kind === "leading" && (
+        <p
+          data-testid="bid-feedback"
+          className="mt-5 animate-veil-up font-sans text-sm leading-relaxed text-sand-deep"
+        >
+          Öndesiniz. Parça şu an {formatMoneyPrecise(feedback.price)} ve sizin adınıza en fazla{" "}
+          {formatMoneyPrecise(feedback.max)} verilecek. Rakip çıkarsa gerektiği kadar artırırız —
+          ekranın başında beklemenize gerek yok.
+        </p>
+      )}
+
+      {feedback.kind === "answered" && (
+        <p
+          data-testid="bid-feedback"
+          className="mt-5 animate-veil-up border-l-2 border-slate pl-4 font-sans text-sm leading-relaxed text-ink/70"
+        >
+          {formatMoneyPrecise(feedback.max)} sınırınız yetmedi: önde olan alıcının sınırı daha
+          yüksekti ve parça {formatMoneyPrecise(feedback.price)} seviyesine çıktı. Daha yüksek bir
+          sınır verirseniz öne geçebilirsiniz.
         </p>
       )}
 
       {feedback.kind === "outbid" && (
-        <p className="mt-5 border-l-2 border-slate pl-4 font-sans text-sm leading-relaxed text-ink/70">
+        <p
+          data-testid="bid-feedback"
+          className="mt-5 border-l-2 border-slate pl-4 font-sans text-sm leading-relaxed text-ink/70"
+        >
           {feedback.message}
         </p>
       )}
 
       {feedback.kind === "error" && (
-        <p className="mt-5 border-l-2 border-sand-deep pl-4 font-sans text-sm leading-relaxed text-ink/70">
+        <p
+          data-testid="bid-feedback"
+          className="mt-5 border-l-2 border-sand-deep pl-4 font-sans text-sm leading-relaxed text-ink/70"
+        >
           {feedback.message}
         </p>
       )}

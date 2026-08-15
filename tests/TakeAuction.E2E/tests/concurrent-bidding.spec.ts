@@ -37,7 +37,7 @@ test.describe("Eşzamanlı teklif ve canlı fiyat", () => {
       ]);
 
       const outcomes = [aliceOutcome, bobOutcome];
-      const winners = outcomes.filter((outcome) => outcome.kind === "accepted");
+      const winners = outcomes.filter((outcome) => outcome.kind === "leading");
 
       expect(
         winners,
@@ -51,7 +51,7 @@ test.describe("Eşzamanlı teklif ve canlı fiyat", () => {
       expect(persisted.currentPrice).toBe(STARTING_PRICE);
       expect(persisted.minimumAcceptableBid).toBe(STARTING_PRICE + INCREMENT);
 
-      const loser = aliceOutcome.kind === "accepted" ? bob : alice;
+      const loser = aliceOutcome.kind === "leading" ? bob : alice;
 
       // The loser never reloaded: everything below arrived over the hub.
       await expect(loser.panel.currentPrice).toHaveText(amountPattern(STARTING_PRICE));
@@ -111,7 +111,7 @@ test.describe("Eşzamanlı teklif ve canlı fiyat", () => {
 
       const outcome = await bob.panel.outcome();
 
-      expect(outcome.kind, outcome.text).not.toBe("accepted");
+      expect(outcome.kind, outcome.text).not.toBe("leading");
       expect(outcome.text).toMatch(/1050\.00|öne geçti/);
 
       const persisted = await getAuction(request, auction.id);
@@ -145,14 +145,18 @@ test.describe("Eşzamanlı teklif ve canlı fiyat", () => {
       await Promise.all(bidders.map((bidder) => bidder.panel.submit()));
 
       const outcomes = await Promise.all(bidders.map((bidder) => bidder.panel.outcome()));
-      const accepted = outcomes.filter((outcome) => outcome.kind === "accepted");
+      const accepted = outcomes.filter(
+        (outcome) => outcome.kind === "leading" || outcome.kind === "answered"
+      );
 
       expect(accepted.length, "at least one bid has to get through").toBeGreaterThanOrEqual(1);
 
       const persisted = await getAuction(request, auction.id);
 
-      // No lost updates: the row reflects exactly the bids the clients were told won.
-      expect(persisted.bidCount).toBe(accepted.length);
+      // A submission answered by a proxy writes two rows, so the ladder is no longer one rung
+      // per bidder — but every accepted submission is on it, and the asking price still
+      // follows from the price the lot shows.
+      expect(persisted.bidCount).toBeGreaterThanOrEqual(accepted.length);
       expect(persisted.minimumAcceptableBid).toBe(persisted.currentPrice + INCREMENT);
 
       // Every screen converges on the settled price over the hub.
@@ -182,15 +186,21 @@ test.describe("Eşzamanlı teklif ve canlı fiyat", () => {
 
     await expect(auctions.priceOn(title)).toHaveText(amountPattern(STARTING_PRICE));
 
-    const bidderContext = await browser.newContext();
+    const leaderContext = await browser.newContext();
+    const rivalContext = await browser.newContext();
 
     try {
-      await registerBidder(bidderContext.request);
-      await placeBid(bidderContext.request, auction.id, 1500);
+      // Takes a contest to move the price: the first ceiling only buys the asking price, and
+      // it is the second one running into it that pushes the lot up.
+      await registerBidder(leaderContext.request);
+      await placeBid(leaderContext.request, auction.id, 2000);
 
-      await expect(auctions.priceOn(title)).toHaveText(amountPattern(1500));
+      await registerBidder(rivalContext.request);
+      await placeBid(rivalContext.request, auction.id, 1500);
+
+      await expect(auctions.priceOn(title)).toHaveText(amountPattern(1550));
     } finally {
-      await bidderContext.close();
+      await Promise.all([leaderContext.close(), rivalContext.close()]);
     }
   });
 });

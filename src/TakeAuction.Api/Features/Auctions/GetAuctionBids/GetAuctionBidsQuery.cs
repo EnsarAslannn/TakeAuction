@@ -23,9 +23,13 @@ public sealed record GetAuctionBidsQuery(Guid AuctionId, int Page = 1, int PageS
 /// <summary>
 /// Deliberately no display name: the salon shows what was bid and when, not who by. The
 /// bidder id is already public over the hub, and it is what lets a client mark its own bids.
+///
+/// Just as deliberately no maximum: a sealed ceiling is the whole point of bidding by proxy,
+/// and publishing it here would hand every rival the exact figure that takes the lot.
 /// </summary>
 public sealed record AuctionBidItem(
     Guid Id,
     decimal Amount,
+    bool IsAutomatic,
     DateTimeOffset PlacedAtUtc,
     Guid BidderId);

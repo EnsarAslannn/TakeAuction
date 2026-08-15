@@ -36,7 +36,7 @@ test.describe("Oturum sessiz yenileme", () => {
       expect(refreshResponse.status(), "the client should have refreshed on its own").toBe(200);
 
       // The user never saw a login screen: the bid they clicked is the bid that landed.
-      expect(outcome.kind, outcome.text).toBe("accepted");
+      expect(outcome.kind, outcome.text).toBe("leading");
       await expect(bidder.panel.currentPrice).toHaveText(amountPattern(STARTING_PRICE));
 
       const persisted = await getAuction(request, auction.id);

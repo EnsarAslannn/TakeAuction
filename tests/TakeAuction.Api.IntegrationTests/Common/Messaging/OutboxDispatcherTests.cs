@@ -228,6 +228,7 @@ public sealed class OutboxDispatcherTests : IAsyncLifetime
         Guid.CreateVersion7(),
         Guid.CreateVersion7(),
         150m,
+        false,
         100m,
         null,
         DateTimeOffset.UtcNow.AddDays(2),

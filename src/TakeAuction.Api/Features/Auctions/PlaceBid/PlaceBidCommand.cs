@@ -15,9 +15,12 @@ public sealed record PlaceBidResponse(
     Guid BidId,
     Guid AuctionId,
     decimal Amount,
+    decimal MaxAmount,
     decimal CurrentPrice,
     decimal MinimumNextBid,
     int BidCount,
+    bool IsLeading,
+    bool AnsweredByProxy,
     DateTimeOffset PlacedAtUtc,
     DateTimeOffset EndsAtUtc,
     bool AuctionExtended);

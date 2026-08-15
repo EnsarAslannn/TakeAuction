@@ -63,6 +63,7 @@ public sealed class BroadcastBidPlacedConsumerTests
         BidId,
         BidderId,
         150m,
+        false,
         100m,
         null,
         TestHarness.Now.AddDays(2),

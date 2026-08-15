@@ -25,6 +25,7 @@ public sealed class BroadcastBidPlacedConsumer : IConsumer<BidPlacedIntegrationE
                 message.BidId,
                 message.BidderId,
                 message.Amount,
+                message.Automatic,
                 message.PreviousPrice,
                 message.OutbidBidderId,
                 message.EndsAtUtc,

@@ -42,7 +42,12 @@ public sealed class GetAuctionBidsHandler
             .ThenByDescending(bid => bid.PlacedAtUtc)
             .Skip((normalized.Page - 1) * normalized.PageSize)
             .Take(normalized.PageSize)
-            .Select(bid => new AuctionBidItem(bid.Id, bid.Amount, bid.PlacedAtUtc, bid.BidderId))
+            .Select(bid => new AuctionBidItem(
+                bid.Id,
+                bid.Amount,
+                bid.IsAutomatic,
+                bid.PlacedAtUtc,
+                bid.BidderId))
             .ToListAsync(cancellationToken);
 
         return new PagedResult<AuctionBidItem>(items, normalized.Page, normalized.PageSize, totalCount);

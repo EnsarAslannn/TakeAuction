@@ -93,6 +93,7 @@ public sealed class OutboxTests : IDisposable
         Guid.CreateVersion7(),
         Guid.CreateVersion7(),
         150m,
+        false,
         100m,
         Guid.CreateVersion7(),
         TestHarness.Now.AddDays(2),

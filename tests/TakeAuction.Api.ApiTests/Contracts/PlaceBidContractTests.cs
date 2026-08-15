@@ -92,14 +92,16 @@ public sealed class PlaceBidContractTests : IAsyncLifetime
         using var first = await _fixture.CreateBidderAsync();
         (await first.PostAsync(ApiRoutes.Bids(_auctionId), new { amount = 150m })).EnsureSuccessStatusCode();
 
+        // The lot still shows the asking price of 100 — the opener's ceiling is sealed — so
+        // what a challenger has to clear is 105, not whatever the leader privately agreed to.
         using var second = await _fixture.CreateBidderAsync();
-        var response = await second.PostAsync(ApiRoutes.Bids(_auctionId), new { amount = 154m });
+        var response = await second.PostAsync(ApiRoutes.Bids(_auctionId), new { amount = 104m });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
 
         var problem = await second.ReadAsync<ProblemDetails>(response);
 
-        Assert.Contains("155.00", problem.Detail);
+        Assert.Contains("105.00", problem.Detail);
     }
 
     [Theory]
@@ -162,8 +164,11 @@ public sealed class PlaceBidContractTests : IAsyncLifetime
 
         Assert.NotEqual(Guid.Empty, receipt.BidId);
         Assert.Equal(_auctionId, receipt.AuctionId);
-        Assert.Equal(150m, receipt.Amount);
-        Assert.Equal(150m, receipt.CurrentPrice);
+        Assert.Equal(StartingPrice, receipt.Amount);
+        Assert.Equal(150m, receipt.MaxAmount);
+        Assert.Equal(StartingPrice, receipt.CurrentPrice);
+        Assert.True(receipt.IsLeading);
+        Assert.False(receipt.AnsweredByProxy);
         Assert.Equal(155m, receipt.MinimumNextBid);
         Assert.Equal(1, receipt.BidCount);
         Assert.True(receipt.PlacedAtUtc <= DateTimeOffset.UtcNow.AddSeconds(5));
@@ -172,17 +177,57 @@ public sealed class PlaceBidContractTests : IAsyncLifetime
     [Fact]
     public async Task An_accepted_bid_moves_the_price_the_next_reader_sees()
     {
-        using var bidder = await _fixture.CreateBidderAsync();
+        using var leader = await _fixture.CreateBidderAsync();
+        using var challenger = await _fixture.CreateBidderAsync();
 
-        (await bidder.PostAsync(ApiRoutes.Bids(_auctionId), new { amount = 150m })).EnsureSuccessStatusCode();
+        (await leader.PostAsync(ApiRoutes.Bids(_auctionId), new { amount = 500m })).EnsureSuccessStatusCode();
+        (await challenger.PostAsync(ApiRoutes.Bids(_auctionId), new { amount = 300m })).EnsureSuccessStatusCode();
 
         using var reader = _fixture.CreateSession();
         var detail = await reader.ReadAsync<AuctionDetailResponse>(
             await reader.GetAsync(ApiRoutes.Auction(_auctionId)));
 
-        Assert.Equal(150m, detail.CurrentPrice);
-        Assert.Equal(155m, detail.MinimumAcceptableBid);
-        Assert.Equal(1, detail.BidCount);
+        // The reader sees the answered price and nothing about the ceilings behind it.
+        Assert.Equal(305m, detail.CurrentPrice);
+        Assert.Equal(310m, detail.MinimumAcceptableBid);
+        Assert.Equal(3, detail.BidCount);
+    }
+
+    [Fact]
+    public async Task A_challenger_under_the_leader_s_ceiling_is_told_it_did_not_take_the_lot()
+    {
+        using var leader = await _fixture.CreateBidderAsync();
+        using var challenger = await _fixture.CreateBidderAsync();
+
+        (await leader.PostAsync(ApiRoutes.Bids(_auctionId), new { amount = 500m })).EnsureSuccessStatusCode();
+
+        var response = await challenger.PostAsync(ApiRoutes.Bids(_auctionId), new { amount = 300m });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var receipt = await challenger.ReadAsync<PlaceBidResponse>(response);
+
+        Assert.False(receipt.IsLeading);
+        Assert.True(receipt.AnsweredByProxy);
+        Assert.Equal(300m, receipt.Amount);
+        Assert.Equal(305m, receipt.CurrentPrice);
+        Assert.Equal(310m, receipt.MinimumNextBid);
+    }
+
+    [Fact]
+    public async Task A_leader_is_told_what_they_have_to_clear_to_raise_their_own_ceiling()
+    {
+        using var leader = await _fixture.CreateBidderAsync();
+
+        (await leader.PostAsync(ApiRoutes.Bids(_auctionId), new { amount = 500m })).EnsureSuccessStatusCode();
+
+        var response = await leader.PostAsync(ApiRoutes.Bids(_auctionId), new { amount = 400m });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var problem = await leader.ReadAsync<ProblemDetails>(response);
+
+        Assert.Contains("505.00", problem.Detail);
     }
 
     [Fact]
@@ -283,8 +328,15 @@ public sealed class PlaceBidContractTests : IAsyncLifetime
             var detail = await reader.ReadAsync<AuctionDetailResponse>(
                 await reader.GetAsync(ApiRoutes.Auction(_auctionId)));
 
-            Assert.Equal(acceptedAmounts.Max(), detail.CurrentPrice);
-            Assert.Equal(acceptedAmounts.Count, detail.BidCount);
+            // A receipt reports what that submission reached, which under proxies can be less
+            // than where the lot ended up: the leader's answer came after it. What every
+            // reader must agree on is that the lot is at least as high as any receipt, and
+            // that its own asking price follows from the price it shows.
+            Assert.True(
+                detail.CurrentPrice >= acceptedAmounts.Max(),
+                $"the lot shows {detail.CurrentPrice}, below an accepted bid of {acceptedAmounts.Max()}");
+
+            Assert.True(detail.BidCount >= acceptedAmounts.Count);
             Assert.Equal(detail.CurrentPrice + Increment, detail.MinimumAcceptableBid);
         }
         finally

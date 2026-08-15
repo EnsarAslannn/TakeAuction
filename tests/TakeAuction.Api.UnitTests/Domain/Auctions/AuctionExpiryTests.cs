@@ -68,11 +68,13 @@ public sealed class AuctionExpiryTests
         var auction = ActiveAuction();
         var bidder = Guid.CreateVersion7();
 
+        // Unopposed, a ceiling of 150 wins the lot at the asking price — the winner pays what
+        // it took to hold it, not what they were prepared to spend.
         auction.PlaceBid(bidder, 150m, TestHarness.Now);
         auction.End(auction.EndsAtUtc);
 
         Assert.Equal(bidder, auction.LeadingBidderId);
-        Assert.Equal(150m, auction.CurrentPrice);
+        Assert.Equal(100m, auction.CurrentPrice);
         Assert.Equal(1, auction.BidCount);
     }
 

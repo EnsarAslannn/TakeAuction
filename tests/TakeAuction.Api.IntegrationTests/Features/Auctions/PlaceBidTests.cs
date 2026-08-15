@@ -83,8 +83,10 @@ public sealed class PlaceBidTests : IAsyncLifetime
         var first = await CreateBidderClientAsync();
         (await first.PostAsJsonAsync(BidsUrl(_auctionId), new PlaceBidRequest(150m))).EnsureSuccessStatusCode();
 
+        // The lot sits at the asking price of 100, so a ceiling under 105 does not clear it —
+        // whatever the leader's hidden maximum happens to be.
         var second = await CreateBidderClientAsync();
-        var response = await second.PostAsJsonAsync(BidsUrl(_auctionId), new PlaceBidRequest(154m));
+        var response = await second.PostAsJsonAsync(BidsUrl(_auctionId), new PlaceBidRequest(104m));
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Single(await _fixture.ExecuteDbContextAsync(db => db.Bids.ToListAsync()));
@@ -136,8 +138,10 @@ public sealed class PlaceBidTests : IAsyncLifetime
 
         var body = await response.Content.ReadFromJsonAsync<PlaceBidResponse>(IntegrationTestFixture.JsonOptions);
         Assert.NotNull(body);
-        Assert.Equal(150m, body.Amount);
-        Assert.Equal(150m, body.CurrentPrice);
+        Assert.Equal(StartingPrice, body.Amount);
+        Assert.Equal(150m, body.MaxAmount);
+        Assert.Equal(StartingPrice, body.CurrentPrice);
+        Assert.True(body.IsLeading);
         Assert.Equal(155m, body.MinimumNextBid);
         Assert.Equal(1, body.BidCount);
 
@@ -145,7 +149,8 @@ public sealed class PlaceBidTests : IAsyncLifetime
             db.Auctions.SingleAsync(a => a.Id == _auctionId));
         var bid = await _fixture.ExecuteDbContextAsync(db => db.Bids.SingleAsync());
 
-        Assert.Equal(150m, auction.CurrentPrice);
+        Assert.Equal(StartingPrice, auction.CurrentPrice);
+        Assert.Equal(150m, auction.LeadingMaxAmount);
         Assert.Equal(1, auction.BidCount);
         Assert.Equal(bid.BidderId, auction.LeadingBidderId);
         Assert.NotEqual(versionBefore, auction.Version);
@@ -163,14 +168,21 @@ public sealed class PlaceBidTests : IAsyncLifetime
         Assert.NotNull(beforeBid);
         Assert.Equal(StartingPrice, beforeBid.CurrentPrice);
 
-        (await client.PostAsJsonAsync(BidsUrl(_auctionId), new PlaceBidRequest(150m))).EnsureSuccessStatusCode();
+        // Takes a contest to move the visible price: the first ceiling only buys the asking
+        // price, and it is the second one running into it that pushes the lot up.
+        (await client.PostAsJsonAsync(BidsUrl(_auctionId), new PlaceBidRequest(150m)))
+            .EnsureSuccessStatusCode();
+
+        var rival = await CreateBidderClientAsync();
+        (await rival.PostAsJsonAsync(BidsUrl(_auctionId), new PlaceBidRequest(140m)))
+            .EnsureSuccessStatusCode();
 
         var afterBid = await client.GetFromJsonAsync<AuctionDetailResponse>(
             $"/api/v1/auctions/{_auctionId}",
             IntegrationTestFixture.JsonOptions);
 
         Assert.NotNull(afterBid);
-        Assert.Equal(150m, afterBid.CurrentPrice);
+        Assert.Equal(145m, afterBid.CurrentPrice);
     }
 
     [Fact]
@@ -223,18 +235,27 @@ public sealed class PlaceBidTests : IAsyncLifetime
         var auction = await _fixture.ExecuteDbContextAsync(db =>
             db.Auctions.SingleAsync(a => a.Id == _auctionId));
 
-        Assert.Equal(acceptedCount, bids.Count);
-        Assert.Equal(acceptedCount, auction.BidCount);
+        // A submission answered by a proxy writes two rows, so the ladder is no longer one
+        // rung per request. What has to hold is that the lot agrees with its own ladder.
+        Assert.Equal(bids.Count, auction.BidCount);
         Assert.Equal(bids.Max(bid => bid.Amount), auction.CurrentPrice);
-        Assert.Equal(bids.Count, bids.Select(bid => bid.BidderId).Distinct().Count());
         Assert.True(bids[0].Amount >= StartingPrice);
 
-        for (var index = 1; index < bids.Count; index++)
-        {
-            Assert.True(
-                bids[index].Amount >= bids[index - 1].Amount + Increment,
-                $"bid {bids[index].Amount} did not clear the increment over {bids[index - 1].Amount}");
-        }
+        // The heart of it: whoever committed the highest ceiling holds the lot, and the price
+        // never runs past what that bidder agreed to. A lost update would show up here as a
+        // leader who is not the highest ceiling on the board.
+        var highest = bids.MaxBy(bid => bid.MaxAmount)!;
+
+        Assert.Equal(highest.MaxAmount, auction.LeadingMaxAmount);
+        Assert.Equal(highest.BidderId, auction.LeadingBidderId);
+        Assert.True(
+            auction.CurrentPrice <= auction.LeadingMaxAmount,
+            $"the lot stands at {auction.CurrentPrice}, past the winning ceiling of {auction.LeadingMaxAmount}");
+
+        // Nobody was ever charged past their own ceiling, automatic bids included.
+        Assert.All(bids, bid => Assert.True(
+            bid.Amount <= bid.MaxAmount,
+            $"a bid of {bid.Amount} was recorded against a ceiling of {bid.MaxAmount}"));
     }
 
     [Fact]
@@ -262,6 +283,8 @@ public sealed class PlaceBidTests : IAsyncLifetime
             .Where(message => message.Type == nameof(BidPlacedIntegrationEvent))
             .ToListAsync());
 
+        // One announcement per accepted submission, however many rows it wrote: a challenge
+        // answered by a proxy leaves two bids behind but only ever moves the lot once.
         Assert.Equal(accepted, queued.Count);
 
         var announced = queued
@@ -270,7 +293,8 @@ public sealed class PlaceBidTests : IAsyncLifetime
                 Outbox.SerializerOptions)!.BidId)
             .ToList();
 
-        Assert.Equal(bidIds.Order(), announced.Order());
+        Assert.Equal(announced.Count, announced.Distinct().Count());
+        Assert.All(announced, bidId => Assert.Contains(bidId, bidIds));
     }
 
     [Fact]
@@ -297,7 +321,7 @@ public sealed class PlaceBidTests : IAsyncLifetime
 
         Assert.Single(await _fixture.ExecuteDbContextAsync(db => db.Bids.ToListAsync()));
         Assert.Equal(1, auction.BidCount);
-        Assert.Equal(150m, auction.CurrentPrice);
+        Assert.Equal(StartingPrice, auction.CurrentPrice);
     }
 
     [Fact]
@@ -320,7 +344,7 @@ public sealed class PlaceBidTests : IAsyncLifetime
 
         Assert.Single(await _fixture.ExecuteDbContextAsync(db => db.Bids.ToListAsync()));
         Assert.Equal(1, auction.BidCount);
-        Assert.Equal(150m, auction.CurrentPrice);
+        Assert.Equal(StartingPrice, auction.CurrentPrice);
     }
 
     [Fact]

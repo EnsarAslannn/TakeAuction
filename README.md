@@ -36,6 +36,18 @@ survives a broker outage or the death of the instance that wrote it. Claims are 
 taken with `FOR UPDATE SKIP LOCKED`, so running several API instances does not send anything
 twice. Delivery is at-least-once — consumers are expected to tolerate a repeat.
 
+## Bidding
+
+A bid is a ceiling, not a price. The house bids on the bidder's behalf only as far as it takes
+to lead, so a winner pays one increment over the next-highest ceiling rather than everything
+they were prepared to spend, and nobody has to sit at the screen defending a lot by hand. A
+challenger who cannot clear the leader's ceiling is answered automatically; a tie goes to the
+incumbent, because matching a maximum is not beating it.
+
+Ceilings are never published — not on the detail endpoint, not in the bid history, not over the
+hub. Knowing a leader's ceiling is knowing the exact figure that takes the lot, which is the one
+thing a sealed maximum exists to prevent.
+
 ## Closing a lot
 
 A bid placed inside the closing window pushes the end out, so a lot only settles once a bid

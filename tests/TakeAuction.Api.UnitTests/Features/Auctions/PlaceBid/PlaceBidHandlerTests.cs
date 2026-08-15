@@ -36,8 +36,14 @@ public sealed class PlaceBidHandlerTests : IDisposable
 
         Assert.True(result.Succeeded);
         Assert.NotNull(result.Response);
-        Assert.Equal(150m, result.Response.Amount);
-        Assert.Equal(150m, result.Response.CurrentPrice);
+        Assert.True(result.Response.IsLeading);
+        Assert.False(result.Response.AnsweredByProxy);
+
+        // Nobody to bid against yet, so a ceiling of 150 takes the lot at the asking price and
+        // stays sealed. What this bidder has to clear next is their own ceiling, not the price.
+        Assert.Equal(100m, result.Response.Amount);
+        Assert.Equal(150m, result.Response.MaxAmount);
+        Assert.Equal(100m, result.Response.CurrentPrice);
         Assert.Equal(155m, result.Response.MinimumNextBid);
         Assert.Equal(1, result.Response.BidCount);
     }
@@ -55,8 +61,10 @@ public sealed class PlaceBidHandlerTests : IDisposable
 
         Assert.Equal(_auctionId, bid.AuctionId);
         Assert.Equal(_bidderId, bid.BidderId);
-        Assert.Equal(150m, bid.Amount);
-        Assert.Equal(150m, auction.CurrentPrice);
+        Assert.Equal(100m, bid.Amount);
+        Assert.Equal(150m, bid.MaxAmount);
+        Assert.Equal(100m, auction.CurrentPrice);
+        Assert.Equal(150m, auction.LeadingMaxAmount);
         Assert.Equal(_bidderId, auction.LeadingBidderId);
         Assert.Equal(1, auction.BidCount);
     }
@@ -73,7 +81,8 @@ public sealed class PlaceBidHandlerTests : IDisposable
                 domainEvent.AuctionId == _auctionId
                 && domainEvent.BidId == result.Response!.BidId
                 && domainEvent.BidderId == _bidderId
-                && domainEvent.Amount == 150m
+                && domainEvent.Amount == 100m
+                && !domainEvent.Automatic
                 && domainEvent.PreviousPrice == 100m
                 && domainEvent.OutbidBidderId == null),
             Arg.Any<CancellationToken>());
@@ -89,10 +98,11 @@ public sealed class PlaceBidHandlerTests : IDisposable
         _bidderId = AddUser(UserRole.Bidder);
         await handler.Handle(Command(200m), CancellationToken.None);
 
+        // 200 beats the ceiling of 150, so it takes the lot at one increment over what it beat.
         await _publisher.Received(1).Publish(
             Arg.Is<BidPlacedEvent>(domainEvent =>
-                domainEvent.Amount == 200m
-                && domainEvent.PreviousPrice == 150m
+                domainEvent.Amount == 155m
+                && domainEvent.PreviousPrice == 100m
                 && domainEvent.OutbidBidderId == firstBidder),
             Arg.Any<CancellationToken>());
     }
@@ -114,7 +124,8 @@ public sealed class PlaceBidHandlerTests : IDisposable
         Assert.Null(message.ProcessedAtUtc);
         Assert.Equal(result.Response!.BidId, published!.BidId);
         Assert.Equal(_auctionId, published.AuctionId);
-        Assert.Equal(150m, published.Amount);
+        Assert.Equal(100m, published.Amount);
+        Assert.False(published.Automatic);
         Assert.Equal(100m, published.PreviousPrice);
     }
 
@@ -181,7 +192,7 @@ public sealed class PlaceBidHandlerTests : IDisposable
         await using var verification = NewContext();
         Assert.Equal(1, await verification.Bids.CountAsync());
         Assert.Equal(1, (await verification.Auctions.SingleAsync()).BidCount);
-        Assert.Equal(150m, (await verification.Auctions.SingleAsync()).CurrentPrice);
+        Assert.Equal(100m, (await verification.Auctions.SingleAsync()).CurrentPrice);
     }
 
     [Fact]
@@ -215,9 +226,10 @@ public sealed class PlaceBidHandlerTests : IDisposable
         var replay = await handler.Handle(Command(150m, key), CancellationToken.None);
 
         Assert.True(replay.Replayed);
-        Assert.Equal(150m, replay.Response!.Amount);
-        Assert.Equal(400m, replay.Response.CurrentPrice);
-        Assert.Equal(405m, replay.Response.MinimumNextBid);
+        Assert.False(replay.Response!.IsLeading);
+        Assert.Equal(100m, replay.Response.Amount);
+        Assert.Equal(155m, replay.Response.CurrentPrice);
+        Assert.Equal(160m, replay.Response.MinimumNextBid);
         Assert.Equal(2, replay.Response.BidCount);
     }
 
@@ -346,7 +358,7 @@ public sealed class PlaceBidHandlerTests : IDisposable
 
         await using var verification = NewContext();
         Assert.Equal(1, await verification.Bids.CountAsync());
-        Assert.Equal(150m, (await verification.Auctions.SingleAsync()).CurrentPrice);
+        Assert.Equal(100m, (await verification.Auctions.SingleAsync()).CurrentPrice);
 
         await _publisher.Received(1).Publish(Arg.Any<BidPlacedEvent>(), Arg.Any<CancellationToken>());
     }
@@ -395,8 +407,11 @@ public sealed class PlaceBidHandlerTests : IDisposable
         var result = await handler.Handle(Command(150m), CancellationToken.None);
 
         Assert.True(result.Succeeded);
-        Assert.Equal(150m, result.Response!.CurrentPrice);
-        Assert.Equal(2, result.Response.BidCount);
+        Assert.Equal(125m, result.Response!.CurrentPrice);
+
+        // Three from the contest that set the price — the leader's opening ceiling, the
+        // challenge that ran into it, and the answer the house placed — plus this one.
+        Assert.Equal(4, result.Response.BidCount);
     }
 
     public void Dispose()
@@ -469,13 +484,22 @@ public sealed class PlaceBidHandlerTests : IDisposable
         return user.Id;
     }
 
+    /// <summary>
+    /// Takes two rivals to move the visible price now that bidding is by proxy: the first
+    /// ceiling only buys the asking price, and it is the second one running into it that
+    /// drives the lot up to <paramref name="amount"/>.
+    /// </summary>
     private void RaiseWinningPrice(decimal amount)
     {
         using var context = TestHarness.CreateDbContext(_databaseName);
 
-        var rivalId = AddUser(UserRole.Bidder);
+        var leaderId = AddUser(UserRole.Bidder);
+        var challengerId = AddUser(UserRole.Bidder);
         var auction = context.Auctions.Single(entity => entity.Id == _auctionId);
-        auction.PlaceBid(rivalId, amount, TestHarness.Now);
+
+        auction.PlaceBid(leaderId, amount, TestHarness.Now);
+        auction.PlaceBid(challengerId, amount, TestHarness.Now);
+
         context.SaveChanges();
     }
 
