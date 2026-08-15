@@ -288,6 +288,11 @@ export function AuctionDetail() {
                       window.setTimeout(() => setExtended(false), 4000);
                     }
                   }}
+                  onWithdrawn={() =>
+                    setAuction((previous) =>
+                      previous ? { ...previous, status: "Cancelled" } : previous
+                    )
+                  }
                 />
               </div>
 

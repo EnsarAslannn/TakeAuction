@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { placeBid } from "@/api/auctions";
+import { cancelAuction, placeBid } from "@/api/auctions";
 import { ApiError, toApiError } from "@/api/client";
 import { formatMoney, formatMoneyPrecise } from "@/lib/format";
 import { useAuthStore } from "@/store/authStore";
@@ -11,7 +11,10 @@ interface BidPanelProps {
   minimumNextBid: number;
   isLive: boolean;
   onAccepted: (result: PlaceBidResponse) => void;
+  onWithdrawn: () => void;
 }
+
+type Withdrawal = { kind: "idle" } | { kind: "pending" } | { kind: "error"; message: string };
 
 type Feedback =
   | { kind: "idle" }
@@ -21,10 +24,11 @@ type Feedback =
   | { kind: "outbid"; message: string }
   | { kind: "error"; message: string };
 
-export function BidPanel({ auction, minimumNextBid, isLive, onAccepted }: BidPanelProps) {
+export function BidPanel({ auction, minimumNextBid, isLive, onAccepted, onWithdrawn }: BidPanelProps) {
   const user = useAuthStore((state) => state.user);
   const [amount, setAmount] = useState("");
   const [feedback, setFeedback] = useState<Feedback>({ kind: "idle" });
+  const [withdrawal, setWithdrawal] = useState<Withdrawal>({ kind: "idle" });
 
   // One key per intended bid, not per request. A second click on the same amount is the same
   // bid being sent again — the server recognises the key and hands back the first answer
@@ -88,6 +92,26 @@ export function BidPanel({ auction, minimumNextBid, isLive, onAccepted }: BidPan
     }
   };
 
+  const withdraw = async () => {
+    setWithdrawal({ kind: "pending" });
+
+    try {
+      await cancelAuction(auction.id);
+      setWithdrawal({ kind: "idle" });
+      onWithdrawn();
+    } catch (caught) {
+      const error = toApiError(caught);
+
+      setWithdrawal({
+        kind: "error",
+        message:
+          error instanceof ApiError && error.status === 409
+            ? "Siz geri çekerken bir teklif geldi. Parça artık kapanışa kadar açık kalır."
+            : error.message,
+      });
+    }
+  };
+
   if (!user) {
     return (
       <div className="border border-ink/15 bg-paper-pure p-8">
@@ -109,6 +133,8 @@ export function BidPanel({ auction, minimumNextBid, isLive, onAccepted }: BidPan
   }
 
   if (isOwnAuction) {
+    const withdrawable = auction.bidCount === 0 && auction.status !== "Ended" && auction.status !== "Cancelled";
+
     return (
       <div className="border border-ink/15 bg-paper-pure p-8">
         <p className="eyebrow mb-4">Bu parça sizin</p>
@@ -116,6 +142,36 @@ export function BidPanel({ auction, minimumNextBid, isLive, onAccepted }: BidPan
           Kendi ilanınıza teklif veremezsiniz. Kapanışta en yüksek teklifi veren alıcı otomatik
           olarak belirlenir; sizin bir şey yapmanız gerekmez.
         </p>
+
+        {withdrawable ? (
+          <>
+            <p className="mt-6 font-sans text-sm leading-relaxed text-ink/60">
+              Henüz teklif gelmedi, dolayısıyla ilanı geri çekebilirsiniz. İlk teklif geldikten
+              sonra bu mümkün olmaz: alıcıların bu parçaya bağladıkları bir sınır olur.
+            </p>
+            <button
+              type="button"
+              onClick={withdraw}
+              disabled={withdrawal.kind === "pending"}
+              className="btn-ghost mt-5"
+            >
+              {withdrawal.kind === "pending" ? "Geri çekiliyor…" : "İlanı geri çekin"}
+            </button>
+          </>
+        ) : (
+          auction.status !== "Ended" &&
+          auction.status !== "Cancelled" && (
+            <p className="mt-6 border-l-2 border-slate pl-4 font-sans text-sm leading-relaxed text-ink/60">
+              Bu parçaya teklif geldi, artık geri çekilemez. Kapanışa kadar açık kalır.
+            </p>
+          )
+        )}
+
+        {withdrawal.kind === "error" && (
+          <p className="mt-5 border-l-2 border-sand-deep pl-4 font-sans text-sm leading-relaxed text-ink/70">
+            {withdrawal.message}
+          </p>
+        )}
       </div>
     );
   }
@@ -127,7 +183,9 @@ export function BidPanel({ auction, minimumNextBid, isLive, onAccepted }: BidPan
         <p className="font-sans text-base leading-relaxed text-ink/70">
           {auction.status === "Scheduled"
             ? "Bu parça henüz açık artırmaya çıkmadı. Başlama saati aşağıda yazıyor."
-            : "Bu açık artırma kapandı. Salonda başka parçalar var."}
+            : auction.status === "Cancelled"
+              ? "Satıcı bu ilanı geri çekti. Salonda başka parçalar var."
+              : "Bu açık artırma kapandı. Salonda başka parçalar var."}
         </p>
       </div>
     );

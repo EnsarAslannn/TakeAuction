@@ -82,6 +82,12 @@ export interface CreateAuctionResponse {
   imageUrl: string | null;
 }
 
+export interface CancelAuctionResponse {
+  id: string;
+  status: AuctionStatus;
+  cancelledAtUtc: string;
+}
+
 export interface UploadImageResponse {
   url: string;
   sizeInBytes: number;

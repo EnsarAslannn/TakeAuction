@@ -216,6 +216,28 @@ public sealed class AuctionRealTimeTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task A_withdrawal_reaches_watchers_and_the_lobby()
+    {
+        await using var connection = _fixture.CreateHubConnection();
+        var received = Capture<AuctionStatusChangedNotification>(
+            connection,
+            nameof(IAuctionClient.AuctionStatusChanged));
+
+        await connection.StartAsync();
+        await connection.InvokeAsync(nameof(AuctionHub.SubscribeToAuction), _auctionId);
+
+        var sellerClient = await _fixture.CreateClientAsAsync(_seller);
+        (await sellerClient.PostAsync($"/api/v1/auctions/{_auctionId}/cancel", null))
+            .EnsureSuccessStatusCode();
+
+        var notification = await received.Task.WaitAsync(DeliveryTimeout);
+
+        Assert.Equal(_auctionId, notification.AuctionId);
+        Assert.Equal(nameof(AuctionStatus.Cancelled), notification.Status);
+        Assert.Null(notification.LeadingBidderId);
+    }
+
+    [Fact]
     public async Task A_bid_never_reaches_watchers_of_another_auction()
     {
         var otherAuctionId = await CreateAuctionAsync();

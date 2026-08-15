@@ -203,6 +203,8 @@ public static class ApiRoutes
     public static string Auction(Guid id) => $"/api/v1/auctions/{id}";
 
     public static string Bids(Guid id) => $"/api/v1/auctions/{id}/bids";
+
+    public static string Cancel(Guid id) => $"/api/v1/auctions/{id}/cancel";
 }
 
 public static class LocationAssert

@@ -275,6 +275,44 @@ public sealed class Auction
         return true;
     }
 
+    /// <summary>
+    /// A lot can be withdrawn only while nobody has committed to it. Once a bid is in, the
+    /// seller no longer owns the outcome on their own: bidders have ceilings riding on it, and
+    /// letting a seller pull a lot they did not like the look of is exactly the thing a bidder
+    /// has to be able to trust will not happen.
+    /// </summary>
+    public CancelOutcome Cancel(Guid sellerId, DateTimeOffset nowUtc)
+    {
+        if (sellerId == Guid.Empty)
+        {
+            throw new ArgumentException("Seller id is required.", nameof(sellerId));
+        }
+
+        if (sellerId != SellerId)
+        {
+            return CancelOutcome.Rejected(CancelRejection.NotTheSeller);
+        }
+
+        if (Status is AuctionStatus.Cancelled)
+        {
+            return CancelOutcome.Rejected(CancelRejection.AlreadyCancelled);
+        }
+
+        if (Status is AuctionStatus.Ended || nowUtc >= EndsAtUtc)
+        {
+            return CancelOutcome.Rejected(CancelRejection.AlreadyClosed);
+        }
+
+        if (BidCount > 0)
+        {
+            return CancelOutcome.Rejected(CancelRejection.AlreadyBidOn);
+        }
+
+        Status = AuctionStatus.Cancelled;
+
+        return CancelOutcome.Accepted();
+    }
+
     public bool End(DateTimeOffset nowUtc)
     {
         if (Status is AuctionStatus.Ended or AuctionStatus.Cancelled)

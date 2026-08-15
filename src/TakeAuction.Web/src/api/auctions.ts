@@ -4,6 +4,7 @@ import type {
   AuctionDetail,
   AuctionListItem,
   AuctionStatus,
+  CancelAuctionResponse,
   CreateAuctionResponse,
   PagedResult,
   PlaceBidResponse,
@@ -46,6 +47,11 @@ export async function placeBid(
     { amount },
     { headers: { "Idempotency-Key": idempotencyKey } }
   );
+  return data;
+}
+
+export async function cancelAuction(auctionId: string): Promise<CancelAuctionResponse> {
+  const { data } = await http.post<CancelAuctionResponse>(`/auctions/${auctionId}/cancel`);
   return data;
 }
 
