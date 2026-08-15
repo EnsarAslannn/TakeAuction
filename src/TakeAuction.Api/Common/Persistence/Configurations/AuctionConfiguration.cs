@@ -61,6 +61,14 @@ public sealed class AuctionConfiguration : IEntityTypeConfiguration<Auction>
         builder.Property(a => a.CreatedAtUtc)
             .IsRequired();
 
+        builder.Property(a => a.AntiSnipeWindowSeconds)
+            .IsRequired()
+            .HasDefaultValue(Auction.DefaultAntiSnipeWindowSeconds);
+
+        builder.Property(a => a.AntiSnipeExtensionSeconds)
+            .IsRequired()
+            .HasDefaultValue(Auction.DefaultAntiSnipeExtensionSeconds);
+
         builder.Property(a => a.Version)
             .IsRowVersion();
 

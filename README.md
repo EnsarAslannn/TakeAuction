@@ -36,6 +36,14 @@ survives a broker outage or the death of the instance that wrote it. Claims are 
 taken with `FOR UPDATE SKIP LOCKED`, so running several API instances does not send anything
 twice. Delivery is at-least-once — consumers are expected to tolerate a repeat.
 
+## Closing a lot
+
+A bid placed inside the closing window pushes the end out, so a lot only settles once a bid
+goes unanswered. The clock is set from the bid rather than added to the old end, which means
+every snipe buys the room the same reply window instead of stacking. The window and the
+extension are stored on the lot when it is listed, so changing the defaults never moves the
+goalposts under an auction that is already running.
+
 ## Health
 
 | Path | Answers |

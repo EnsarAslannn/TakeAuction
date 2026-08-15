@@ -10,4 +10,5 @@ public sealed record BidPlacedEvent(
     decimal PreviousPrice,
     Guid? OutbidBidderId,
     DateTimeOffset EndsAtUtc,
+    bool AuctionExtended,
     DateTimeOffset OccurredAtUtc) : IDomainEvent;

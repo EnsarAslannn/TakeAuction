@@ -2,6 +2,10 @@ namespace TakeAuction.Api.Domain.Auctions;
 
 public sealed class Auction
 {
+    public const int DefaultAntiSnipeWindowSeconds = 60;
+
+    public const int DefaultAntiSnipeExtensionSeconds = 60;
+
     public Guid Id { get; private set; }
     public Guid SellerId { get; private set; }
     public string Title { get; private set; } = null!;
@@ -18,6 +22,15 @@ public sealed class Auction
     public DateTimeOffset CreatedAtUtc { get; private set; }
     public uint Version { get; private set; }
 
+    /// <summary>
+    /// The soft-close rules are stored on the lot rather than read from configuration on every
+    /// bid. They are part of the deal a bidder accepted when they joined this lot, so changing
+    /// the defaults must not move the goalposts under an auction that is already running.
+    /// </summary>
+    public int AntiSnipeWindowSeconds { get; private set; }
+
+    public int AntiSnipeExtensionSeconds { get; private set; }
+
     public decimal MinimumAcceptableBid =>
         BidCount == 0 ? StartingPrice : CurrentPrice + MinimumBidIncrement;
 
@@ -32,7 +45,9 @@ public sealed class Auction
         DateTimeOffset startsAtUtc,
         DateTimeOffset endsAtUtc,
         DateTimeOffset nowUtc,
-        string? imageUrl = null)
+        string? imageUrl = null,
+        int antiSnipeWindowSeconds = DefaultAntiSnipeWindowSeconds,
+        int antiSnipeExtensionSeconds = DefaultAntiSnipeExtensionSeconds)
     {
         if (sellerId == Guid.Empty)
         {
@@ -54,6 +69,16 @@ public sealed class Auction
             throw new ArgumentException("Minimum bid increment must be greater than zero.", nameof(minimumBidIncrement));
         }
 
+        if (antiSnipeWindowSeconds < 0)
+        {
+            throw new ArgumentException("Anti-snipe window cannot be negative.", nameof(antiSnipeWindowSeconds));
+        }
+
+        if (antiSnipeExtensionSeconds < 0)
+        {
+            throw new ArgumentException("Anti-snipe extension cannot be negative.", nameof(antiSnipeExtensionSeconds));
+        }
+
         return new Auction
         {
             Id = Guid.CreateVersion7(),
@@ -67,7 +92,9 @@ public sealed class Auction
             StartsAtUtc = startsAtUtc.ToUniversalTime(),
             EndsAtUtc = endsAtUtc.ToUniversalTime(),
             Status = startsAtUtc > nowUtc ? AuctionStatus.Scheduled : AuctionStatus.Active,
-            CreatedAtUtc = nowUtc
+            CreatedAtUtc = nowUtc,
+            AntiSnipeWindowSeconds = antiSnipeWindowSeconds,
+            AntiSnipeExtensionSeconds = antiSnipeExtensionSeconds
         };
     }
 
@@ -109,7 +136,37 @@ public sealed class Auction
         LeadingBidderId = bidderId;
         BidCount++;
 
-        return BidOutcome.Accepted(bid);
+        return BidOutcome.Accepted(bid, ExtendIfSniped(nowUtc));
+    }
+
+    /// <summary>
+    /// A bid landing in the closing seconds pushes the end out, so winning cannot be a matter
+    /// of arriving late enough that nobody has time to answer. The clock is set from the bid,
+    /// not added to the old end: every snipe buys the room the same fixed reply window, and a
+    /// lot only settles once a bid goes unanswered.
+    /// </summary>
+    private bool ExtendIfSniped(DateTimeOffset nowUtc)
+    {
+        if (AntiSnipeWindowSeconds <= 0 || AntiSnipeExtensionSeconds <= 0)
+        {
+            return false;
+        }
+
+        if (EndsAtUtc - nowUtc > TimeSpan.FromSeconds(AntiSnipeWindowSeconds))
+        {
+            return false;
+        }
+
+        var extendedTo = nowUtc.AddSeconds(AntiSnipeExtensionSeconds);
+
+        if (extendedTo <= EndsAtUtc)
+        {
+            return false;
+        }
+
+        EndsAtUtc = extendedTo;
+
+        return true;
     }
 
     public bool End(DateTimeOffset nowUtc)

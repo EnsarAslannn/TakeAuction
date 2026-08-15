@@ -131,6 +131,40 @@ public sealed class PlaceBidHandlerTests : IDisposable
     }
 
     [Fact]
+    public async Task Carries_the_new_close_out_to_the_bidder_and_the_watchers_when_a_bid_snipes()
+    {
+        var (handler, _) = CreateHandler();
+        _timeProvider.Advance(TimeSpan.FromDays(2).Subtract(TimeSpan.FromSeconds(10)));
+
+        var result = await handler.Handle(Command(150m), CancellationToken.None);
+
+        Assert.True(result.Succeeded);
+        Assert.True(result.Response!.AuctionExtended);
+
+        await using var verification = NewContext();
+        var auction = await verification.Auctions.SingleAsync();
+
+        Assert.Equal(auction.EndsAtUtc, result.Response.EndsAtUtc);
+        Assert.Equal(_timeProvider.GetUtcNow().AddSeconds(Auction.DefaultAntiSnipeExtensionSeconds), auction.EndsAtUtc);
+
+        await _publisher.Received(1).Publish(
+            Arg.Is<BidPlacedEvent>(domainEvent =>
+                domainEvent.AuctionExtended && domainEvent.EndsAtUtc == auction.EndsAtUtc),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Leaves_the_close_alone_for_a_bid_that_is_nowhere_near_it()
+    {
+        var (handler, _) = CreateHandler();
+
+        var result = await handler.Handle(Command(150m), CancellationToken.None);
+
+        Assert.False(result.Response!.AuctionExtended);
+        Assert.Equal(TestHarness.Now.AddDays(2), result.Response.EndsAtUtc);
+    }
+
+    [Fact]
     public async Task Answers_a_repeated_key_with_the_bid_it_already_recorded()
     {
         var (handler, _) = CreateHandler();

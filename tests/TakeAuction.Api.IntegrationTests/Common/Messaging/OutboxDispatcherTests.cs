@@ -231,5 +231,6 @@ public sealed class OutboxDispatcherTests : IAsyncLifetime
         100m,
         null,
         DateTimeOffset.UtcNow.AddDays(2),
+        false,
         DateTimeOffset.UtcNow);
 }

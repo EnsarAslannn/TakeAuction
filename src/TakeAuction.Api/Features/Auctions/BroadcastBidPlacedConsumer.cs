@@ -28,6 +28,7 @@ public sealed class BroadcastBidPlacedConsumer : IConsumer<BidPlacedIntegrationE
                 message.PreviousPrice,
                 message.OutbidBidderId,
                 message.EndsAtUtc,
+                message.AuctionExtended,
                 message.OccurredAtUtc),
             context.CancellationToken);
 

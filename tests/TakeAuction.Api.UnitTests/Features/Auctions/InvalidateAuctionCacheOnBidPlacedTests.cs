@@ -94,5 +94,6 @@ public sealed class InvalidateAuctionCacheOnBidPlacedTests
         100m,
         null,
         TestHarness.Now.AddDays(2),
+        false,
         TestHarness.Now);
 }

@@ -66,5 +66,6 @@ public sealed class BroadcastBidPlacedConsumerTests
         100m,
         null,
         TestHarness.Now.AddDays(2),
+        false,
         TestHarness.Now);
 }

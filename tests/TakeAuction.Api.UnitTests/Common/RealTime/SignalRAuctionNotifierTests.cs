@@ -86,6 +86,7 @@ public sealed class SignalRAuctionNotifierTests
         100m,
         null,
         TestHarness.Now.AddDays(2),
+        false,
         TestHarness.Now);
 
     private static AuctionStatusChangedNotification StatusNotification() => new(

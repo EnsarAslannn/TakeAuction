@@ -18,7 +18,9 @@ public sealed record PlaceBidResponse(
     decimal CurrentPrice,
     decimal MinimumNextBid,
     int BidCount,
-    DateTimeOffset PlacedAtUtc);
+    DateTimeOffset PlacedAtUtc,
+    DateTimeOffset EndsAtUtc,
+    bool AuctionExtended);
 
 public sealed record PlaceBidResult(
     BidRejection Rejection,

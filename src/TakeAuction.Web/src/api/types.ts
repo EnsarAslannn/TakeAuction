@@ -49,6 +49,8 @@ export interface PlaceBidResponse {
   minimumNextBid: number;
   bidCount: number;
   placedAtUtc: string;
+  endsAtUtc: string;
+  auctionExtended: boolean;
 }
 
 export interface AuthenticatedUser {
@@ -90,6 +92,7 @@ export interface BidPlacedNotification {
   previousPrice: number;
   outbidBidderId: string | null;
   endsAtUtc: string;
+  auctionExtended: boolean;
   occurredAtUtc: string;
 }
 

@@ -84,6 +84,7 @@ public sealed class PlaceBidHandler : IRequestHandler<PlaceBidCommand, PlaceBidR
                     previousPrice,
                     outbidBidderId,
                     auction.EndsAtUtc,
+                    outcome.Extended,
                     bid.PlacedAtUtc),
                 bid.PlacedAtUtc);
 
@@ -133,6 +134,7 @@ public sealed class PlaceBidHandler : IRequestHandler<PlaceBidCommand, PlaceBidR
                     previousPrice,
                     outbidBidderId,
                     auction.EndsAtUtc,
+                    outcome.Extended,
                     bid.PlacedAtUtc),
                 cancellationToken);
 
@@ -143,7 +145,9 @@ public sealed class PlaceBidHandler : IRequestHandler<PlaceBidCommand, PlaceBidR
                 auction.CurrentPrice,
                 auction.MinimumAcceptableBid,
                 auction.BidCount,
-                bid.PlacedAtUtc));
+                bid.PlacedAtUtc,
+                auction.EndsAtUtc,
+                outcome.Extended));
         }
 
         _logger.LogWarning(
@@ -197,7 +201,9 @@ public sealed class PlaceBidHandler : IRequestHandler<PlaceBidCommand, PlaceBidR
             auction.CurrentPrice,
             auction.MinimumAcceptableBid,
             auction.BidCount,
-            bid.PlacedAtUtc));
+            bid.PlacedAtUtc,
+            auction.EndsAtUtc,
+            AuctionExtended: false));
     }
 
     private static string? Normalize(string? idempotencyKey) =>

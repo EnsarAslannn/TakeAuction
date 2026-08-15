@@ -96,6 +96,7 @@ public sealed class OutboxTests : IDisposable
         100m,
         Guid.CreateVersion7(),
         TestHarness.Now.AddDays(2),
+        false,
         TestHarness.Now);
 
     private sealed record NotAContract(Guid Id);

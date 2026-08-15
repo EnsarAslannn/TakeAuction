@@ -2,10 +2,12 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using TakeAuction.Api.Common.Messaging.Contracts;
 using TakeAuction.Api.Common.Messaging.Outbox;
 using TakeAuction.Api.Domain.Auctions;
 using TakeAuction.Api.Domain.Users;
+using TakeAuction.Api.Features.Auctions.ExpireAuctions;
 using TakeAuction.Api.Features.Auctions.GetAuctionById;
 using TakeAuction.Api.Features.Auctions.PlaceBid;
 using TakeAuction.Api.IntegrationTests.Common;
@@ -349,6 +351,53 @@ public sealed class PlaceBidTests : IAsyncLifetime
 
         var bid = await _fixture.ExecuteDbContextAsync(db => db.Bids.SingleAsync());
         Assert.Null(bid.IdempotencyKey);
+    }
+
+    [Fact]
+    public async Task A_bid_in_the_closing_seconds_pushes_the_close_out_for_everyone()
+    {
+        var closingId = await CreateAuctionAsync(runsFor: TimeSpan.FromSeconds(20));
+        var client = await CreateBidderClientAsync();
+
+        var before = await _fixture.ExecuteDbContextAsync(db =>
+            db.Auctions.AsNoTracking().SingleAsync(a => a.Id == closingId));
+
+        var response = await client.PostAsJsonAsync(BidsUrl(closingId), new PlaceBidRequest(150m));
+        response.EnsureSuccessStatusCode();
+
+        var body = await response.Content.ReadFromJsonAsync<PlaceBidResponse>(IntegrationTestFixture.JsonOptions);
+
+        Assert.True(body!.AuctionExtended);
+        Assert.True(body.EndsAtUtc > before.EndsAtUtc);
+
+        var detail = await client.GetFromJsonAsync<AuctionDetailResponse>(
+            $"/api/v1/auctions/{closingId}",
+            IntegrationTestFixture.JsonOptions);
+
+        // To the microsecond: the bidder's copy came straight off the entity in memory, while
+        // everyone else reads it back through a timestamptz column, which rounds off the
+        // sub-microsecond tail.
+        Assert.Equal(body.EndsAtUtc, detail!.EndsAtUtc, TimeSpan.FromMicroseconds(1));
+    }
+
+    [Fact]
+    public async Task An_extended_lot_survives_the_expiry_sweep_it_was_already_due_for()
+    {
+        var closingId = await CreateAuctionAsync(runsFor: TimeSpan.FromSeconds(5));
+        var client = await CreateBidderClientAsync();
+
+        (await client.PostAsJsonAsync(BidsUrl(closingId), new PlaceBidRequest(150m)))
+            .EnsureSuccessStatusCode();
+
+        await using var scope = _fixture.Services.CreateAsyncScope();
+        var job = scope.ServiceProvider.GetRequiredService<ExpireAuctionsJob>();
+
+        Assert.Equal(0, await job.RunAsync(CancellationToken.None));
+
+        var auction = await _fixture.ExecuteDbContextAsync(db =>
+            db.Auctions.AsNoTracking().SingleAsync(a => a.Id == closingId));
+
+        Assert.Equal(AuctionStatus.Active, auction.Status);
     }
 
     private Task<HttpResponseMessage> SendBidAsync(HttpClient client, decimal amount, string idempotencyKey)

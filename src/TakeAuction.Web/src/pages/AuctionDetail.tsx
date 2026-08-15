@@ -13,6 +13,8 @@ import type { AuctionDetail as AuctionDetailModel, BidPlacedNotification } from 
 
 const FEED_LENGTH = 12;
 
+const laterOf = (a: string, b: string) => (new Date(b).getTime() > new Date(a).getTime() ? b : a);
+
 interface BidFeedItem {
   id: string;
   amount: number;
@@ -27,6 +29,7 @@ export function AuctionDetail() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [flash, setFlash] = useState(false);
+  const [extended, setExtended] = useState(false);
 
   const now = useNow(1000);
   const reducedMotion = usePrefersReducedMotion();
@@ -84,8 +87,17 @@ export function AuctionDetail() {
           currentPrice: notification.amount,
           bidCount: previous.bidCount + 1,
           minimumAcceptableBid: notification.amount + previous.minimumBidIncrement,
+          // A bid in the closing seconds moves the end, and the countdown has to follow it or
+          // it will run out on a lot that is still taking bids. Only ever forward: an
+          // out-of-order notification must not wind the clock back.
+          endsAtUtc: laterOf(previous.endsAtUtc, notification.endsAtUtc),
         };
       });
+
+      if (notification.auctionExtended) {
+        setExtended(true);
+        window.setTimeout(() => setExtended(false), 4000);
+      }
       setFeed((previous) =>
         previous.some((entry) => entry.id === notification.bidId)
           ? previous
@@ -210,11 +222,20 @@ export function AuctionDetail() {
 
                 <div className="text-right">
                   <p className="eyebrow mb-3">{isLive ? "Kalan" : "Durum"}</p>
-                  <p className="font-mono text-lg tabular-nums text-ink">
+                  <p
+                    className={`font-mono text-lg tabular-nums transition-colors duration-500 ${
+                      extended ? "text-sand-deep" : "text-ink"
+                    }`}
+                  >
                     {isLive
                       ? formatCountdown(remaining)
                       : STATUS_LABEL[auction.status] ?? auction.status}
                   </p>
+                  {extended && (
+                    <p className="mt-2 font-mono text-eyebrow uppercase text-sand-deep">
+                      Süre uzatıldı
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -246,7 +267,7 @@ export function AuctionDetail() {
                   auction={auction}
                   minimumNextBid={minimumNextBid}
                   isLive={isLive}
-                  onAccepted={(result) =>
+                  onAccepted={(result) => {
                     setAuction((previous) =>
                       previous
                         ? {
@@ -254,10 +275,16 @@ export function AuctionDetail() {
                             currentPrice: result.currentPrice,
                             bidCount: result.bidCount,
                             minimumAcceptableBid: result.minimumNextBid,
+                            endsAtUtc: laterOf(previous.endsAtUtc, result.endsAtUtc),
                           }
                         : previous
-                    )
-                  }
+                    );
+
+                    if (result.auctionExtended) {
+                      setExtended(true);
+                      window.setTimeout(() => setExtended(false), 4000);
+                    }
+                  }}
                 />
               </div>
 

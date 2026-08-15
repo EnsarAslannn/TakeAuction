@@ -207,6 +207,7 @@ public sealed class AuctionRealTimeTests : IAsyncLifetime
             250m,
             outbidBidderId,
             occurredAt.AddDays(1),
+            false,
             occurredAt));
 
         var notification = await received.Task.WaitAsync(DeliveryTimeout);

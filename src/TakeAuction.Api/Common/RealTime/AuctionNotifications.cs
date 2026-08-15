@@ -8,6 +8,7 @@ public sealed record BidPlacedNotification(
     decimal PreviousPrice,
     Guid? OutbidBidderId,
     DateTimeOffset EndsAtUtc,
+    bool AuctionExtended,
     DateTimeOffset OccurredAtUtc);
 
 public sealed record AuctionStatusChangedNotification(

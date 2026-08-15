@@ -10,11 +10,12 @@ public enum BidRejection
     ConcurrencyConflict = 5
 }
 
-public sealed record BidOutcome(BidRejection Rejection, Bid? Bid)
+public sealed record BidOutcome(BidRejection Rejection, Bid? Bid, bool Extended = false)
 {
     public bool Succeeded => Rejection == BidRejection.None;
 
-    public static BidOutcome Accepted(Bid bid) => new(BidRejection.None, bid);
+    public static BidOutcome Accepted(Bid bid, bool extended = false) =>
+        new(BidRejection.None, bid, extended);
 
     public static BidOutcome Rejected(BidRejection rejection) => new(rejection, null);
 }
