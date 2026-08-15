@@ -434,6 +434,7 @@ public sealed class PlaceBidHandlerTests : IDisposable
             _timeProvider,
             _publisher,
             TestHarness.CreateOutbox(dbContext),
+            TestHarness.CreateTelemetry(),
             NullLogger<PlaceBidHandler>.Instance);
 
         return (handler, dbContext);

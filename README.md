@@ -63,6 +63,20 @@ goalposts under an auction that is already running.
 | `/health/live` | The process is up. Consults nothing, so a database blip never restarts a healthy instance. |
 | `/health/ready` | PostgreSQL, Redis and the RabbitMQ bus are all reachable. |
 
+## What the instruments say
+
+Request counts and latencies come free from the ASP.NET Core instrumentation. What does not,
+and what this system is actually judged by, is measured explicitly: how often a bid lost the
+row-version race (`takeauction.bids.concurrency_conflicts`), how many passes through the retry
+loop a bid took to settle (`takeauction.bids.attempts`), how long that took end to end
+(`takeauction.bids.duration`, tagged by outcome), how often a proxy answered for a leader, how
+often a lot's close was pushed out, and whether the outbox is keeping up
+(`takeauction.outbox.batch_size` — a batch that keeps arriving full is a backlog).
+
+Set `Telemetry__OtlpEndpoint` to ship traces and metrics to a collector. Set
+`Telemetry__PrometheusEndpointEnabled` to serve `/metrics` for scraping — the gateway returns
+404 for that path, so a collector has to reach the API on the internal network.
+
 ## Tests
 
 ```bash

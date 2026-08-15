@@ -4,6 +4,7 @@ using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Options;
+using TakeAuction.Api.Common.Observability;
 using TakeAuction.Api.Common.Persistence;
 
 namespace TakeAuction.Api.Common.Messaging.Outbox;
@@ -55,6 +56,7 @@ public sealed class OutboxDispatcher
     private readonly IntegrationEventTypeRegistry _registry;
     private readonly TimeProvider _timeProvider;
     private readonly IOptions<OutboxOptions> _options;
+    private readonly TakeAuctionTelemetry _telemetry;
     private readonly ILogger<OutboxDispatcher> _logger;
 
     public OutboxDispatcher(
@@ -63,6 +65,7 @@ public sealed class OutboxDispatcher
         IntegrationEventTypeRegistry registry,
         TimeProvider timeProvider,
         IOptions<OutboxOptions> options,
+        TakeAuctionTelemetry telemetry,
         ILogger<OutboxDispatcher> logger)
     {
         _dbContext = dbContext;
@@ -70,6 +73,7 @@ public sealed class OutboxDispatcher
         _registry = registry;
         _timeProvider = timeProvider;
         _options = options;
+        _telemetry = telemetry;
         _logger = logger;
     }
 
@@ -82,6 +86,9 @@ public sealed class OutboxDispatcher
         {
             return new OutboxSweep(0, 0, false);
         }
+
+        using var activity = TakeAuctionTelemetry.Source.StartActivity("OutboxSweep");
+        activity?.SetTag("takeauction.outbox.claimed", claimed.Count);
 
         var published = new List<Guid>(claimed.Count);
 
@@ -100,6 +107,8 @@ public sealed class OutboxDispatcher
                 [_timeProvider.GetUtcNow(), published.ToArray()],
                 cancellationToken);
         }
+
+        _telemetry.OutboxSwept(claimed.Count, published.Count);
 
         _logger.LogInformation(
             "Outbox sweep published {Published} of {Claimed} claimed message(s)",

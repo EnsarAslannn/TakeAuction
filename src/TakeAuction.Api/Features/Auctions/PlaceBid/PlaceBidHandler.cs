@@ -1,8 +1,10 @@
+using System.Diagnostics;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using TakeAuction.Api.Common.Messaging.Contracts;
 using TakeAuction.Api.Common.Messaging.Outbox;
+using TakeAuction.Api.Common.Observability;
 using TakeAuction.Api.Common.Persistence;
 using TakeAuction.Api.Domain.Auctions;
 
@@ -16,6 +18,7 @@ public sealed class PlaceBidHandler : IRequestHandler<PlaceBidCommand, PlaceBidR
     private readonly TimeProvider _timeProvider;
     private readonly IPublisher _publisher;
     private readonly IOutbox _outbox;
+    private readonly TakeAuctionTelemetry _telemetry;
     private readonly ILogger<PlaceBidHandler> _logger;
 
     public PlaceBidHandler(
@@ -23,16 +26,49 @@ public sealed class PlaceBidHandler : IRequestHandler<PlaceBidCommand, PlaceBidR
         TimeProvider timeProvider,
         IPublisher publisher,
         IOutbox outbox,
+        TakeAuctionTelemetry telemetry,
         ILogger<PlaceBidHandler> logger)
     {
         _dbContext = dbContext;
         _timeProvider = timeProvider;
         _publisher = publisher;
         _outbox = outbox;
+        _telemetry = telemetry;
         _logger = logger;
     }
 
     public async Task<PlaceBidResult> Handle(PlaceBidCommand command, CancellationToken cancellationToken)
+    {
+        var started = Stopwatch.GetTimestamp();
+        var attempts = 0;
+
+        using var activity = TakeAuctionTelemetry.Source.StartActivity("PlaceBid");
+        activity?.SetTag("takeauction.auction.id", command.AuctionId);
+        activity?.SetTag("takeauction.bidder.id", command.BidderId);
+
+        var result = await SettleAsync(command, count => attempts = count, cancellationToken);
+
+        activity?.SetTag("takeauction.bid.outcome", Describe(result));
+
+        _telemetry.BidSettled(
+            Describe(result),
+            attempts,
+            Stopwatch.GetElapsedTime(started).TotalMilliseconds);
+
+        return result;
+    }
+
+    private static string Describe(PlaceBidResult result) => result switch
+    {
+        { Replayed: true } => "replayed",
+        { Succeeded: true } => "accepted",
+        _ => result.Rejection.ToString()
+    };
+
+    private async Task<PlaceBidResult> SettleAsync(
+        PlaceBidCommand command,
+        Action<int> reportAttempts,
+        CancellationToken cancellationToken)
     {
         var idempotencyKey = Normalize(command.IdempotencyKey);
 
@@ -48,6 +84,8 @@ public sealed class PlaceBidHandler : IRequestHandler<PlaceBidCommand, PlaceBidR
 
         for (var attempt = 1; attempt <= MaxAttempts; attempt++)
         {
+            reportAttempts(attempt);
+
             _dbContext.ChangeTracker.Clear();
 
             var auction = await _dbContext.Auctions
@@ -107,6 +145,8 @@ public sealed class PlaceBidHandler : IRequestHandler<PlaceBidCommand, PlaceBidR
             }
             catch (DbUpdateConcurrencyException)
             {
+                _telemetry.BidConflicted();
+
                 _logger.LogWarning(
                     "Concurrency conflict on auction {AuctionId} for bidder {BidderId} (attempt {Attempt} of {MaxAttempts})",
                     command.AuctionId,
@@ -129,6 +169,16 @@ public sealed class PlaceBidHandler : IRequestHandler<PlaceBidCommand, PlaceBidR
 
                 return await TryReplayAsync(command.BidderId, idempotencyKey, cancellationToken)
                     ?? PlaceBidResult.Rejected(BidRejection.ConcurrencyConflict);
+            }
+
+            if (outcome.AutomaticBid is not null)
+            {
+                _telemetry.ProxyAnswered();
+            }
+
+            if (outcome.Extended)
+            {
+                _telemetry.AuctionExtended();
             }
 
             _logger.LogInformation(

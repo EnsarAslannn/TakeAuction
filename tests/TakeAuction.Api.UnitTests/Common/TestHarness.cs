@@ -1,11 +1,14 @@
+using System.Diagnostics.Metrics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using TakeAuction.Api.Common.Caching;
 using TakeAuction.Api.Common.Messaging.Outbox;
+using TakeAuction.Api.Common.Observability;
 using TakeAuction.Api.Common.Persistence;
 using TakeAuction.Api.Features.Auctions;
 
@@ -28,12 +31,26 @@ public static class TestHarness
         return new AppDbContext(options);
     }
 
-    public static ICacheService CreateCacheService(IDistributedCache? backingCache = null)
+    public static ICacheService CreateCacheService(
+        IDistributedCache? backingCache = null,
+        TakeAuctionTelemetry? telemetry = null)
     {
         backingCache ??= CreateDistributedCache();
 
-        return new DistributedCacheService(backingCache, NullLogger<DistributedCacheService>.Instance);
+        return new DistributedCacheService(
+            backingCache,
+            telemetry ?? CreateTelemetry(),
+            NullLogger<DistributedCacheService>.Instance);
     }
+
+    /// <summary>
+    /// Its own meter per call, so one test's measurements are never another's to trip over.
+    /// </summary>
+    public static TakeAuctionTelemetry CreateTelemetry() =>
+        new(new ServiceCollection()
+            .AddMetrics()
+            .BuildServiceProvider()
+            .GetRequiredService<IMeterFactory>());
 
     public static IDistributedCache CreateDistributedCache() =>
         new MemoryDistributedCache(Options.Create(new MemoryDistributedCacheOptions()));

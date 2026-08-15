@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.Extensions.Caching.Distributed;
+using TakeAuction.Api.Common.Observability;
 
 namespace TakeAuction.Api.Common.Caching;
 
@@ -8,11 +9,16 @@ public sealed class DistributedCacheService : ICacheService
     private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web);
 
     private readonly IDistributedCache _cache;
+    private readonly TakeAuctionTelemetry _telemetry;
     private readonly ILogger<DistributedCacheService> _logger;
 
-    public DistributedCacheService(IDistributedCache cache, ILogger<DistributedCacheService> logger)
+    public DistributedCacheService(
+        IDistributedCache cache,
+        TakeAuctionTelemetry telemetry,
+        ILogger<DistributedCacheService> logger)
     {
         _cache = cache;
+        _telemetry = telemetry;
         _logger = logger;
     }
 
@@ -57,10 +63,12 @@ public sealed class DistributedCacheService : ICacheService
         var cached = await GetAsync<T>(key, cancellationToken);
         if (cached is not null)
         {
+            _telemetry.CacheLookup(hit: true);
             _logger.LogDebug("Cache hit for key {CacheKey}", key);
             return cached;
         }
 
+        _telemetry.CacheLookup(hit: false);
         _logger.LogDebug("Cache miss for key {CacheKey}", key);
         var value = await factory(cancellationToken);
 

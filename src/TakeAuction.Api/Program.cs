@@ -40,6 +40,7 @@ try
     builder.Services.AddTakeAuctionJobs(builder.Configuration, Assembly.GetExecutingAssembly());
     builder.Services.AddTakeAuctionEndpoints(Assembly.GetExecutingAssembly());
     builder.Services.AddTakeAuctionHealthChecks(builder.Configuration);
+    builder.Services.AddTakeAuctionTelemetry(builder.Configuration, builder.Environment);
     builder.Services.AddAuctionsFeature();
     builder.Services.AddMediaFeature(builder.Configuration);
     builder.Services.AddProblemDetails();
@@ -100,6 +101,7 @@ try
     app.UseTakeAuctionRecurringJobs();
 
     app.MapTakeAuctionHealthChecks();
+    app.MapTakeAuctionTelemetry();
 
     if (app.Services.GetRequiredService<IOptions<DatabaseOptions>>().Value.MigrateOnStartup)
     {
