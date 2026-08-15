@@ -243,6 +243,48 @@ public sealed class AuctionProxyBiddingTests
         Assert.True(auction.EndsAtUtc > endBeforeTheSnipe);
     }
 
+    [Fact]
+    public void A_ceiling_left_behind_by_older_data_never_collapses_the_price()
+    {
+        // What a lot listed before proxy bidding looks like once the column is added: a real
+        // price with a leader, and a ceiling of zero because nobody had one to record.
+        var auction = LotFromBeforeProxyBidding(currentPrice: 500m, leader: Ada);
+
+        var outcome = auction.PlaceBid(Bruno, 900m, TestHarness.Now);
+
+        Assert.True(outcome.Succeeded);
+        Assert.Equal(Bruno, auction.LeadingBidderId);
+        Assert.Equal(505m, auction.CurrentPrice);
+        Assert.True(auction.CurrentPrice > 500m, "the lot must never fall below where it stood");
+    }
+
+    [Fact]
+    public void An_older_leader_is_still_defended_up_to_the_price_they_were_holding()
+    {
+        var auction = LotFromBeforeProxyBidding(currentPrice: 500m, leader: Ada);
+
+        // 400 does not clear the visible price, so it is refused outright rather than being
+        // absorbed against a ceiling that was never recorded.
+        Assert.Equal(BidRejection.BidTooLow, auction.PlaceBid(Bruno, 400m, TestHarness.Now).Rejection);
+        Assert.Equal(500m, auction.CurrentPrice);
+        Assert.Equal(Ada, auction.LeadingBidderId);
+    }
+
+    private static Auction LotFromBeforeProxyBidding(decimal currentPrice, Guid leader)
+    {
+        var auction = OpenAuction();
+
+        SetPrivate(auction, nameof(Auction.CurrentPrice), currentPrice);
+        SetPrivate(auction, nameof(Auction.LeadingBidderId), leader);
+        SetPrivate(auction, nameof(Auction.LeadingMaxAmount), 0m);
+        SetPrivate(auction, nameof(Auction.BidCount), 1);
+
+        return auction;
+    }
+
+    private static void SetPrivate(Auction auction, string property, object value) =>
+        typeof(Auction).GetProperty(property)!.SetValue(auction, value);
+
     private static Auction OpenAuction() => Auction.Create(
         Seller,
         "Rare stamp collection",

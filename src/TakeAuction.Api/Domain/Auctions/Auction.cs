@@ -192,7 +192,13 @@ public sealed class Auction
         string? idempotencyKey)
     {
         var leaderId = LeadingBidderId!.Value;
-        var leaderMax = LeadingMaxAmount;
+
+        // A leader's ceiling is never below the price they are already holding — the bidding
+        // rules cannot produce that state, but a row written before they existed can, and
+        // reading such a ceiling literally would hand the lot to the next challenger for a
+        // single increment. Standing at the price is the least the leader can be said to have
+        // agreed to.
+        var leaderMax = Math.Max(LeadingMaxAmount, CurrentPrice);
 
         if (maxAmount > leaderMax)
         {
