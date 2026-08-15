@@ -196,6 +196,78 @@ public sealed class ExpireAuctionsTests : IAsyncLifetime
         return await job.RunAsync(CancellationToken.None);
     }
 
+    [Fact]
+    public async Task A_new_lot_books_its_own_close_rather_than_waiting_for_the_sweep()
+    {
+        var auctionId = await ListAuctionAsync(runsFor: TimeSpan.FromMinutes(10));
+
+        var storage = _fixture.Services.GetRequiredService<JobStorage>();
+        var scheduled = storage.GetMonitoringApi().ScheduledJobs(0, 100);
+
+        var booking = scheduled.SingleOrDefault(entry =>
+            entry.Value.Job.Type == typeof(CloseAuctionJob)
+            && entry.Value.Job.Args[0] is Guid id
+            && id == auctionId);
+
+        Assert.NotNull(booking.Value);
+        Assert.Equal(nameof(CloseAuctionJob.RunAsync), booking.Value.Job.Method.Name);
+    }
+
+    [Fact]
+    public async Task A_lot_the_soft_close_pushed_out_books_the_new_time_too()
+    {
+        var auctionId = await ListAuctionAsync(runsFor: TimeSpan.FromMinutes(6));
+
+        // Six minutes out, so the bid lands well inside the default one-minute closing window
+        // only after the clock has run down — which it has not. Instead the lot is nudged by a
+        // bid that does extend it: the shortest lot the validator allows still closes inside
+        // the window once its own close is a minute away, so this asserts the booking count
+        // rather than trying to race a real clock.
+        var bidder = await _fixture.CreateUserAsync(UserRole.Bidder);
+        var bidderClient = await _fixture.CreateClientAsAsync(bidder);
+
+        (await bidderClient.PostAsJsonAsync($"/api/v1/auctions/{auctionId}/bids", new PlaceBidRequest(150m)))
+            .EnsureSuccessStatusCode();
+
+        var storage = _fixture.Services.GetRequiredService<JobStorage>();
+        var bookings = storage.GetMonitoringApi()
+            .ScheduledJobs(0, 200)
+            .Count(entry =>
+                entry.Value.Job.Type == typeof(CloseAuctionJob)
+                && entry.Value.Job.Args[0] is Guid id
+                && id == auctionId);
+
+        // An ordinary bid changes nothing about when the lot closes, so nothing is re-booked.
+        Assert.Equal(1, bookings);
+    }
+
+    private async Task<Guid> ListAuctionAsync(TimeSpan runsFor)
+    {
+        var sellerClient = await _fixture.CreateClientAsAsync(_seller);
+        var now = DateTimeOffset.UtcNow;
+
+        var response = await sellerClient.PostAsJsonAsync(
+            "/api/v1/auctions",
+            new
+            {
+                title = "Rare stamp collection",
+                description = "A detailed description of the lot on offer.",
+                startingPrice = StartingPrice,
+                minimumBidIncrement = Increment,
+                startsAtUtc = now,
+                endsAtUtc = now.Add(runsFor)
+            });
+
+        response.EnsureSuccessStatusCode();
+
+        var created = await response.Content.ReadFromJsonAsync<CreateAuctionBody>(
+            IntegrationTestFixture.JsonOptions);
+
+        return created!.Id;
+    }
+
+    private sealed record CreateAuctionBody(Guid Id);
+
     private async Task WaitForStatusAsync(Guid auctionId, AuctionStatus expected)
     {
         var deadline = DateTimeOffset.UtcNow + JobTimeout;

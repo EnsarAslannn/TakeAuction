@@ -189,11 +189,17 @@ public sealed class ExpireAuctionsJobTests : IDisposable
         var options = Options.Create(new JobOptions { ExpireAuctionsBatchSize = batchSize });
         var dbContext = NewContext(interceptors);
 
-        return new ExpireAuctionsJob(
+        var closer = new AuctionCloser(
             dbContext,
             _timeProvider,
             _publisher,
             TestHarness.CreateOutbox(dbContext),
+            NullLogger<AuctionCloser>.Instance);
+
+        return new ExpireAuctionsJob(
+            dbContext,
+            closer,
+            _timeProvider,
             options,
             NullLogger<ExpireAuctionsJob>.Instance);
     }

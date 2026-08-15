@@ -1,38 +1,37 @@
 using Hangfire;
-using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using TakeAuction.Api.Common.Jobs;
-using TakeAuction.Api.Common.Messaging.Contracts;
-using TakeAuction.Api.Common.Messaging.Outbox;
 using TakeAuction.Api.Common.Persistence;
 using TakeAuction.Api.Domain.Auctions;
 
 namespace TakeAuction.Api.Features.Auctions.ExpireAuctions;
 
+/// <summary>
+/// The safety net rather than the mechanism. Each lot has a job scheduled for its own closing
+/// second; this sweep exists for the ones whose schedule was lost — a queue that was purged, a
+/// lot whose close moved after it was scheduled, or a listing that predates the schedule.
+/// </summary>
 [DisableConcurrentExecution(timeoutInSeconds: 300)]
 [AutomaticRetry(Attempts = 0)]
 public sealed class ExpireAuctionsJob
 {
     private readonly AppDbContext _dbContext;
+    private readonly AuctionCloser _closer;
     private readonly TimeProvider _timeProvider;
-    private readonly IPublisher _publisher;
-    private readonly IOutbox _outbox;
     private readonly IOptions<JobOptions> _options;
     private readonly ILogger<ExpireAuctionsJob> _logger;
 
     public ExpireAuctionsJob(
         AppDbContext dbContext,
+        AuctionCloser closer,
         TimeProvider timeProvider,
-        IPublisher publisher,
-        IOutbox outbox,
         IOptions<JobOptions> options,
         ILogger<ExpireAuctionsJob> logger)
     {
         _dbContext = dbContext;
+        _closer = closer;
         _timeProvider = timeProvider;
-        _publisher = publisher;
-        _outbox = outbox;
         _options = options;
         _logger = logger;
     }
@@ -63,7 +62,7 @@ public sealed class ExpireAuctionsJob
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (await TryEndAsync(auctionId, now, cancellationToken))
+            if (await _closer.TryCloseAsync(auctionId, cancellationToken))
             {
                 endedCount++;
             }
@@ -72,61 +71,5 @@ public sealed class ExpireAuctionsJob
         _logger.LogInformation("Auction expiry sweep closed {EndedCount} of {DueCount} auction(s)", endedCount, dueAuctionIds.Count);
 
         return endedCount;
-    }
-
-    private async Task<bool> TryEndAsync(Guid auctionId, DateTimeOffset nowUtc, CancellationToken cancellationToken)
-    {
-        _dbContext.ChangeTracker.Clear();
-
-        var auction = await _dbContext.Auctions
-            .FirstOrDefaultAsync(entity => entity.Id == auctionId, cancellationToken);
-
-        if (auction is null || !auction.End(nowUtc))
-        {
-            return false;
-        }
-
-        _outbox.Enqueue(
-            new AuctionEndedIntegrationEvent(
-                auction.Id,
-                auction.SellerId,
-                auction.LeadingBidderId,
-                auction.CurrentPrice,
-                auction.BidCount,
-                auction.EndsAtUtc,
-                nowUtc),
-            nowUtc);
-
-        try
-        {
-            await _dbContext.SaveChangesAsync(cancellationToken);
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            _logger.LogWarning(
-                "Auction {AuctionId} changed while it was being closed; leaving it for the next sweep",
-                auctionId);
-
-            return false;
-        }
-
-        _logger.LogInformation(
-            "Auction {AuctionId} ended at {FinalPrice} after {BidCount} bid(s)",
-            auction.Id,
-            auction.CurrentPrice,
-            auction.BidCount);
-
-        await _publisher.Publish(
-            new AuctionEndedEvent(
-                auction.Id,
-                auction.SellerId,
-                auction.LeadingBidderId,
-                auction.CurrentPrice,
-                auction.BidCount,
-                auction.EndsAtUtc,
-                nowUtc),
-            cancellationToken);
-
-        return true;
     }
 }

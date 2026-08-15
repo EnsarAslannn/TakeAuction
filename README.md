@@ -50,6 +50,10 @@ thing a sealed maximum exists to prevent.
 
 ## Closing a lot
 
+Each lot books its own close for the second it is due, so a sold lot does not sit open waiting
+for the next sweep. The recurring sweep stays as the safety net for bookings that were lost.
+Closing is idempotent, so whichever of the two arrives second finds the lot already closed.
+
 A bid placed inside the closing window pushes the end out, so a lot only settles once a bid
 goes unanswered. The clock is set from the bid rather than added to the old end, which means
 every snipe buys the room the same reply window instead of stacking. The window and the
