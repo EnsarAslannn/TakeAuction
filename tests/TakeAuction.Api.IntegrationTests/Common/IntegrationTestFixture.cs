@@ -112,10 +112,36 @@ public sealed class IntegrationTestFixture : IAsyncLifetime
         {
             var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             await dbContext.Database.ExecuteSqlRawAsync(
-                """TRUNCATE TABLE "bids", "auctions", "refresh_tokens", "users" RESTART IDENTITY CASCADE;""");
+                """TRUNCATE TABLE "bids", "auctions", "refresh_tokens", "users", "outbox_messages" RESTART IDENTITY CASCADE;""");
         }
 
         await _redis.ExecAsync(["redis-cli", "FLUSHALL"]);
+    }
+
+    /// <summary>
+    /// Delivery is asynchronous by design now that events travel through the outbox, so a test
+    /// that sets the stage with a bid and then expects the next broadcast to be about a
+    /// different one has to let the stage settle first.
+    /// </summary>
+    public async Task WaitForOutboxDrainAsync(TimeSpan? timeout = null)
+    {
+        var deadline = DateTimeOffset.UtcNow + (timeout ?? TimeSpan.FromSeconds(30));
+
+        while (DateTimeOffset.UtcNow < deadline)
+        {
+            var pending = await ExecuteDbContextAsync(dbContext => dbContext.OutboxMessages
+                .AsNoTracking()
+                .AnyAsync(message => message.ProcessedAtUtc == null));
+
+            if (!pending)
+            {
+                return;
+            }
+
+            await Task.Delay(50);
+        }
+
+        throw new TimeoutException("The outbox still had unpublished messages when the wait ran out.");
     }
 
     public async Task<T> ExecuteDbContextAsync<T>(Func<AppDbContext, Task<T>> action)

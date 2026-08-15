@@ -1,6 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using TakeAuction.Api.Common.Messaging.Contracts;
+using TakeAuction.Api.Common.Messaging.Outbox;
 using TakeAuction.Api.Domain.Auctions;
 using TakeAuction.Api.Domain.Users;
 using TakeAuction.Api.Features.Auctions.GetAuctionById;
@@ -230,6 +233,42 @@ public sealed class PlaceBidTests : IAsyncLifetime
                 bids[index].Amount >= bids[index - 1].Amount + Increment,
                 $"bid {bids[index].Amount} did not clear the increment over {bids[index - 1].Amount}");
         }
+    }
+
+    [Fact]
+    public async Task Every_accepted_bid_leaves_exactly_one_queued_event_and_every_rejected_one_leaves_none()
+    {
+        const int bidders = 12;
+        var clients = await CreateBidderClientsAsync(bidders);
+
+        var amounts = Enumerable
+            .Range(0, bidders)
+            .Select(index => StartingPrice + (index * Increment))
+            .ToArray();
+
+        var responses = await Task.WhenAll(
+            clients.Select((client, index) =>
+                client.PostAsJsonAsync(BidsUrl(_auctionId), new PlaceBidRequest(amounts[index]))));
+
+        var accepted = responses.Count(response => response.StatusCode == HttpStatusCode.OK);
+
+        var bidIds = await _fixture.ExecuteDbContextAsync(db =>
+            db.Bids.Select(bid => bid.Id).ToListAsync());
+
+        var queued = await _fixture.ExecuteDbContextAsync(db => db.OutboxMessages
+            .AsNoTracking()
+            .Where(message => message.Type == nameof(BidPlacedIntegrationEvent))
+            .ToListAsync());
+
+        Assert.Equal(accepted, queued.Count);
+
+        var announced = queued
+            .Select(message => JsonSerializer.Deserialize<BidPlacedIntegrationEvent>(
+                message.Payload,
+                Outbox.SerializerOptions)!.BidId)
+            .ToList();
+
+        Assert.Equal(bidIds.Order(), announced.Order());
     }
 
     private static string BidsUrl(Guid auctionId) => $"/api/v1/auctions/{auctionId}/bids";

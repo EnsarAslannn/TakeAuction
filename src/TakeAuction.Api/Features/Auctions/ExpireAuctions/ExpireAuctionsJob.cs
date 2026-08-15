@@ -3,6 +3,8 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using TakeAuction.Api.Common.Jobs;
+using TakeAuction.Api.Common.Messaging.Contracts;
+using TakeAuction.Api.Common.Messaging.Outbox;
 using TakeAuction.Api.Common.Persistence;
 using TakeAuction.Api.Domain.Auctions;
 
@@ -15,6 +17,7 @@ public sealed class ExpireAuctionsJob
     private readonly AppDbContext _dbContext;
     private readonly TimeProvider _timeProvider;
     private readonly IPublisher _publisher;
+    private readonly IOutbox _outbox;
     private readonly IOptions<JobOptions> _options;
     private readonly ILogger<ExpireAuctionsJob> _logger;
 
@@ -22,12 +25,14 @@ public sealed class ExpireAuctionsJob
         AppDbContext dbContext,
         TimeProvider timeProvider,
         IPublisher publisher,
+        IOutbox outbox,
         IOptions<JobOptions> options,
         ILogger<ExpireAuctionsJob> logger)
     {
         _dbContext = dbContext;
         _timeProvider = timeProvider;
         _publisher = publisher;
+        _outbox = outbox;
         _options = options;
         _logger = logger;
     }
@@ -80,6 +85,17 @@ public sealed class ExpireAuctionsJob
         {
             return false;
         }
+
+        _outbox.Enqueue(
+            new AuctionEndedIntegrationEvent(
+                auction.Id,
+                auction.SellerId,
+                auction.LeadingBidderId,
+                auction.CurrentPrice,
+                auction.BidCount,
+                auction.EndsAtUtc,
+                nowUtc),
+            nowUtc);
 
         try
         {

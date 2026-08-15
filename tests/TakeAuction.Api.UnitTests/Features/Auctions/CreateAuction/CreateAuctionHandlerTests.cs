@@ -21,6 +21,7 @@ public sealed class CreateAuctionHandlerTests : IDisposable
             _dbContext,
             _timeProvider,
             _publisher,
+            TestHarness.CreateOutbox(_dbContext),
             NullLogger<CreateAuctionHandler>.Instance);
 
     [Fact]

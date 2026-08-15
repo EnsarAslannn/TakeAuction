@@ -7,6 +7,7 @@ using TakeAuction.Api.Common.Api;
 using TakeAuction.Api.Common.Caching;
 using TakeAuction.Api.Common.Jobs;
 using TakeAuction.Api.Common.Messaging;
+using TakeAuction.Api.Common.Messaging.Outbox;
 using TakeAuction.Api.Common.Observability;
 using TakeAuction.Api.Common.Persistence;
 using TakeAuction.Api.Common.RealTime;
@@ -34,6 +35,7 @@ try
     builder.Services.AddTakeAuctionCaching(builder.Configuration);
     builder.Services.AddTakeAuctionMessaging(Assembly.GetExecutingAssembly());
     builder.Services.AddTakeAuctionMessageBroker(builder.Configuration, Assembly.GetExecutingAssembly());
+    builder.Services.AddTakeAuctionOutbox(builder.Configuration, Assembly.GetExecutingAssembly());
     builder.Services.AddTakeAuctionRealTime(builder.Configuration);
     builder.Services.AddTakeAuctionJobs(builder.Configuration, Assembly.GetExecutingAssembly());
     builder.Services.AddTakeAuctionEndpoints(Assembly.GetExecutingAssembly());

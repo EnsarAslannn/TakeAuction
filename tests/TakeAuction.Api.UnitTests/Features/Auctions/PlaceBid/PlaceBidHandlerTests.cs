@@ -1,8 +1,11 @@
+using System.Text.Json;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
+using TakeAuction.Api.Common.Messaging.Contracts;
+using TakeAuction.Api.Common.Messaging.Outbox;
 using TakeAuction.Api.Common.Persistence;
 using TakeAuction.Api.Domain.Auctions;
 using TakeAuction.Api.Domain.Users;
@@ -92,6 +95,39 @@ public sealed class PlaceBidHandlerTests : IDisposable
                 && domainEvent.PreviousPrice == 150m
                 && domainEvent.OutbidBidderId == firstBidder),
             Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Queues_the_integration_event_in_the_same_save_as_the_bid()
+    {
+        var (handler, _) = CreateHandler();
+
+        var result = await handler.Handle(Command(150m), CancellationToken.None);
+
+        await using var verification = NewContext();
+        var message = await verification.OutboxMessages.SingleAsync();
+        var published = JsonSerializer.Deserialize<BidPlacedIntegrationEvent>(
+            message.Payload,
+            Outbox.SerializerOptions);
+
+        Assert.Equal(nameof(BidPlacedIntegrationEvent), message.Type);
+        Assert.Null(message.ProcessedAtUtc);
+        Assert.Equal(result.Response!.BidId, published!.BidId);
+        Assert.Equal(_auctionId, published.AuctionId);
+        Assert.Equal(150m, published.Amount);
+        Assert.Equal(100m, published.PreviousPrice);
+    }
+
+    [Fact]
+    public async Task Leaves_only_the_winning_attempt_s_message_behind_after_a_conflict()
+    {
+        var (handler, _) = CreateHandler(new ConcurrencyConflictInterceptor(conflictCount: 1));
+
+        await handler.Handle(Command(150m), CancellationToken.None);
+
+        await using var verification = NewContext();
+
+        Assert.Single(await verification.OutboxMessages.ToListAsync());
     }
 
     [Fact]
@@ -228,6 +264,7 @@ public sealed class PlaceBidHandlerTests : IDisposable
             dbContext,
             _timeProvider,
             _publisher,
+            TestHarness.CreateOutbox(dbContext),
             NullLogger<PlaceBidHandler>.Instance);
 
         return (handler, dbContext);
@@ -293,6 +330,7 @@ public sealed class PlaceBidHandlerTests : IDisposable
         await using var verification = NewContext();
 
         Assert.Empty(await verification.Bids.ToListAsync());
+        Assert.Empty(await verification.OutboxMessages.ToListAsync());
         Assert.Equal(100m, (await verification.Auctions.SingleAsync()).CurrentPrice);
         await _publisher.DidNotReceive().Publish(Arg.Any<BidPlacedEvent>(), Arg.Any<CancellationToken>());
     }

@@ -22,6 +22,13 @@ public sealed class TakeAuctionApiFactory : WebApplicationFactory<Program>
         ["Jobs__ServerEnabled"] = "true",
         ["Jobs__WorkerCount"] = "2",
         ["Jobs__QueuePollIntervalSeconds"] = "1",
-        ["Jobs__ExpireAuctionsCron"] = TakeAuctionApiFactory.NeverFiringCron
+        ["Jobs__ExpireAuctionsCron"] = TakeAuctionApiFactory.NeverFiringCron,
+        ["Jobs__PurgeRefreshTokensCron"] = TakeAuctionApiFactory.NeverFiringCron,
+        ["Jobs__PurgeOutboxCron"] = TakeAuctionApiFactory.NeverFiringCron,
+
+        // The hosted dispatcher still reacts to the commit signal, so the real bid-to-browser
+        // path stays end-to-end. Parking the timer keeps it away from rows a test inserted by
+        // hand to drive the dispatcher itself.
+        ["Outbox__PollIntervalSeconds"] = "3600"
     };
 }

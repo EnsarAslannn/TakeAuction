@@ -5,6 +5,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using TakeAuction.Api.Common.Caching;
+using TakeAuction.Api.Common.Messaging.Outbox;
 using TakeAuction.Api.Common.Persistence;
 using TakeAuction.Api.Features.Auctions;
 
@@ -39,4 +40,10 @@ public static class TestHarness
 
     public static AuctionCache CreateAuctionCache(ICacheService cacheService) =>
         new(cacheService, Options.Create(new CacheOptions()));
+
+    public static IntegrationEventTypeRegistry CreateIntegrationEventTypeRegistry() =>
+        new(typeof(AppDbContext).Assembly);
+
+    public static IOutbox CreateOutbox(AppDbContext dbContext) =>
+        new Outbox(dbContext, CreateIntegrationEventTypeRegistry());
 }

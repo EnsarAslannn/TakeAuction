@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using TakeAuction.Api.Common.Messaging.Outbox;
 using TakeAuction.Api.Common.Persistence.Seeding;
 using TakeAuction.Api.Common.Security;
 
@@ -27,6 +28,8 @@ public static class PersistenceExtensions
                 npgsql.MigrationsHistoryTable("__ef_migrations_history");
                 npgsql.EnableRetryOnFailure(3, TimeSpan.FromSeconds(5), null);
             });
+
+            options.AddInterceptors(serviceProvider.GetRequiredService<OutboxSignalInterceptor>());
 
             var seedOptions = serviceProvider.GetRequiredService<IOptions<SeedOptions>>().Value;
             var passwordHasher = serviceProvider.GetRequiredService<IPasswordHasher>();

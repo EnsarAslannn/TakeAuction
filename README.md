@@ -24,6 +24,18 @@ dotnet run --project src/TakeAuction.Api        # http://localhost:5080
 npm --prefix src/TakeAuction.Web run dev        # http://localhost:5173
 ```
 
+## How an event leaves the API
+
+A bid and the event announcing it are written in the same transaction: the bid row and an
+`outbox_messages` row commit together, so there is no window where the database and the rest
+of the system disagree about what happened.
+
+A dispatcher then moves queued messages to RabbitMQ. It wakes on the commit itself, so a live
+bid still reaches watchers in milliseconds, and sweeps on a timer as well, so a message
+survives a broker outage or the death of the instance that wrote it. Claims are leased and
+taken with `FOR UPDATE SKIP LOCKED`, so running several API instances does not send anything
+twice. Delivery is at-least-once — consumers are expected to tolerate a repeat.
+
 ## Health
 
 | Path | Answers |

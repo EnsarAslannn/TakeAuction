@@ -18,6 +18,8 @@ public sealed class JobOptions
 
     public string PurgeRefreshTokensCron { get; set; } = "0 3 * * *";
 
+    public string PurgeOutboxCron { get; set; } = "15 3 * * *";
+
     /// <summary>
     /// How long an expired refresh token is kept before it is deleted. Reuse of a stolen
     /// token is only detectable while its row still exists, so the sweep does not run tight

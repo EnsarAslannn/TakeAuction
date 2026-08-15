@@ -87,6 +87,8 @@ public sealed class AuctionRealTimeTests : IAsyncLifetime
         (await firstClient.PostAsJsonAsync(BidsUrl(_auctionId), new PlaceBidRequest(150m)))
             .EnsureSuccessStatusCode();
 
+        await _fixture.WaitForOutboxDrainAsync();
+
         await using var connection = _fixture.CreateHubConnection();
         var received = Capture<BidPlacedNotification>(connection, nameof(IAuctionClient.BidPlaced));
 

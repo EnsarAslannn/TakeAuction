@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using TakeAuction.Api.Common.Messaging.Outbox;
 using TakeAuction.Api.Domain.Auctions;
 using TakeAuction.Api.Domain.Users;
 
@@ -17,6 +18,8 @@ public sealed class AppDbContext : DbContext
     public DbSet<Auction> Auctions => Set<Auction>();
 
     public DbSet<Bid> Bids => Set<Bid>();
+
+    public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

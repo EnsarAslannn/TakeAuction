@@ -1,4 +1,6 @@
 using MediatR;
+using TakeAuction.Api.Common.Messaging.Contracts;
+using TakeAuction.Api.Common.Messaging.Outbox;
 using TakeAuction.Api.Common.Persistence;
 using TakeAuction.Api.Domain.Auctions;
 
@@ -9,17 +11,20 @@ public sealed class CreateAuctionHandler : IRequestHandler<CreateAuctionCommand,
     private readonly AppDbContext _dbContext;
     private readonly TimeProvider _timeProvider;
     private readonly IPublisher _publisher;
+    private readonly IOutbox _outbox;
     private readonly ILogger<CreateAuctionHandler> _logger;
 
     public CreateAuctionHandler(
         AppDbContext dbContext,
         TimeProvider timeProvider,
         IPublisher publisher,
+        IOutbox outbox,
         ILogger<CreateAuctionHandler> logger)
     {
         _dbContext = dbContext;
         _timeProvider = timeProvider;
         _publisher = publisher;
+        _outbox = outbox;
         _logger = logger;
     }
 
@@ -41,6 +46,17 @@ public sealed class CreateAuctionHandler : IRequestHandler<CreateAuctionCommand,
             command.ImageUrl);
 
         await _dbContext.Auctions.AddAsync(auction, cancellationToken);
+
+        _outbox.Enqueue(
+            new AuctionCreatedIntegrationEvent(
+                auction.Id,
+                auction.SellerId,
+                auction.StartingPrice,
+                auction.Status.ToString(),
+                auction.EndsAtUtc,
+                now),
+            now);
+
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation(

@@ -1,5 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using TakeAuction.Api.Common.Messaging.Contracts;
+using TakeAuction.Api.Common.Messaging.Outbox;
 using TakeAuction.Api.Common.Persistence;
 using TakeAuction.Api.Domain.Auctions;
 
@@ -12,17 +14,20 @@ public sealed class PlaceBidHandler : IRequestHandler<PlaceBidCommand, PlaceBidR
     private readonly AppDbContext _dbContext;
     private readonly TimeProvider _timeProvider;
     private readonly IPublisher _publisher;
+    private readonly IOutbox _outbox;
     private readonly ILogger<PlaceBidHandler> _logger;
 
     public PlaceBidHandler(
         AppDbContext dbContext,
         TimeProvider timeProvider,
         IPublisher publisher,
+        IOutbox outbox,
         ILogger<PlaceBidHandler> logger)
     {
         _dbContext = dbContext;
         _timeProvider = timeProvider;
         _publisher = publisher;
+        _outbox = outbox;
         _logger = logger;
     }
 
@@ -52,6 +57,18 @@ public sealed class PlaceBidHandler : IRequestHandler<PlaceBidCommand, PlaceBidR
 
             var bid = outcome.Bid!;
             await _dbContext.Bids.AddAsync(bid, cancellationToken);
+
+            _outbox.Enqueue(
+                new BidPlacedIntegrationEvent(
+                    auction.Id,
+                    bid.Id,
+                    bid.BidderId,
+                    bid.Amount,
+                    previousPrice,
+                    outbidBidderId,
+                    auction.EndsAtUtc,
+                    bid.PlacedAtUtc),
+                bid.PlacedAtUtc);
 
             try
             {
