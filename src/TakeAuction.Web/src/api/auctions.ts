@@ -36,8 +36,16 @@ export async function getAuctionById(id: string): Promise<AuctionDetail> {
   return data;
 }
 
-export async function placeBid(auctionId: string, amount: number): Promise<PlaceBidResponse> {
-  const { data } = await http.post<PlaceBidResponse>(`/auctions/${auctionId}/bids`, { amount });
+export async function placeBid(
+  auctionId: string,
+  amount: number,
+  idempotencyKey: string
+): Promise<PlaceBidResponse> {
+  const { data } = await http.post<PlaceBidResponse>(
+    `/auctions/${auctionId}/bids`,
+    { amount },
+    { headers: { "Idempotency-Key": idempotencyKey } }
+  );
   return data;
 }
 

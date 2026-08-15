@@ -71,7 +71,11 @@ public sealed class Auction
         };
     }
 
-    public BidOutcome PlaceBid(Guid bidderId, decimal amount, DateTimeOffset nowUtc)
+    public BidOutcome PlaceBid(
+        Guid bidderId,
+        decimal amount,
+        DateTimeOffset nowUtc,
+        string? idempotencyKey = null)
     {
         if (bidderId == Guid.Empty)
         {
@@ -98,7 +102,7 @@ public sealed class Auction
             return BidOutcome.Rejected(BidRejection.BidTooLow);
         }
 
-        var bid = Bid.Create(Id, bidderId, amount, nowUtc);
+        var bid = Bid.Create(Id, bidderId, amount, nowUtc, idempotencyKey);
 
         Status = AuctionStatus.Active;
         CurrentPrice = amount;

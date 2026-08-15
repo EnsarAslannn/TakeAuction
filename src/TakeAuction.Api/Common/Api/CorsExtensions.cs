@@ -28,7 +28,7 @@ public static class CorsExtensions
                 .AllowAnyHeader()
                 .AllowAnyMethod()
                 .AllowCredentials()
-                .WithExposedHeaders("Retry-After");
+                .WithExposedHeaders("Retry-After", "Idempotent-Replay");
         }));
 
         return services;

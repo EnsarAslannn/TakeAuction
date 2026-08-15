@@ -1,4 +1,5 @@
 using FluentValidation.Results;
+using TakeAuction.Api.Domain.Auctions;
 using TakeAuction.Api.Features.Auctions.PlaceBid;
 
 namespace TakeAuction.Api.UnitTests.Features.Auctions.PlaceBid;
@@ -55,6 +56,23 @@ public sealed class PlaceBidValidatorTests
         var result = await _validator.ValidateAsync(Valid() with { Amount = 2_000_000_000m });
 
         AssertFailedOn(result, nameof(PlaceBidCommand.Amount));
+    }
+
+    [Fact]
+    public async Task Idempotency_key_longer_than_the_column_fails()
+    {
+        var result = await _validator.ValidateAsync(
+            Valid() with { IdempotencyKey = new string('k', Bid.MaxIdempotencyKeyLength + 1) });
+
+        AssertFailedOn(result, nameof(PlaceBidCommand.IdempotencyKey));
+    }
+
+    [Fact]
+    public async Task Missing_idempotency_key_passes()
+    {
+        var result = await _validator.ValidateAsync(Valid() with { IdempotencyKey = null });
+
+        Assert.True(result.IsValid);
     }
 
     private static PlaceBidCommand Valid() => new(Guid.CreateVersion7(), Guid.CreateVersion7(), 150.00m);

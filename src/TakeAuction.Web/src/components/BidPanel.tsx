@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { placeBid } from "@/api/auctions";
 import { ApiError, toApiError } from "@/api/client";
@@ -25,6 +25,19 @@ export function BidPanel({ auction, minimumNextBid, isLive, onAccepted }: BidPan
   const [amount, setAmount] = useState("");
   const [feedback, setFeedback] = useState<Feedback>({ kind: "idle" });
 
+  // One key per intended bid, not per request. A second click on the same amount is the same
+  // bid being sent again — the server recognises the key and hands back the first answer
+  // instead of raising the price twice. Typing a new amount is a new intent, so a new key.
+  const pendingKey = useRef<{ amount: number; key: string } | null>(null);
+
+  const keyFor = (value: number) => {
+    if (pendingKey.current?.amount !== value) {
+      pendingKey.current = { amount: value, key: crypto.randomUUID() };
+    }
+
+    return pendingKey.current.key;
+  };
+
   const isOwnAuction = user?.id === auction.sellerId;
 
   useEffect(() => {
@@ -47,8 +60,11 @@ export function BidPanel({ auction, minimumNextBid, isLive, onAccepted }: BidPan
 
     setFeedback({ kind: "pending" });
 
+    const bid = Number(parsed.toFixed(2));
+
     try {
-      const response = await placeBid(auction.id, Number(parsed.toFixed(2)));
+      const response = await placeBid(auction.id, bid, keyFor(bid));
+      pendingKey.current = null;
       setFeedback({ kind: "accepted", amount: response.amount });
       onAccepted(response);
       setAmount(response.minimumNextBid.toFixed(2));

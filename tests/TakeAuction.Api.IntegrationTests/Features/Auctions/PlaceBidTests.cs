@@ -271,6 +271,98 @@ public sealed class PlaceBidTests : IAsyncLifetime
         Assert.Equal(bidIds.Order(), announced.Order());
     }
 
+    [Fact]
+    public async Task A_repeated_key_gives_back_the_first_answer_instead_of_bidding_again()
+    {
+        var client = await CreateBidderClientAsync();
+        var key = Guid.CreateVersion7().ToString();
+
+        var first = await SendBidAsync(client, 150m, key);
+        var second = await SendBidAsync(client, 150m, key);
+
+        first.EnsureSuccessStatusCode();
+        second.EnsureSuccessStatusCode();
+
+        Assert.False(first.Headers.Contains(PlaceBidEndpoint.IdempotentReplayHeader));
+        Assert.True(second.Headers.Contains(PlaceBidEndpoint.IdempotentReplayHeader));
+
+        var firstBody = await first.Content.ReadFromJsonAsync<PlaceBidResponse>(IntegrationTestFixture.JsonOptions);
+        var secondBody = await second.Content.ReadFromJsonAsync<PlaceBidResponse>(IntegrationTestFixture.JsonOptions);
+
+        Assert.Equal(firstBody!.BidId, secondBody!.BidId);
+
+        var auction = await _fixture.ExecuteDbContextAsync(db => db.Auctions.SingleAsync(a => a.Id == _auctionId));
+
+        Assert.Single(await _fixture.ExecuteDbContextAsync(db => db.Bids.ToListAsync()));
+        Assert.Equal(1, auction.BidCount);
+        Assert.Equal(150m, auction.CurrentPrice);
+    }
+
+    [Fact]
+    public async Task Two_copies_of_the_same_request_arriving_at_once_still_leave_one_bid()
+    {
+        var client = await CreateBidderClientAsync();
+        var key = Guid.CreateVersion7().ToString();
+
+        var responses = await Task.WhenAll(
+            Enumerable.Range(0, 8).Select(_ => SendBidAsync(client, 150m, key)));
+
+        Assert.All(responses, response => response.EnsureSuccessStatusCode());
+
+        var bodies = await Task.WhenAll(responses.Select(response =>
+            response.Content.ReadFromJsonAsync<PlaceBidResponse>(IntegrationTestFixture.JsonOptions)));
+
+        Assert.Single(bodies.Select(body => body!.BidId).Distinct());
+
+        var auction = await _fixture.ExecuteDbContextAsync(db => db.Auctions.SingleAsync(a => a.Id == _auctionId));
+
+        Assert.Single(await _fixture.ExecuteDbContextAsync(db => db.Bids.ToListAsync()));
+        Assert.Equal(1, auction.BidCount);
+        Assert.Equal(150m, auction.CurrentPrice);
+    }
+
+    [Fact]
+    public async Task A_replayed_bid_is_never_announced_twice()
+    {
+        var client = await CreateBidderClientAsync();
+        var key = Guid.CreateVersion7().ToString();
+
+        await SendBidAsync(client, 150m, key);
+        await SendBidAsync(client, 150m, key);
+
+        var queued = await _fixture.ExecuteDbContextAsync(db => db.OutboxMessages
+            .AsNoTracking()
+            .CountAsync(message => message.Type == nameof(BidPlacedIntegrationEvent)));
+
+        Assert.Equal(1, queued);
+    }
+
+    [Fact]
+    public async Task A_bid_sent_without_a_key_still_works()
+    {
+        var client = await CreateBidderClientAsync();
+
+        var response = await client.PostAsJsonAsync(BidsUrl(_auctionId), new PlaceBidRequest(150m));
+
+        response.EnsureSuccessStatusCode();
+        Assert.False(response.Headers.Contains(PlaceBidEndpoint.IdempotentReplayHeader));
+
+        var bid = await _fixture.ExecuteDbContextAsync(db => db.Bids.SingleAsync());
+        Assert.Null(bid.IdempotencyKey);
+    }
+
+    private Task<HttpResponseMessage> SendBidAsync(HttpClient client, decimal amount, string idempotencyKey)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, BidsUrl(_auctionId))
+        {
+            Content = JsonContent.Create(new PlaceBidRequest(amount))
+        };
+
+        request.Headers.Add(PlaceBidEndpoint.IdempotencyHeader, idempotencyKey);
+
+        return client.SendAsync(request);
+    }
+
     private static string BidsUrl(Guid auctionId) => $"/api/v1/auctions/{auctionId}/bids";
 
     private async Task<HttpClient> CreateBidderClientAsync()

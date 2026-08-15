@@ -131,6 +131,125 @@ public sealed class PlaceBidHandlerTests : IDisposable
     }
 
     [Fact]
+    public async Task Answers_a_repeated_key_with_the_bid_it_already_recorded()
+    {
+        var (handler, _) = CreateHandler();
+        var key = Guid.CreateVersion7().ToString();
+
+        var first = await handler.Handle(Command(150m, key), CancellationToken.None);
+        var second = await handler.Handle(Command(150m, key), CancellationToken.None);
+
+        Assert.True(second.Succeeded);
+        Assert.True(second.Replayed);
+        Assert.False(first.Replayed);
+        Assert.Equal(first.Response!.BidId, second.Response!.BidId);
+
+        await using var verification = NewContext();
+        Assert.Equal(1, await verification.Bids.CountAsync());
+        Assert.Equal(1, (await verification.Auctions.SingleAsync()).BidCount);
+        Assert.Equal(150m, (await verification.Auctions.SingleAsync()).CurrentPrice);
+    }
+
+    [Fact]
+    public async Task Announces_a_replayed_bid_only_once()
+    {
+        var (handler, _) = CreateHandler();
+        var key = Guid.CreateVersion7().ToString();
+
+        await handler.Handle(Command(150m, key), CancellationToken.None);
+        await handler.Handle(Command(150m, key), CancellationToken.None);
+
+        await _publisher.Received(1).Publish(Arg.Any<BidPlacedEvent>(), Arg.Any<CancellationToken>());
+
+        await using var verification = NewContext();
+        Assert.Single(await verification.OutboxMessages.ToListAsync());
+    }
+
+    [Fact]
+    public async Task Replays_the_price_as_it_stands_now_rather_than_when_the_bid_landed()
+    {
+        var (handler, _) = CreateHandler();
+        var key = Guid.CreateVersion7().ToString();
+
+        await handler.Handle(Command(150m, key), CancellationToken.None);
+
+        var rival = _bidderId;
+        _bidderId = AddUser(UserRole.Bidder);
+        await handler.Handle(Command(400m), CancellationToken.None);
+        _bidderId = rival;
+
+        var replay = await handler.Handle(Command(150m, key), CancellationToken.None);
+
+        Assert.True(replay.Replayed);
+        Assert.Equal(150m, replay.Response!.Amount);
+        Assert.Equal(400m, replay.Response.CurrentPrice);
+        Assert.Equal(405m, replay.Response.MinimumNextBid);
+        Assert.Equal(2, replay.Response.BidCount);
+    }
+
+    [Fact]
+    public async Task Treats_a_different_key_as_a_different_bid()
+    {
+        var (handler, _) = CreateHandler();
+
+        await handler.Handle(Command(150m, Guid.CreateVersion7().ToString()), CancellationToken.None);
+        var second = await handler.Handle(Command(200m, Guid.CreateVersion7().ToString()), CancellationToken.None);
+
+        Assert.True(second.Succeeded);
+        Assert.False(second.Replayed);
+
+        await using var verification = NewContext();
+        Assert.Equal(2, await verification.Bids.CountAsync());
+    }
+
+    [Fact]
+    public async Task Keeps_two_bidders_who_reached_for_the_same_key_apart()
+    {
+        var (handler, _) = CreateHandler();
+        var key = "same-string-different-people";
+
+        await handler.Handle(Command(150m, key), CancellationToken.None);
+
+        _bidderId = AddUser(UserRole.Bidder);
+        var second = await handler.Handle(Command(200m, key), CancellationToken.None);
+
+        Assert.True(second.Succeeded);
+        Assert.False(second.Replayed);
+
+        await using var verification = NewContext();
+        Assert.Equal(2, await verification.Bids.CountAsync());
+    }
+
+    [Fact]
+    public async Task Stores_the_key_alongside_the_bid()
+    {
+        var (handler, _) = CreateHandler();
+        var key = Guid.CreateVersion7().ToString();
+
+        await handler.Handle(Command(150m, key), CancellationToken.None);
+
+        await using var verification = NewContext();
+
+        Assert.Equal(key, (await verification.Bids.SingleAsync()).IdempotencyKey);
+    }
+
+    [Fact]
+    public async Task Ignores_a_blank_key_instead_of_treating_it_as_one_the_next_bid_can_match()
+    {
+        var (handler, _) = CreateHandler();
+
+        await handler.Handle(Command(150m, "   "), CancellationToken.None);
+        var second = await handler.Handle(Command(200m, "   "), CancellationToken.None);
+
+        Assert.True(second.Succeeded);
+        Assert.False(second.Replayed);
+
+        await using var verification = NewContext();
+        Assert.Equal(2, await verification.Bids.CountAsync());
+        Assert.All(await verification.Bids.ToListAsync(), bid => Assert.Null(bid.IdempotencyKey));
+    }
+
+    [Fact]
     public async Task Reports_an_unknown_auction()
     {
         var (handler, _) = CreateHandler();
@@ -254,7 +373,8 @@ public sealed class PlaceBidHandlerTests : IDisposable
         }
     }
 
-    private PlaceBidCommand Command(decimal amount) => new(_auctionId, _bidderId, amount);
+    private PlaceBidCommand Command(decimal amount, string? idempotencyKey = null) =>
+        new(_auctionId, _bidderId, amount, idempotencyKey);
 
     private (PlaceBidHandler Handler, AppDbContext DbContext) CreateHandler(params IInterceptor[] interceptors)
     {

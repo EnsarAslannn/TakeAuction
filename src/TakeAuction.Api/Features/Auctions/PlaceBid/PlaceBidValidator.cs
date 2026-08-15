@@ -1,4 +1,5 @@
 using FluentValidation;
+using TakeAuction.Api.Domain.Auctions;
 
 namespace TakeAuction.Api.Features.Auctions.PlaceBid;
 
@@ -12,6 +13,10 @@ public sealed class PlaceBidValidator : AbstractValidator<PlaceBidCommand>
         RuleFor(command => command.BidderId)
             .NotEmpty()
             .WithMessage("Bidder could not be resolved from the authenticated principal.");
+
+        RuleFor(command => command.IdempotencyKey)
+            .MaximumLength(Bid.MaxIdempotencyKeyLength)
+            .When(command => command.IdempotencyKey is not null);
 
         RuleFor(command => command.Amount)
             .GreaterThan(0m)

@@ -8,20 +8,39 @@ namespace TakeAuction.Api.Features.Auctions.PlaceBid;
 
 public sealed class PlaceBidEndpoint : IEndpoint
 {
+    public const string IdempotencyHeader = "Idempotency-Key";
+
+    public const string IdempotentReplayHeader = "Idempotent-Replay";
+
     public void MapEndpoint(IEndpointRouteBuilder builder)
     {
         builder.MapPost("/auctions/{id:guid}/bids", async (
                 Guid id,
                 PlaceBidRequest request,
                 ClaimsPrincipal principal,
+                HttpContext httpContext,
                 ISender sender,
                 CancellationToken cancellationToken) =>
             {
-                var command = new PlaceBidCommand(id, principal.GetUserId(), request.Amount);
+                var command = new PlaceBidCommand(
+                    id,
+                    principal.GetUserId(),
+                    request.Amount,
+                    ReadIdempotencyKey(httpContext));
 
                 var result = await sender.Send(command, cancellationToken);
 
-                return result.Succeeded ? Results.Ok(result.Response) : ToProblem(id, result);
+                if (!result.Succeeded)
+                {
+                    return ToProblem(id, result);
+                }
+
+                if (result.Replayed)
+                {
+                    httpContext.Response.Headers[IdempotentReplayHeader] = "true";
+                }
+
+                return Results.Ok(result.Response);
             })
             .RequireAuthorization()
             .WithName("PlaceBid")
@@ -34,6 +53,11 @@ public sealed class PlaceBidEndpoint : IEndpoint
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status409Conflict);
     }
+
+    private static string? ReadIdempotencyKey(HttpContext httpContext) =>
+        httpContext.Request.Headers.TryGetValue(IdempotencyHeader, out var values)
+            ? values.ToString()
+            : null;
 
     private static IResult ToProblem(Guid auctionId, PlaceBidResult result) => result.Rejection switch
     {

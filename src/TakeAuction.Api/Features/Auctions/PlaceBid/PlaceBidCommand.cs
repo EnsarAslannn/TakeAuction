@@ -3,7 +3,11 @@ using TakeAuction.Api.Domain.Auctions;
 
 namespace TakeAuction.Api.Features.Auctions.PlaceBid;
 
-public sealed record PlaceBidCommand(Guid AuctionId, Guid BidderId, decimal Amount) : IRequest<PlaceBidResult>;
+public sealed record PlaceBidCommand(
+    Guid AuctionId,
+    Guid BidderId,
+    decimal Amount,
+    string? IdempotencyKey = null) : IRequest<PlaceBidResult>;
 
 public sealed record PlaceBidRequest(decimal Amount);
 
@@ -19,12 +23,16 @@ public sealed record PlaceBidResponse(
 public sealed record PlaceBidResult(
     BidRejection Rejection,
     PlaceBidResponse? Response,
-    decimal? MinimumAcceptableBid)
+    decimal? MinimumAcceptableBid,
+    bool Replayed = false)
 {
     public bool Succeeded => Rejection == BidRejection.None;
 
     public static PlaceBidResult Accepted(PlaceBidResponse response) =>
         new(BidRejection.None, response, null);
+
+    public static PlaceBidResult Replay(PlaceBidResponse response) =>
+        new(BidRejection.None, response, null, Replayed: true);
 
     public static PlaceBidResult Rejected(BidRejection rejection, decimal? minimumAcceptableBid = null) =>
         new(rejection, null, minimumAcceptableBid);
