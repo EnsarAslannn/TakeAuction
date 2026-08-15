@@ -65,6 +65,49 @@ public sealed class SignalRAuctionNotifierTests
     }
 
     [Fact]
+    public async Task Tells_the_bidder_who_lost_the_lead_and_nobody_else()
+    {
+        var outbidBidderId = Guid.CreateVersion7();
+        var everyoneElse = Substitute.For<IAuctionClient>();
+
+        _clients.User(outbidBidderId.ToString()).Returns(_target);
+        _clients.All.Returns(everyoneElse);
+        _clients.Group(Arg.Any<string>()).Returns(everyoneElse);
+
+        var notification = OutbidNotice();
+
+        await _notifier.OutbidAsync(outbidBidderId, notification, CancellationToken.None);
+
+        await _target.Received(1).Outbid(notification);
+        await everyoneElse.DidNotReceive().Outbid(Arg.Any<OutbidNotification>());
+    }
+
+    [Fact]
+    public async Task Addresses_the_bidder_by_the_id_signalr_knows_them_by()
+    {
+        var outbidBidderId = Guid.CreateVersion7();
+        _clients.User(Arg.Any<string>()).Returns(_target);
+
+        await _notifier.OutbidAsync(outbidBidderId, OutbidNotice(), CancellationToken.None);
+
+        _clients.Received(1).User(outbidBidderId.ToString());
+    }
+
+    [Fact]
+    public async Task Honours_cancellation_before_telling_a_bidder_they_lost_the_lead()
+    {
+        using var cancellation = new CancellationTokenSource();
+        await cancellation.CancelAsync();
+
+        _clients.User(Arg.Any<string>()).Returns(_target);
+
+        await Assert.ThrowsAsync<OperationCanceledException>(
+            () => _notifier.OutbidAsync(Guid.CreateVersion7(), OutbidNotice(), cancellation.Token));
+
+        await _target.DidNotReceive().Outbid(Arg.Any<OutbidNotification>());
+    }
+
+    [Fact]
     public async Task Honours_cancellation_before_broadcasting()
     {
         using var cancellation = new CancellationTokenSource();
@@ -88,6 +131,13 @@ public sealed class SignalRAuctionNotifierTests
         null,
         TestHarness.Now.AddDays(2),
         false,
+        TestHarness.Now);
+
+    private static OutbidNotification OutbidNotice() => new(
+        AuctionId,
+        "Rare stamp collection",
+        155m,
+        TestHarness.Now.AddDays(2),
         TestHarness.Now);
 
     private static AuctionStatusChangedNotification StatusNotification() => new(

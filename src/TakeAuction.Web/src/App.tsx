@@ -2,6 +2,7 @@ import { Suspense, lazy, useEffect } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/Footer";
+import { OutbidNotices } from "@/components/OutbidNotices";
 import { SmoothScroll, useScrollReset } from "@/motion/SmoothScroll";
 import { Landing } from "@/pages/Landing";
 import { Auctions } from "@/pages/Auctions";
@@ -80,6 +81,7 @@ function Shell() {
         </Suspense>
       </main>
       {!bare && <Footer />}
+      <OutbidNotices />
     </>
   );
 }

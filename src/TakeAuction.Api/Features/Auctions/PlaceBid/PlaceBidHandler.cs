@@ -128,6 +128,7 @@ public sealed class PlaceBidHandler : IRequestHandler<PlaceBidCommand, PlaceBidR
             _outbox.Enqueue(
                 new BidPlacedIntegrationEvent(
                     auction.Id,
+                    auction.Title,
                     priceSetter.Id,
                     priceSetter.BidderId,
                     priceSetter.Amount,

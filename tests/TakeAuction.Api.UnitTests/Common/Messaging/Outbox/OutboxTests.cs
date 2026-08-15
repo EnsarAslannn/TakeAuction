@@ -90,6 +90,7 @@ public sealed class OutboxTests : IDisposable
 
     private static BidPlacedIntegrationEvent Event() => new(
         Guid.CreateVersion7(),
+        "Rare stamp collection",
         Guid.CreateVersion7(),
         Guid.CreateVersion7(),
         150m,

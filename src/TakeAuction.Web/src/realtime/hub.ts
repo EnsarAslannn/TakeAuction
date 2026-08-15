@@ -5,7 +5,11 @@ import {
   LogLevel,
 } from "@microsoft/signalr";
 import { HUB_URL } from "@/api/client";
-import type { AuctionStatusChangedNotification, BidPlacedNotification } from "@/api/types";
+import type {
+  AuctionStatusChangedNotification,
+  BidPlacedNotification,
+  OutbidNotification,
+} from "@/api/types";
 
 export type ConnectionState = "disconnected" | "connecting" | "connected" | "reconnecting";
 
@@ -22,6 +26,7 @@ const isConnected = (connection: HubConnection): boolean =>
 
 type BidHandler = (notification: BidPlacedNotification) => void;
 type StatusHandler = (notification: AuctionStatusChangedNotification) => void;
+type OutbidHandler = (notification: OutbidNotification) => void;
 type StateHandler = (state: ConnectionState) => void;
 
 class AuctionHubClient {
@@ -30,12 +35,17 @@ class AuctionHubClient {
 
   private readonly bidHandlers = new Set<BidHandler>();
   private readonly statusHandlers = new Set<StatusHandler>();
+  private readonly outbidHandlers = new Set<OutbidHandler>();
   private readonly stateHandlers = new Set<StateHandler>();
 
   private readonly auctionSubscriptions = new Map<string, number>();
   private lobbySubscribers = 0;
+  private holders = 0;
+
+  private state: ConnectionState = "disconnected";
 
   private emitState(state: ConnectionState) {
+    this.state = state;
     this.stateHandlers.forEach((handler) => handler(state));
   }
 
@@ -60,6 +70,12 @@ class AuctionHubClient {
 
     connection.on("AuctionStatusChanged", (notification: AuctionStatusChangedNotification) =>
       this.statusHandlers.forEach((handler) => handler(notification))
+    );
+
+    // Addressed to this bidder rather than to a group they joined, so there is nothing to
+    // subscribe to: the server sends it because of who the connection belongs to.
+    connection.on("Outbid", (notification: OutbidNotification) =>
+      this.outbidHandlers.forEach((handler) => handler(notification))
     );
 
     connection.onreconnecting(() => this.emitState("reconnecting"));
@@ -125,8 +141,35 @@ class AuctionHubClient {
     };
   }
 
+  onOutbid(handler: OutbidHandler): () => void {
+    this.outbidHandlers.add(handler);
+    return () => {
+      this.outbidHandlers.delete(handler);
+    };
+  }
+
+  /**
+   * Keeps the connection open without joining anything. A bidder browsing elsewhere in the
+   * salon has no lot subscribed, and the message telling them they were outbid is exactly the
+   * one they need while they are not looking at it.
+   */
+  async hold(): Promise<() => void> {
+    this.holders += 1;
+    await this.ensureStarted();
+
+    return () => {
+      this.holders = Math.max(0, this.holders - 1);
+    };
+  }
+
   onStateChange(handler: StateHandler): () => void {
     this.stateHandlers.add(handler);
+
+    // The connection outlives any one component, so a subscriber that arrives after it opened
+    // would otherwise sit on "disconnected" until something happened to the socket — and on a
+    // healthy connection nothing does. Hand it the state as it stands.
+    handler(this.state);
+
     return () => {
       this.stateHandlers.delete(handler);
     };
@@ -168,7 +211,7 @@ class AuctionHubClient {
 
     this.emitState("disconnected");
 
-    if (this.lobbySubscribers > 0 || this.auctionSubscriptions.size > 0) {
+    if (this.holders > 0 || this.lobbySubscribers > 0 || this.auctionSubscriptions.size > 0) {
       const restored = await this.ensureStarted();
       if (restored) await this.restoreSubscriptions();
     }

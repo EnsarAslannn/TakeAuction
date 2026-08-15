@@ -77,6 +77,27 @@ public sealed class IntegrationTestFixture : IAsyncLifetime
             .Build();
     }
 
+    /// <summary>
+    /// A connection the hub can put a name to. Messages addressed to a bidder rather than to a
+    /// lot go nowhere without one, so a test about them has to sign in like a browser would.
+    /// </summary>
+    public HubConnection CreateHubConnectionAs(User user)
+    {
+        var server = _factory.Server;
+
+        using var scope = _factory.Services.CreateScope();
+        var token = scope.ServiceProvider.GetRequiredService<IJwtTokenGenerator>().Generate(user);
+
+        return new HubConnectionBuilder()
+            .WithUrl(new Uri(server.BaseAddress, AuctionHub.Route.TrimStart('/')), options =>
+            {
+                options.HttpMessageHandlerFactory = _ => server.CreateHandler();
+                options.Transports = HttpTransportType.LongPolling;
+                options.Headers.Add("Authorization", $"Bearer {token.Value}");
+            })
+            .Build();
+    }
+
     public async Task<HttpClient> CreateClientAsAsync(User user)
     {
         var client = CreateClient();

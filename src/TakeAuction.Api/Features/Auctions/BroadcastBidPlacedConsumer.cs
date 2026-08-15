@@ -37,5 +37,20 @@ public sealed class BroadcastBidPlacedConsumer : IConsumer<BidPlacedIntegrationE
             "Broadcast bid {BidId} on auction {AuctionId} to real-time watchers",
             message.BidId,
             message.AuctionId);
+
+        if (message.OutbidBidderId is not { } outbidBidderId)
+        {
+            return;
+        }
+
+        await _notifier.OutbidAsync(
+            outbidBidderId,
+            new OutbidNotification(
+                message.AuctionId,
+                message.AuctionTitle,
+                message.Amount,
+                message.EndsAtUtc,
+                message.OccurredAtUtc),
+            context.CancellationToken);
     }
 }

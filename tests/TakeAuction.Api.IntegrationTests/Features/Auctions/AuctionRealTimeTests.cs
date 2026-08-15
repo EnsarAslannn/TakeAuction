@@ -141,6 +141,81 @@ public sealed class AuctionRealTimeTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task The_bidder_who_lost_the_lead_is_told_even_though_they_joined_no_group()
+    {
+        var leader = await _fixture.CreateUserAsync(UserRole.Bidder);
+        var leaderClient = await _fixture.CreateClientAsAsync(leader);
+        (await leaderClient.PostAsJsonAsync(BidsUrl(_auctionId), new PlaceBidRequest(200m)))
+            .EnsureSuccessStatusCode();
+
+        await _fixture.WaitForOutboxDrainAsync();
+
+        // Signed in but watching nothing: the notice arrives because of who the connection
+        // belongs to, which is the whole point of it.
+        await using var connection = _fixture.CreateHubConnectionAs(leader);
+        var received = Capture<OutbidNotification>(connection, nameof(IAuctionClient.Outbid));
+        await connection.StartAsync();
+
+        var rival = await _fixture.CreateUserAsync(UserRole.Bidder);
+        var rivalClient = await _fixture.CreateClientAsAsync(rival);
+        (await rivalClient.PostAsJsonAsync(BidsUrl(_auctionId), new PlaceBidRequest(500m)))
+            .EnsureSuccessStatusCode();
+
+        var notification = await received.Task.WaitAsync(DeliveryTimeout);
+
+        Assert.Equal(_auctionId, notification.AuctionId);
+        Assert.Equal("Rare stamp collection", notification.AuctionTitle);
+        Assert.Equal(205m, notification.CurrentPrice);
+    }
+
+    [Fact]
+    public async Task A_leader_whose_proxy_held_the_lot_is_not_told_they_lost_it()
+    {
+        var leader = await _fixture.CreateUserAsync(UserRole.Bidder);
+        var leaderClient = await _fixture.CreateClientAsAsync(leader);
+        (await leaderClient.PostAsJsonAsync(BidsUrl(_auctionId), new PlaceBidRequest(500m)))
+            .EnsureSuccessStatusCode();
+
+        await _fixture.WaitForOutboxDrainAsync();
+
+        await using var connection = _fixture.CreateHubConnectionAs(leader);
+        var received = Capture<OutbidNotification>(connection, nameof(IAuctionClient.Outbid));
+        await connection.StartAsync();
+
+        var rival = await _fixture.CreateUserAsync(UserRole.Bidder);
+        var rivalClient = await _fixture.CreateClientAsAsync(rival);
+        (await rivalClient.PostAsJsonAsync(BidsUrl(_auctionId), new PlaceBidRequest(300m)))
+            .EnsureSuccessStatusCode();
+
+        await AssertStaysSilentAsync(received);
+    }
+
+    [Fact]
+    public async Task Nobody_else_is_told_that_somebody_lost_the_lead()
+    {
+        var leader = await _fixture.CreateUserAsync(UserRole.Bidder);
+        var leaderClient = await _fixture.CreateClientAsAsync(leader);
+        (await leaderClient.PostAsJsonAsync(BidsUrl(_auctionId), new PlaceBidRequest(200m)))
+            .EnsureSuccessStatusCode();
+
+        await _fixture.WaitForOutboxDrainAsync();
+
+        var onlooker = await _fixture.CreateUserAsync(UserRole.Bidder);
+        await using var connection = _fixture.CreateHubConnectionAs(onlooker);
+        var received = Capture<OutbidNotification>(connection, nameof(IAuctionClient.Outbid));
+
+        await connection.StartAsync();
+        await connection.InvokeAsync(nameof(AuctionHub.SubscribeToAuction), _auctionId);
+
+        var rival = await _fixture.CreateUserAsync(UserRole.Bidder);
+        var rivalClient = await _fixture.CreateClientAsAsync(rival);
+        (await rivalClient.PostAsJsonAsync(BidsUrl(_auctionId), new PlaceBidRequest(500m)))
+            .EnsureSuccessStatusCode();
+
+        await AssertStaysSilentAsync(received);
+    }
+
+    [Fact]
     public async Task A_bid_never_reaches_watchers_of_another_auction()
     {
         var otherAuctionId = await CreateAuctionAsync();
@@ -234,6 +309,7 @@ public sealed class AuctionRealTimeTests : IAsyncLifetime
 
         await bus.Publish(new BidPlacedIntegrationEvent(
             _auctionId,
+            "Rare stamp collection",
             bidId,
             bidderId,
             275m,

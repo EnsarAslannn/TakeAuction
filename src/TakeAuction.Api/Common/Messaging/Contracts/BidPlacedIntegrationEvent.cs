@@ -2,6 +2,7 @@ namespace TakeAuction.Api.Common.Messaging.Contracts;
 
 public sealed record BidPlacedIntegrationEvent(
     Guid AuctionId,
+    string AuctionTitle,
     Guid BidId,
     Guid BidderId,
     decimal Amount,

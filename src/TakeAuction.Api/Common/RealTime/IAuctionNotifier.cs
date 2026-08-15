@@ -7,4 +7,9 @@ public interface IAuctionNotifier
     Task AuctionStatusChangedAsync(
         AuctionStatusChangedNotification notification,
         CancellationToken cancellationToken = default);
+
+    Task OutbidAsync(
+        Guid bidderId,
+        OutbidNotification notification,
+        CancellationToken cancellationToken = default);
 }

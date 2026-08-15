@@ -100,6 +100,14 @@ export interface BidPlacedNotification {
   occurredAtUtc: string;
 }
 
+export interface OutbidNotification {
+  auctionId: string;
+  auctionTitle: string;
+  currentPrice: number;
+  endsAtUtc: string;
+  occurredAtUtc: string;
+}
+
 export interface AuctionStatusChangedNotification {
   auctionId: string;
   status: AuctionStatus;
