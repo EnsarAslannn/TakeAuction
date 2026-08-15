@@ -68,10 +68,7 @@ try
 
     // After authentication on purpose: the dashboard's authorization filter reads the
     // signed-in principal, which does not exist yet earlier in the pipeline.
-    if (app.Environment.IsDevelopment())
-    {
-        app.UseTakeAuctionJobsDashboard();
-    }
+    app.UseTakeAuctionJobsDashboard();
 
     ApiVersionSet versionSet = app.NewApiVersionSet()
         .HasApiVersion(ApiVersioningExtensions.V1)

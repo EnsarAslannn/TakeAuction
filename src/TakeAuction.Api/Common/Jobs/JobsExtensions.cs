@@ -1,6 +1,7 @@
 using System.Reflection;
 using Hangfire;
 using Hangfire.PostgreSql;
+using Microsoft.Extensions.Options;
 
 namespace TakeAuction.Api.Common.Jobs;
 
@@ -69,6 +70,13 @@ public static class JobsExtensions
 
     public static IApplicationBuilder UseTakeAuctionJobsDashboard(this IApplicationBuilder app)
     {
+        var options = app.ApplicationServices.GetRequiredService<IOptions<JobOptions>>().Value;
+
+        if (!options.DashboardEnabled)
+        {
+            return app;
+        }
+
         app.UseHangfireDashboard(DashboardRoute, new DashboardOptions
         {
             DisplayStorageConnectionString = false,

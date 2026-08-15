@@ -24,6 +24,8 @@ public sealed class ApiTestFactory : WebApplicationFactory<Program>
         ["RateLimiting__AuthPermitLimit"] = "1000000",
         ["Seed__Enabled"] = "false",
         ["Jobs__ServerEnabled"] = "false",
+        // On in these tests so the gate in front of it is exercised rather than assumed.
+        ["Jobs__DashboardEnabled"] = "true",
         ["Jobs__QueuePollIntervalSeconds"] = "1",
         ["Jobs__ExpireAuctionsCron"] = NeverFiringCron,
         ["Telemetry__PrometheusEndpointEnabled"] = "true"

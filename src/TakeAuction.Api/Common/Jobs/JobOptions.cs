@@ -6,6 +6,13 @@ public sealed class JobOptions
 
     public bool ServerEnabled { get; set; } = true;
 
+    /// <summary>
+    /// Serves the job dashboard. It is gated on an admin principal wherever it runs, so this
+    /// switch is about whether the route exists at all — the answer for most deployments is
+    /// no, and for the one where somebody needs to requeue a stuck job, yes.
+    /// </summary>
+    public bool DashboardEnabled { get; set; }
+
     public string SchemaName { get; set; } = "hangfire";
 
     public int WorkerCount { get; set; } = 4;

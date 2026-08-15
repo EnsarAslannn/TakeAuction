@@ -1,5 +1,6 @@
 using System.Net;
 using TakeAuction.Api.ApiTests.Common;
+using TakeAuction.Api.Common.Jobs;
 
 namespace TakeAuction.Api.ApiTests.Contracts;
 
@@ -55,17 +56,23 @@ public sealed class ApiSurfaceContractTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// The job dashboard is mapped only in Development. This suite runs in Production, so a
-    /// hit here would mean the environment gate had quietly come off.
+    /// The dashboard is switched on for this suite so the gate in front of it is exercised
+    /// rather than assumed. A page here rather than a challenge would mean it had come off.
     /// </summary>
     [Fact]
-    public async Task The_job_dashboard_is_not_exposed_outside_development()
+    public async Task The_job_dashboard_is_never_served_to_an_anonymous_caller()
     {
         using var client = _fixture.CreateRawClient();
 
         var response = await client.GetAsync("/hangfire");
 
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public void The_job_dashboard_is_off_unless_a_deployment_asks_for_it()
+    {
+        Assert.False(new JobOptions().DashboardEnabled);
     }
 
     [Fact]
