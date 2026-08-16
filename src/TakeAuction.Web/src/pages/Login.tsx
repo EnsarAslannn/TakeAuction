@@ -4,13 +4,6 @@ import { VISUALS } from "@/content/catalog";
 import { useAuthStore } from "@/store/authStore";
 import { SplitLine } from "@/motion/Reveal";
 
-const DEMO_ACCOUNTS = [
-  { label: "Satıcı", email: "seller@takeauction.local" },
-  { label: "Alıcı", email: "bidder@takeauction.local" },
-];
-
-const DEMO_PASSWORD = "TakeAuction!2026";
-
 export function Login() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -104,26 +97,7 @@ export function Login() {
             </button>
           </form>
 
-          <div className="mt-10 border-t border-ink/12 pt-8">
-            <p className="eyebrow mb-4">Demo hesapları</p>
-            <div className="flex flex-wrap gap-2">
-              {DEMO_ACCOUNTS.map((account) => (
-                <button
-                  key={account.email}
-                  type="button"
-                  onClick={() => {
-                    setEmail(account.email);
-                    setPassword(DEMO_PASSWORD);
-                  }}
-                  className="rounded-full border border-ink/15 px-4 py-1.5 font-mono text-eyebrow uppercase text-stone transition-colors hover:border-ink/40 hover:text-ink"
-                >
-                  {account.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <p className="mt-8 font-sans text-sm text-ink/55">
+          <p className="mt-10 border-t border-ink/12 pt-8 font-sans text-sm text-ink/55">
             Hesabınız yok mu?{" "}
             <Link to="/register" className="text-sand-deep underline underline-offset-4">
               Kaydolun

@@ -1,7 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { newAccount } from "../fixtures/api";
-
-const DEMO_BIDDER = "Demo Bidder";
+import { newAccount, register } from "../fixtures/api";
 
 test.describe("Kimlik akışı", () => {
   test("yeni bir alıcı kaydolur ve doğrudan salona düşer", async ({ page }) => {
@@ -70,14 +68,17 @@ test.describe("Kimlik akışı", () => {
     expect(csrf?.httpOnly, "the double-submit token has to be readable by the client").toBe(false);
   });
 
-  test("demo hesabı tek tıkla giriş yapar", async ({ page }) => {
+  test("kayıtlı bir hesap formdan giriş yapıp salona düşer", async ({ page, request }) => {
+    const account = await register(request, newAccount("Bidder"));
+
     await page.goto("/login");
 
-    await page.getByRole("button", { name: "Alıcı" }).click();
+    await page.locator("#email").fill(account.email);
+    await page.locator("#password").fill(account.password);
     await page.getByRole("button", { name: "Giriş yapın" }).click();
 
     await expect(page).toHaveURL(/\/auctions$/);
-    await expect(page.getByText(DEMO_BIDDER).first()).toBeVisible();
+    await expect(page.getByText(account.displayName).first()).toBeVisible();
   });
 
   test("yanlış parola girişi salona sokmaz", async ({ page }) => {
