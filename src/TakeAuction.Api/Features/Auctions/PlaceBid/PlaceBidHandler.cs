@@ -107,6 +107,20 @@ public sealed class PlaceBidHandler : IRequestHandler<PlaceBidCommand, PlaceBidR
 
             if (!outcome.Succeeded)
             {
+                // The other copy of this request may have landed between the replay lookup above
+                // and this read, in which case the lot now stands at this bidder's own ceiling and
+                // the rules turn their own bid away. What came back is the bid that won, not a
+                // late one worth refusing.
+                if (idempotencyKey is not null)
+                {
+                    var replay = await TryReplayAsync(command.BidderId, idempotencyKey, cancellationToken);
+
+                    if (replay is not null)
+                    {
+                        return replay;
+                    }
+                }
+
                 return PlaceBidResult.Rejected(
                     outcome.Rejection,
                     auction.MinimumAcceptableBidFor(command.BidderId));

@@ -396,6 +396,32 @@ public sealed class PlaceBidHandlerTests : IDisposable
     }
 
     [Fact]
+    public async Task Answers_with_the_copy_that_won_the_race_rather_than_calling_the_bid_too_low()
+    {
+        var key = Guid.CreateVersion7().ToString();
+
+        var interceptor = new ConcurrencyConflictInterceptor(
+            conflictCount: 1,
+            onConflict: () => RecordWinningCopy(key));
+
+        var (handler, _) = CreateHandler(interceptor);
+
+        var result = await handler.Handle(Command(150m, key), CancellationToken.None);
+
+        Assert.True(result.Succeeded);
+        Assert.True(result.Replayed);
+        Assert.Equal(100m, result.Response!.Amount);
+        Assert.Equal(150m, result.Response.MaxAmount);
+        Assert.True(result.Response.IsLeading);
+
+        await using var verification = NewContext();
+        Assert.Equal(1, await verification.Bids.CountAsync());
+        Assert.Equal(1, (await verification.Auctions.SingleAsync()).BidCount);
+        Assert.Equal(100m, (await verification.Auctions.SingleAsync()).CurrentPrice);
+        await _publisher.DidNotReceive().Publish(Arg.Any<BidPlacedEvent>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task Accepts_the_retry_when_the_bid_still_clears_the_new_price()
     {
         var interceptor = new ConcurrencyConflictInterceptor(
@@ -501,6 +527,21 @@ public sealed class PlaceBidHandlerTests : IDisposable
         auction.PlaceBid(leaderId, amount, TestHarness.Now);
         auction.PlaceBid(challengerId, amount, TestHarness.Now);
 
+        context.SaveChanges();
+    }
+
+    /// <summary>
+    /// Stands in for the copy of the same request that reached the database first: it records a
+    /// bid under the shared key and leaves the sender holding the lot at their own ceiling.
+    /// </summary>
+    private void RecordWinningCopy(string idempotencyKey)
+    {
+        using var context = TestHarness.CreateDbContext(_databaseName);
+
+        var auction = context.Auctions.Single(entity => entity.Id == _auctionId);
+        var outcome = auction.PlaceBid(_bidderId, 150m, TestHarness.Now, idempotencyKey);
+
+        context.Bids.Add(outcome.Bid!);
         context.SaveChanges();
     }
 
