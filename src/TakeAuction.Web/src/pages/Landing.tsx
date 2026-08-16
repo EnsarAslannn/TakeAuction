@@ -17,16 +17,6 @@ export function Landing() {
       .catch(() => setAuctions([]));
   }, []);
 
-  useEffect(() => {
-    const hash = window.location.hash;
-    if (!hash) return;
-
-    const target = document.querySelector(hash);
-    if (target) {
-      window.setTimeout(() => target.scrollIntoView({ behavior: "smooth" }), 400);
-    }
-  }, []);
-
   return (
     <>
       <Hero auctions={auctions} />

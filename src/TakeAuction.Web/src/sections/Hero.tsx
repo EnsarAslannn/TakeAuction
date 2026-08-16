@@ -209,12 +209,12 @@ export function Hero({ auctions }: HeroProps) {
               <Link to="/auctions" className="btn bg-sand text-ink hover:bg-paper">
                 Salona girin
               </Link>
-              <a
-                href="#how-it-works"
+              <Link
+                to="/#how-it-works"
                 className="btn border border-paper/25 text-paper hover:border-paper hover:bg-paper hover:text-ink"
               >
                 Nasıl işliyor
-              </a>
+              </Link>
             </div>
           </div>
 

@@ -3,7 +3,7 @@ import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/Footer";
 import { OutbidNotices } from "@/components/OutbidNotices";
-import { SmoothScroll, useScrollReset } from "@/motion/SmoothScroll";
+import { SmoothScroll, useHashScroll, useScrollReset } from "@/motion/SmoothScroll";
 import { Landing } from "@/pages/Landing";
 import { Auctions } from "@/pages/Auctions";
 import { Login } from "@/pages/Login";
@@ -54,6 +54,7 @@ function RouteFallback() {
 function Shell() {
   const location = useLocation();
   useScrollReset(location.pathname);
+  useHashScroll();
 
   const bare = ["/login", "/register"].includes(location.pathname);
 
