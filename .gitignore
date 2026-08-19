@@ -506,3 +506,6 @@ src/TakeAuction.Api/App_Data/uploads/auctions/*
 *.gltf
 !src/TakeAuction.Web/public/models/*.glb
 !src/TakeAuction.Web/public/models/*.gltf
+
+# Local assistant instructions — not part of the published project.
+CLAUDE.md
