@@ -93,13 +93,26 @@ public sealed class ShowcaseSeedTests : IAsyncLifetime
         Assert.Equal(before, await ShowcaseEndTimesAsync());
     }
 
+    [Fact]
+    public async Task Seeding_refuses_to_run_without_a_configured_password()
+    {
+        await using var scope = _fixture.Services.CreateAsyncScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => DatabaseSeeder.SeedAsync(dbContext, new SeedOptions(), passwordHasher, CancellationToken.None));
+    }
+
     private async Task RunSeederAsync()
     {
         await using var scope = _fixture.Services.CreateAsyncScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
 
-        await DatabaseSeeder.SeedAsync(dbContext, new SeedOptions(), passwordHasher, CancellationToken.None);
+        var options = new SeedOptions { DefaultPassword = "SeedTests!2026" };
+
+        await DatabaseSeeder.SeedAsync(dbContext, options, passwordHasher, CancellationToken.None);
     }
 
     private Task<Dictionary<Guid, DateTimeOffset>> ShowcaseEndTimesAsync() =>

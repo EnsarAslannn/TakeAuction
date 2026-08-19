@@ -18,9 +18,15 @@ public static class DatabaseSeeder
             return;
         }
 
+        if (string.IsNullOrWhiteSpace(options.DefaultPassword))
+        {
+            throw new InvalidOperationException(
+                $"{SeedOptions.SectionName}:{nameof(SeedOptions.DefaultPassword)} must be configured before seeding.");
+        }
+
         var db = (AppDbContext)context;
 
-        await SeedUsersAsync(db, options, passwordHasher, cancellationToken);
+        await SeedUsersAsync(db, options, passwordHasher, options.DefaultPassword, cancellationToken);
         await SeedAuctionsAsync(db, options, cancellationToken);
     }
 
@@ -28,6 +34,7 @@ public static class DatabaseSeeder
         AppDbContext db,
         SeedOptions options,
         IPasswordHasher passwordHasher,
+        string defaultPassword,
         CancellationToken cancellationToken)
     {
         var desired = new[]
@@ -51,7 +58,7 @@ public static class DatabaseSeeder
             .Select(d => User.Create(
                 d.Email,
                 d.DisplayName,
-                passwordHasher.Hash(options.DefaultPassword),
+                passwordHasher.Hash(defaultPassword),
                 d.Role))
             .ToArray();
 

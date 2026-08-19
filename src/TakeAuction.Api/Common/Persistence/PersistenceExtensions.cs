@@ -13,7 +13,13 @@ public static class PersistenceExtensions
         IConfiguration configuration)
     {
         services.AddOptions<SeedOptions>()
-            .Bind(configuration.GetSection(SeedOptions.SectionName));
+            .Bind(configuration.GetSection(SeedOptions.SectionName))
+            .Validate(
+                options => !options.Enabled || !string.IsNullOrWhiteSpace(options.DefaultPassword),
+                $"{SeedOptions.SectionName}:{nameof(SeedOptions.DefaultPassword)} is required when "
+                    + $"{SeedOptions.SectionName}:{nameof(SeedOptions.Enabled)} is true. Seeding creates an "
+                    + "administrator, so the password has to come from configuration, never from a default.")
+            .ValidateOnStart();
 
         services.AddOptions<DatabaseOptions>()
             .Bind(configuration.GetSection(DatabaseOptions.SectionName));
