@@ -10,6 +10,10 @@ updates:
     groups:
       dotnet-minor-and-patch:
         update-types: [minor, patch]
+    ignore:
+      # MediatR moved to a paid licence at v13; v12 is the last freely licensed line.
+      - dependency-name: MediatR
+        update-types: [version-update:semver-major]
 
   - package-ecosystem: npm
     directory: /src/TakeAuction.Web
