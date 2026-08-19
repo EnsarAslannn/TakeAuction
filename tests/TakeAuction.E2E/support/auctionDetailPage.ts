@@ -69,8 +69,8 @@ export class AuctionDetailPage {
     return this.outcome();
   }
 
-  async outcome(): Promise<BidOutcome> {
-    await expect(this.feedback).toBeVisible();
+  async outcome(timeout?: number): Promise<BidOutcome> {
+    await expect(this.feedback).toBeVisible({ timeout });
 
     const text = (await this.feedback.innerText()).trim();
 

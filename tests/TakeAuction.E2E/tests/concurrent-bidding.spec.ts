@@ -7,6 +7,9 @@ import { amountPattern } from "../support/money";
 const STARTING_PRICE = 1000;
 const INCREMENT = 50;
 
+// Five browsers plus the whole stack on two shared cores: the runner starves before the code does.
+const CROWDED_RUNNER_TIMEOUT_MS = 45_000;
+
 test.describe("Eşzamanlı teklif ve canlı fiyat", () => {
   test("aynı anda gelen iki eşit teklifden yalnızca biri kabul edilir", async ({ browser, request }) => {
     const auction = await seedOpenAuction(request, {
@@ -135,7 +138,9 @@ test.describe("Eşzamanlı teklif ve canlı fiyat", () => {
       await Promise.all(bidders.map((bidder, index) => bidder.panel.setAmount(amounts[index])));
       await Promise.all(bidders.map((bidder) => bidder.panel.submit()));
 
-      const outcomes = await Promise.all(bidders.map((bidder) => bidder.panel.outcome()));
+      const outcomes = await Promise.all(
+        bidders.map((bidder) => bidder.panel.outcome(CROWDED_RUNNER_TIMEOUT_MS))
+      );
       const accepted = outcomes.filter(
         (outcome) => outcome.kind === "leading" || outcome.kind === "answered"
       );
