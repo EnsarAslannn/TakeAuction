@@ -40,7 +40,7 @@ jobs:
             -e K6_SUMMARY_EXPORT=/scripts/summary.json \
             grafana/k6 run /scripts/bidding-contention.js
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: load-summary

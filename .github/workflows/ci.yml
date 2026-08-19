@@ -81,7 +81,7 @@ jobs:
           --collect:"XPlat Code Coverage"
           --results-directory artifacts/test-results
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: unit-test-results
@@ -107,7 +107,7 @@ jobs:
           --collect:"XPlat Code Coverage"
           --results-directory artifacts/test-results
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: integration-test-results
@@ -133,7 +133,7 @@ jobs:
           --collect:"XPlat Code Coverage"
           --results-directory artifacts/test-results
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: api-test-results
@@ -212,7 +212,7 @@ jobs:
         if: failure()
         run: docker compose logs --no-color --tail 200
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: playwright-report
