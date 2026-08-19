@@ -6,7 +6,7 @@ public sealed record ShowcaseItem(
     string Description,
     decimal StartingPrice,
     decimal MinimumBidIncrement,
-    int DurationHours);
+    int DurationDays);
 
 public static class ShowcaseCatalog
 {
@@ -20,7 +20,7 @@ public static class ShowcaseCatalog
             + "Ekspertiz raporu kazanan teklif sahibiyle paylaşılır.",
             145_000m,
             1_000m,
-            72),
+            365),
         new(
             "iphone-17",
             "iPhone 17 Pro Max — Mühürlü Kutu",
@@ -29,7 +29,7 @@ public static class ShowcaseCatalog
             + "fatura ve üretici garantisi kazanan teklif sahibine devredilir.",
             84_000m,
             500m,
-            60),
+            340),
         new(
             "canon-5d",
             "Canon EOS 5D Mark IV — Stüdyo Seti",
@@ -38,7 +38,7 @@ public static class ShowcaseCatalog
             + "Sensörü yetkili servis tarafından yakın zamanda temizlenip kalibre edildi.",
             1_850m,
             50m,
-            48),
+            320),
         new(
             "vintage-sofa",
             "Vintage Deri Chesterfield Koltuk",
@@ -47,7 +47,7 @@ public static class ShowcaseCatalog
             + "Yeniden döşeme gerektirmez; deri esnekliğini ve yapısal sağlamlığını koruyor.",
             4_200m,
             100m,
-            96),
+            355),
         new(
             "satellite",
             "Referans Serisi Satellite Hoparlör",
@@ -56,7 +56,7 @@ public static class ShowcaseCatalog
             + "Stüdyo referans sisteminden çıkma; sürücüler ve kabin kusursuz durumda.",
             8_500m,
             250m,
-            120),
+            330),
         new(
             "fridge",
             "Ankastre Panel Uyumlu Buzdolabı",
@@ -65,6 +65,6 @@ public static class ShowcaseCatalog
             + "Bir mimarlık showroom'undan çıkma teşhir ünitesi; hiç kullanılmadı, üretici garantisi devam ediyor.",
             3_400m,
             100m,
-            36)
+            305)
     ];
 }

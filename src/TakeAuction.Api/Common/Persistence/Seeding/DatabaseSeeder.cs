@@ -86,14 +86,24 @@ public static class DatabaseSeeder
             return;
         }
 
+        var now = DateTimeOffset.UtcNow;
+
+        await AddMissingShowcaseAuctionsAsync(db, sellerId, now, cancellationToken);
+        await ReopenClosedShowcaseAuctionsAsync(db, now, cancellationToken);
+    }
+
+    private static async Task AddMissingShowcaseAuctionsAsync(
+        AppDbContext db,
+        Guid sellerId,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
         var titles = ShowcaseCatalog.Items.Select(item => item.Title).ToArray();
 
         var existingTitles = await db.Auctions
             .Where(a => titles.Contains(a.Title))
             .Select(a => a.Title)
             .ToListAsync(cancellationToken);
-
-        var now = DateTimeOffset.UtcNow;
 
         var missing = ShowcaseCatalog.Items
             .Where(item => !existingTitles.Contains(item.Title))
@@ -104,7 +114,7 @@ public static class DatabaseSeeder
                 item.StartingPrice,
                 item.MinimumBidIncrement,
                 now,
-                now.AddHours(item.DurationHours),
+                now.AddDays(item.DurationDays),
                 now))
             .ToArray();
 
@@ -115,5 +125,47 @@ public static class DatabaseSeeder
 
         await db.Auctions.AddRangeAsync(missing, cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// The showcase lots exist so a visitor can always place a bid, which stops being true the
+    /// moment their clock runs out. Reopening them on startup puts the demo back in reach
+    /// without touching the bids already on them: the price, the leader and the ceiling behind
+    /// it all stand, only the closing time moves. A lot the seller withdrew stays withdrawn —
+    /// that is a decision made in the app, not an expired demo.
+    /// </summary>
+    private static async Task ReopenClosedShowcaseAuctionsAsync(
+        AppDbContext db,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        var titles = ShowcaseCatalog.Items.Select(item => item.Title).ToArray();
+
+        var closedTitles = await db.Auctions
+            .Where(a => titles.Contains(a.Title)
+                && a.Status != AuctionStatus.Cancelled
+                && a.EndsAtUtc <= now)
+            .Select(a => a.Title)
+            .ToListAsync(cancellationToken);
+
+        if (closedTitles.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var item in ShowcaseCatalog.Items.Where(item => closedTitles.Contains(item.Title)))
+        {
+            var endsAtUtc = now.AddDays(item.DurationDays);
+
+            await db.Auctions
+                .Where(a => a.Title == item.Title
+                    && a.Status != AuctionStatus.Cancelled
+                    && a.EndsAtUtc <= now)
+                .ExecuteUpdateAsync(
+                    setters => setters
+                        .SetProperty(a => a.EndsAtUtc, endsAtUtc)
+                        .SetProperty(a => a.Status, AuctionStatus.Active),
+                    cancellationToken);
+        }
     }
 }
