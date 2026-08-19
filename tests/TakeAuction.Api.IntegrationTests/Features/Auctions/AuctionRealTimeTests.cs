@@ -314,6 +314,75 @@ public sealed class AuctionRealTimeTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task A_bid_reaches_the_lobby_so_the_salon_list_can_follow_it()
+    {
+        await using var connection = _fixture.CreateHubConnection();
+        var received = Capture<BidPlacedNotification>(connection, nameof(IAuctionClient.BidPlaced));
+
+        await connection.StartAsync();
+        await connection.InvokeAsync(nameof(AuctionHub.SubscribeToLobby));
+
+        var bidder = await _fixture.CreateUserAsync(UserRole.Bidder);
+        var client = await _fixture.CreateClientAsAsync(bidder);
+
+        (await client.PostAsJsonAsync(BidsUrl(_auctionId), new PlaceBidRequest(150m)))
+            .EnsureSuccessStatusCode();
+
+        var notification = await received.Task.WaitAsync(DeliveryTimeout);
+
+        Assert.Equal(_auctionId, notification.AuctionId);
+        Assert.Equal(bidder.Id, notification.BidderId);
+        Assert.Equal(StartingPrice, notification.Amount);
+    }
+
+    [Fact]
+    public async Task A_rival_taking_the_lead_reaches_the_lobby_at_the_new_price()
+    {
+        var first = await _fixture.CreateUserAsync(UserRole.Bidder);
+        var firstClient = await _fixture.CreateClientAsAsync(first);
+        (await firstClient.PostAsJsonAsync(BidsUrl(_auctionId), new PlaceBidRequest(150m)))
+            .EnsureSuccessStatusCode();
+
+        await _fixture.WaitForOutboxDrainAsync();
+
+        await using var connection = _fixture.CreateHubConnection();
+        var received = Capture<BidPlacedNotification>(connection, nameof(IAuctionClient.BidPlaced));
+
+        await connection.StartAsync();
+        await connection.InvokeAsync(nameof(AuctionHub.SubscribeToLobby));
+
+        var second = await _fixture.CreateUserAsync(UserRole.Bidder);
+        var secondClient = await _fixture.CreateClientAsAsync(second);
+        (await secondClient.PostAsJsonAsync(BidsUrl(_auctionId), new PlaceBidRequest(200m)))
+            .EnsureSuccessStatusCode();
+
+        var notification = await received.Task.WaitAsync(DeliveryTimeout);
+
+        Assert.Equal(_auctionId, notification.AuctionId);
+        Assert.Equal(second.Id, notification.BidderId);
+        Assert.Equal(155m, notification.Amount);
+        Assert.Equal(StartingPrice, notification.PreviousPrice);
+    }
+
+    [Fact]
+    public async Task Leaving_the_lobby_stops_bid_broadcasts()
+    {
+        await using var connection = _fixture.CreateHubConnection();
+        var received = Capture<BidPlacedNotification>(connection, nameof(IAuctionClient.BidPlaced));
+
+        await connection.StartAsync();
+        await connection.InvokeAsync(nameof(AuctionHub.SubscribeToLobby));
+        await connection.InvokeAsync(nameof(AuctionHub.UnsubscribeFromLobby));
+
+        var bidder = await _fixture.CreateUserAsync(UserRole.Bidder);
+        var client = await _fixture.CreateClientAsAsync(bidder);
+        (await client.PostAsJsonAsync(BidsUrl(_auctionId), new PlaceBidRequest(150m)))
+            .EnsureSuccessStatusCode();
+
+        await AssertStaysSilentAsync(received);
+    }
+
+    [Fact]
     public async Task A_message_published_straight_to_the_broker_is_consumed_and_broadcast()
     {
         await using var connection = _fixture.CreateHubConnection();

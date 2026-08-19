@@ -21,12 +21,12 @@ public sealed class SignalRAuctionNotifier : IAuctionNotifier
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        await _hubContext.Clients
-            .Group(AuctionHub.AuctionGroup(notification.AuctionId))
-            .BidPlaced(notification);
+        string[] groups = [AuctionHub.AuctionGroup(notification.AuctionId), AuctionHub.LobbyGroup];
+
+        await _hubContext.Clients.Groups(groups).BidPlaced(notification);
 
         _logger.LogDebug(
-            "Broadcast bid {BidId} of {Amount} to watchers of auction {AuctionId}",
+            "Broadcast bid {BidId} of {Amount} to watchers of auction {AuctionId} and the lobby",
             notification.BidId,
             notification.Amount,
             notification.AuctionId);

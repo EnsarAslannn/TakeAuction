@@ -22,16 +22,19 @@ public sealed class SignalRAuctionNotifierTests
     }
 
     [Fact]
-    public async Task Sends_a_bid_only_to_watchers_of_that_auction()
+    public async Task Sends_a_bid_to_both_the_auction_group_and_the_lobby()
     {
-        _clients.Group(AuctionHub.AuctionGroup(AuctionId)).Returns(_target);
+        _clients
+            .Groups(Arg.Is<IReadOnlyList<string>>(groups =>
+                groups.Contains(AuctionHub.AuctionGroup(AuctionId))
+                && groups.Contains(AuctionHub.LobbyGroup)))
+            .Returns(_target);
 
         var notification = BidNotification();
 
         await _notifier.BidPlacedAsync(notification, CancellationToken.None);
 
         await _target.Received(1).BidPlaced(notification);
-        _clients.Received(1).Group(AuctionHub.AuctionGroup(AuctionId));
     }
 
     [Fact]
@@ -40,8 +43,10 @@ public sealed class SignalRAuctionNotifierTests
         var otherAuction = Guid.CreateVersion7();
         var otherTarget = Substitute.For<IAuctionClient>();
 
-        _clients.Group(AuctionHub.AuctionGroup(AuctionId)).Returns(_target);
-        _clients.Group(AuctionHub.AuctionGroup(otherAuction)).Returns(otherTarget);
+        _clients
+            .Groups(Arg.Is<IReadOnlyList<string>>(groups =>
+                groups.Contains(AuctionHub.AuctionGroup(otherAuction))))
+            .Returns(otherTarget);
 
         await _notifier.BidPlacedAsync(BidNotification(), CancellationToken.None);
 
@@ -113,7 +118,7 @@ public sealed class SignalRAuctionNotifierTests
         using var cancellation = new CancellationTokenSource();
         await cancellation.CancelAsync();
 
-        _clients.Group(Arg.Any<string>()).Returns(_target);
+        _clients.Groups(Arg.Any<IReadOnlyList<string>>()).Returns(_target);
 
         await Assert.ThrowsAsync<OperationCanceledException>(
             () => _notifier.BidPlacedAsync(BidNotification(), cancellation.Token));
