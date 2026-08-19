@@ -147,13 +147,17 @@ curl https://<api>.up.railway.app/health/ready
 
 Then, from the deployed SPA:
 
-- `https://<api>.up.railway.app/api/v1/diagnostics/info` — called directly, `clientIp` should be
-  your own address. Through the Vercel rewrite the same endpoint reports a Vercel egress address
-  instead, which is expected and explained above.
+- `https://<api>.up.railway.app/api/v1/diagnostics/info` — signed in and called directly,
+  `clientIp` should be your own address. Through the Vercel rewrite the same endpoint reports a
+  Vercel egress address instead, which is expected and explained above. Anonymous callers get a
+  401: the endpoint reports the environment, so it is not left open.
 - Sign in as the seeded bidder. A `takeauction_access_token` cookie scoped to the Vercel host
   means the proxy is doing its job.
-- Open a lot in two tabs and bid in one. The other updating without a refresh means the hub
-  connected; if it did not, the browser console will name the CORS origin to add.
+- Open the same lot as two different bidders and bid from one. Use two browser profiles or a
+  private window — plain tabs share one cookie jar, so the second sign-in replaces the first and
+  both tabs end up as the same person. The other screen moving without a refresh means the hub
+  connected; if it did not, the browser console will name the CORS origin to add. Bid above the
+  standing bidder's ceiling, or the proxy answers and the price moves by one increment only.
 
 ## What is not deployed
 

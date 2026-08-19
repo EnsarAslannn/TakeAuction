@@ -86,6 +86,7 @@ try
         scheme = httpContext.Request.Scheme,
         timestamp = DateTimeOffset.UtcNow
     }))
+    .RequireAuthorization()
     .WithName("DiagnosticsInfo")
     .WithTags("Diagnostics")
     .WithSummary("Returns runtime information and the client IP as resolved behind the reverse proxy.");

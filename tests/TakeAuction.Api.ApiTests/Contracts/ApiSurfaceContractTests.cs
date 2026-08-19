@@ -18,9 +18,9 @@ public sealed class ApiSurfaceContractTests : IAsyncLifetime
     [Fact]
     public async Task The_diagnostics_endpoint_reports_the_resolved_version()
     {
-        using var client = _fixture.CreateRawClient();
+        using var session = await _fixture.CreateBidderAsync();
 
-        var response = await client.GetAsync("/api/v1/diagnostics/info");
+        var response = await session.GetAsync("/api/v1/diagnostics/info");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
@@ -28,6 +28,16 @@ public sealed class ApiSurfaceContractTests : IAsyncLifetime
 
         JsonAssert.HasProperties(body, "service", "apiVersion", "environment", "scheme", "timestamp");
         Assert.Equal("1", body.GetProperty("apiVersion").GetString());
+    }
+
+    [Fact]
+    public async Task The_diagnostics_endpoint_is_closed_to_anonymous_callers()
+    {
+        using var client = _fixture.CreateRawClient();
+
+        var response = await client.GetAsync("/api/v1/diagnostics/info");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]
