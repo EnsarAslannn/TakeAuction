@@ -7,13 +7,6 @@ public interface IAuctionCloseSchedule
     void ScheduleClose(Guid auctionId, DateTimeOffset endsAtUtc, DateTimeOffset nowUtc);
 }
 
-/// <summary>
-/// Books a lot's close for the second it is due, so a lot does not sit sold-but-open waiting
-/// for the next sweep. Nothing is ever cancelled: when a late bid moves the close, a second
-/// job is simply booked for the new time, and the one already in the queue arrives early,
-/// finds the lot not due, and costs a single indexed read. Cancelling would mean tracking a
-/// job id per auction and getting it right under contention, to save that read.
-/// </summary>
 public sealed class AuctionCloseSchedule : IAuctionCloseSchedule
 {
     private readonly IBackgroundJobClient _jobs;

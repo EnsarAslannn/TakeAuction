@@ -90,8 +90,6 @@ public sealed class GetAuctionBidsContractTests : IAsyncLifetime
     [Fact]
     public async Task The_ladder_comes_back_highest_first()
     {
-        // Each ceiling only pays one increment over the one before it, so the ladder the feed
-        // shows is not the ladder of ceilings that produced it.
         await PlaceLadderAsync(150m, 200m, 250m);
 
         using var session = _fixture.CreateSession();
@@ -133,10 +131,6 @@ public sealed class GetAuctionBidsContractTests : IAsyncLifetime
         Assert.Equal(GetAuctionBidsQuery.MaxPageSize, page.PageSize);
     }
 
-    /// <summary>
-    /// The history is a public record of the bidding, not of the bidders — the salon shows
-    /// what was bid and when, and never puts a name to it.
-    /// </summary>
     [Fact]
     public async Task The_history_names_nobody()
     {

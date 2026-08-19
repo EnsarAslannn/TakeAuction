@@ -50,9 +50,6 @@ class AuctionHubClient {
   }
 
   private build(): HubConnection {
-    // The negotiate step is a POST, so it hits the API's CSRF double-submit check
-    // as soon as an access-token cookie exists. The WebSocket upgrade itself is a
-    // GET and is exempt, but browsers cannot set headers on it anyway.
     const csrf = readCookie(CSRF_COOKIE);
 
     const connection = new HubConnectionBuilder()
@@ -72,8 +69,6 @@ class AuctionHubClient {
       this.statusHandlers.forEach((handler) => handler(notification))
     );
 
-    // Addressed to this bidder rather than to a group they joined, so there is nothing to
-    // subscribe to: the server sends it because of who the connection belongs to.
     connection.on("Outbid", (notification: OutbidNotification) =>
       this.outbidHandlers.forEach((handler) => handler(notification))
     );
@@ -148,11 +143,6 @@ class AuctionHubClient {
     };
   }
 
-  /**
-   * Keeps the connection open without joining anything. A bidder browsing elsewhere in the
-   * salon has no lot subscribed, and the message telling them they were outbid is exactly the
-   * one they need while they are not looking at it.
-   */
   async hold(): Promise<() => void> {
     this.holders += 1;
     await this.ensureStarted();
@@ -165,9 +155,6 @@ class AuctionHubClient {
   onStateChange(handler: StateHandler): () => void {
     this.stateHandlers.add(handler);
 
-    // The connection outlives any one component, so a subscriber that arrives after it opened
-    // would otherwise sit on "disconnected" until something happened to the socket — and on a
-    // healthy connection nothing does. Hand it the state as it stands.
     handler(this.state);
 
     return () => {
@@ -196,10 +183,6 @@ class AuctionHubClient {
     };
   }
 
-  /**
-   * Tears the connection down so the next subscribe rebuilds it. Call after login or
-   * logout: the CSRF header is baked in at build time and would otherwise go stale.
-   */
   async reset(): Promise<void> {
     const connection = this.connection;
     this.connection = null;

@@ -6,10 +6,6 @@ interface StudioProps {
   float?: boolean;
 }
 
-/**
- * Shared lighting rig. The environment map is built from in-scene Lightformers
- * rather than a drei preset, so nothing is fetched from a CDN at runtime.
- */
 export function Studio({ children, shadowOpacity = 0.42, float = true }: StudioProps) {
   const body = float ? (
     <Float speed={1.1} rotationIntensity={0.12} floatIntensity={0.35} floatingRange={[-0.06, 0.06]}>

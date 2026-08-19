@@ -54,8 +54,6 @@ export function Auctions() {
           ? {
               ...previous,
               items: previous.items.map((item) =>
-                // Broadcasts from simultaneous bids can arrive out of order, and a live
-                // auction's price only ever climbs.
                 item.id === notification.auctionId && notification.amount > item.currentPrice
                   ? { ...item, currentPrice: notification.amount }
                   : item

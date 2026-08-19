@@ -33,7 +33,6 @@ public sealed class LoginHandler : IRequestHandler<LoginCommand, LoginResult>
 
         if (user is null)
         {
-            // Hash anyway so a missing account and a wrong password take comparable time.
             _passwordHasher.Verify(DummyHash, command.Password);
 
             return LoginResult.Rejected(LoginRejection.InvalidCredentials);

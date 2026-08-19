@@ -58,8 +58,6 @@ public sealed class AuctionBiddingTests
 
         Assert.Equal(100m, auction.MinimumAcceptableBid);
 
-        // The opener's ceiling of 120 buys the lot at the asking price, so the next rival is
-        // bidding against 100, not against a number only the house can see.
         auction.PlaceBid(Bidder, 120m, TestHarness.Now);
 
         Assert.Equal(105m, auction.MinimumAcceptableBid);

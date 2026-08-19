@@ -103,8 +103,6 @@ public sealed class AuctionRealTimeTests : IAsyncLifetime
 
         var notification = await received.Task.WaitAsync(DeliveryTimeout);
 
-        // Watchers see the lot, not the submission: the leader held it, so the broadcast is
-        // the answer placed on their behalf, and it says so.
         Assert.Equal(leader.Id, notification.BidderId);
         Assert.Equal(305m, notification.Amount);
         Assert.True(notification.Automatic);
@@ -134,7 +132,6 @@ public sealed class AuctionRealTimeTests : IAsyncLifetime
 
         var notification = await received.Task.WaitAsync(DeliveryTimeout);
 
-        // 200 beats the ceiling of 150, so it takes the lot at one increment over it.
         Assert.Equal(155m, notification.Amount);
         Assert.Equal(StartingPrice, notification.PreviousPrice);
         Assert.Equal(first.Id, notification.OutbidBidderId);
@@ -150,8 +147,6 @@ public sealed class AuctionRealTimeTests : IAsyncLifetime
 
         await _fixture.WaitForOutboxDrainAsync();
 
-        // Signed in but watching nothing: the notice arrives because of who the connection
-        // belongs to, which is the whole point of it.
         await using var connection = _fixture.CreateHubConnectionAs(leader);
         var received = Capture<OutbidNotification>(connection, nameof(IAuctionClient.Outbid));
         await connection.StartAsync();

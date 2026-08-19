@@ -1,7 +1,4 @@
 root = true
 
-# .gitattributes checks every text file out with LF, so formatting has to agree with it.
-# Without this, dotnet format falls back to the newline of whichever OS it runs on and
-# reports the whole repo as misformatted on Windows while CI stays green on Linux.
 [*]
 end_of_line = lf

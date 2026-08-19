@@ -26,10 +26,6 @@ public sealed class AdminOnlyDashboardFilterTests
         Assert.True(AdminOnlyDashboardFilter.IsAdmin(PrincipalWith(nameof(UserRole.Admin))));
     }
 
-    /// <summary>
-    /// The dashboard can requeue and delete jobs, so a principal carrying the claim without
-    /// a real authentication behind it must not count.
-    /// </summary>
     [Fact]
     public void An_unauthenticated_principal_carrying_the_role_claim_is_still_turned_away()
     {

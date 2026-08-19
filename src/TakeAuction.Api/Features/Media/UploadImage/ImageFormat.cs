@@ -11,10 +11,6 @@ public sealed record ImageFormat(string ContentType, string Extension)
 
     private static readonly byte[] PngSignature = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
 
-    /// <summary>
-    /// Identifies the image by its magic bytes rather than the client-supplied content type,
-    /// so a renamed executable cannot be stored under an image extension.
-    /// </summary>
     public static ImageFormat? Detect(ReadOnlySpan<byte> signature)
     {
         if (signature.Length >= 3 && signature[0] == 0xFF && signature[1] == 0xD8 && signature[2] == 0xFF)

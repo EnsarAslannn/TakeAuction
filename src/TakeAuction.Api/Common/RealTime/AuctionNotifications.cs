@@ -12,11 +12,6 @@ public sealed record BidPlacedNotification(
     bool AuctionExtended,
     DateTimeOffset OccurredAtUtc);
 
-/// <summary>
-/// Sent to one bidder rather than to a group: it is the only message in the system that is
-/// about a person instead of a lot. It carries the title because the whole point is reaching
-/// somebody who has moved on and is looking at something else entirely.
-/// </summary>
 public sealed record OutbidNotification(
     Guid AuctionId,
     string AuctionTitle,

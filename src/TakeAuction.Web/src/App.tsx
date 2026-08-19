@@ -10,8 +10,6 @@ import { Login } from "@/pages/Login";
 import { Register } from "@/pages/Register";
 import { canSell, useAuthStore } from "@/store/authStore";
 
-// The lot page mounts its own WebGL viewer, so importing it eagerly would drag
-// three.js into the landing page's bundle for a route the visitor may never open.
 const AuctionDetail = lazy(() =>
   import("@/pages/AuctionDetail").then((module) => ({ default: module.AuctionDetail }))
 );

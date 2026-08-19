@@ -77,7 +77,6 @@ export async function uploadAuctionImage(file: File): Promise<UploadImageRespons
   const body = new FormData();
   body.append("file", file);
 
-  // Content-Type is left unset on purpose: the browser has to add the multipart boundary.
   const { data } = await http.post<UploadImageResponse>("/media/images", body);
 
   return data;

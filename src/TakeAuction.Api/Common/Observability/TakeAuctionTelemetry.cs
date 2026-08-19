@@ -3,17 +3,6 @@ using System.Diagnostics.Metrics;
 
 namespace TakeAuction.Api.Common.Observability;
 
-/// <summary>
-/// The instruments this system is judged by. Request counts and latencies come free from the
-/// ASP.NET Core instrumentation; what does not is the thing the design exists to handle — how
-/// hard the bidding contended, how often the optimistic check had to send a bid round again,
-/// and whether the outbox is keeping up. A load test can only tell you the outside story;
-/// these say what happened inside.
-///
-/// Built through <see cref="IMeterFactory"/> rather than from a static field so the meter
-/// belongs to the container that made it. A process-wide meter would be simpler right up until
-/// two tests ran at once and each saw the other's measurements.
-/// </summary>
 public sealed class TakeAuctionTelemetry
 {
     public const string ServiceName = "TakeAuction.Api";

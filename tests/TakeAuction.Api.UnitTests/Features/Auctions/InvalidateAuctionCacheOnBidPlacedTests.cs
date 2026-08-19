@@ -34,8 +34,6 @@ public sealed class InvalidateAuctionCacheOnBidPlacedTests
 
         await _handler.Handle(Event(), CancellationToken.None);
 
-        // The old entry is left to expire on its own. What matters is that the key readers
-        // now compute is a different one, and it is empty.
         var current = AuctionCache.DetailKey(
             AuctionId,
             await _auctionCache.GetDetailGenerationAsync(AuctionId, CancellationToken.None));

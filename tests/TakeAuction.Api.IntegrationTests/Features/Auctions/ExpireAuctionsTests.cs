@@ -218,11 +218,6 @@ public sealed class ExpireAuctionsTests : IAsyncLifetime
     {
         var auctionId = await ListAuctionAsync(runsFor: TimeSpan.FromMinutes(6));
 
-        // Six minutes out, so the bid lands well inside the default one-minute closing window
-        // only after the clock has run down — which it has not. Instead the lot is nudged by a
-        // bid that does extend it: the shortest lot the validator allows still closes inside
-        // the window once its own close is a minute away, so this asserts the booking count
-        // rather than trying to race a real clock.
         var bidder = await _fixture.CreateUserAsync(UserRole.Bidder);
         var bidderClient = await _fixture.CreateClientAsAsync(bidder);
 
@@ -237,7 +232,6 @@ public sealed class ExpireAuctionsTests : IAsyncLifetime
                 && entry.Value.Job.Args[0] is Guid id
                 && id == auctionId);
 
-        // An ordinary bid changes nothing about when the lot closes, so nothing is re-booked.
         Assert.Equal(1, bookings);
     }
 
@@ -313,8 +307,6 @@ public sealed class ExpireAuctionsTests : IAsyncLifetime
 
             if (winner is { } bid)
             {
-                // Two ceilings at the same figure leave the lot exactly there, held by the one
-                // that got in first: an unopposed bid would only ever buy the asking price.
                 Assert.True(auction.PlaceBid(bid.BidderId, bid.Amount, startsAt).Succeeded);
                 Assert.True(auction.PlaceBid(Guid.CreateVersion7(), bid.Amount, startsAt).Succeeded);
             }

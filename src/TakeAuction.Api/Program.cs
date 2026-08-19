@@ -66,8 +66,6 @@ try
     app.UseAuthorization();
     app.UseRateLimiter();
 
-    // After authentication on purpose: the dashboard's authorization filter reads the
-    // signed-in principal, which does not exist yet earlier in the pipeline.
     app.UseTakeAuctionJobsDashboard();
 
     ApiVersionSet versionSet = app.NewApiVersionSet()

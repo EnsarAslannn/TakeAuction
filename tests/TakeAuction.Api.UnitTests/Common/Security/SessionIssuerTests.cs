@@ -62,10 +62,6 @@ public sealed class SessionIssuerTests
         Assert.Equal(2, families.Distinct().Count());
     }
 
-    /// <summary>
-    /// Rotation is the whole point of the design: the presented token dies in the same save
-    /// that mints its successor, so a chain never has two live links.
-    /// </summary>
     [Fact]
     public async Task Rotating_retires_the_presented_token_and_keeps_the_family()
     {

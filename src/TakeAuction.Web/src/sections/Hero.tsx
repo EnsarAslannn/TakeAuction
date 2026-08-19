@@ -16,19 +16,11 @@ const BACKGROUND = "/visuals/auction-hall.webp";
 const BACKGROUND_FALLBACK = "/visuals/hero-atrium.webp";
 
 const FAN = {
-  /** Card-width fraction each step is offset by, before rotation adds its own spread. */
   spacingRatio: 0.72,
-  /**
-   * Rotating about a pivot below the card drags each neighbour back toward the
-   * middle, so the step has to stay wide enough that the neighbour's centre
-   * clears the selected card — otherwise half of it stops being clickable.
-   */
   minSpacingRatio: 0.68,
-  /** Degrees of tilt per step away from the selected lot. */
   tilt: 5,
   liftPerStep: 10,
   scalePerStep: 0.09,
-  /** Pivot below the card, so rotation swings like a held hand of cards. */
   origin: "50% 120%",
   duration: 0.85,
   ease: "power3.out",
@@ -53,20 +45,12 @@ function placeCard(offset: number, spacing: number, visible: number): Placement 
     y: distance * FAN.liftPerStep,
     rotation: offset * FAN.tilt,
     scale: Math.max(0.7, 1 - distance * FAN.scalePerStep),
-    // Cards stay fully opaque inside the fan — depth comes from scale and the
-    // scrim, not translucency, so the room behind never shows through them.
     opacity: hidden ? 0 : 1,
     zIndex: 100 - distance,
     pointerEvents: hidden ? "none" : "auto",
   };
 }
 
-/**
- * The landing stage: a full-bleed room photograph, the platform's own statement
- * on the left, and the catalogue fanned out on the right. Selection is driven by
- * the arrows, the cards themselves, or a horizontal drag — never by page scroll,
- * so the page scrolls past normally.
- */
 export function Hero({ auctions }: HeroProps) {
   const [index, setIndex] = useState(0);
   const total = SHOWCASE.length;
@@ -88,8 +72,6 @@ export function Hero({ auctions }: HeroProps) {
   const settled = useRef(false);
   const [layout, setLayout] = useState({ spacing: 0, visible: 2 });
 
-  // The fan has to stay inside its column, so the step is the smaller of the
-  // ideal spread and whatever the measured stage can actually hold.
   const measure = useCallback(() => {
     const stage = stageRef.current;
     const card = cardRefs.current[0];
@@ -118,7 +100,6 @@ export function Hero({ auctions }: HeroProps) {
     if (!layout.spacing) return;
 
     const tweens: gsap.core.Tween[] = [];
-    // The first pass and reduced-motion both place cards without travel.
     const instant = !settled.current || reducedMotion;
 
     cardRefs.current.forEach((card, cardIndex) => {
@@ -159,8 +140,6 @@ export function Hero({ auctions }: HeroProps) {
 
     settled.current = true;
 
-    // Killing mid-flight leaves each card where it stands, so the next
-    // selection tweens on from there instead of snapping.
     return () => tweens.forEach((tween) => tween.kill());
   }, [index, layout, reducedMotion]);
 
@@ -235,8 +214,6 @@ export function Hero({ auctions }: HeroProps) {
               }`}
               style={{
                 touchAction: "pan-y",
-                // Feathered edges so a card leaving the fan dissolves instead of
-                // meeting a hard clip against the stage bounds.
                 maskImage:
                   "linear-gradient(to right, transparent 0%, #000 7%, #000 93%, transparent 100%)",
                 WebkitMaskImage:
@@ -367,16 +344,12 @@ function CarouselCard({
 
       <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/25 to-transparent" />
 
-      {/* Dim inactive cards with a scrim rather than opacity, so the room
-          behind the section never shows through the card. */}
       <div
         className={`absolute inset-0 bg-ink transition-opacity duration-700 ease-editorial ${
           isActive ? "opacity-0" : "opacity-45 group-hover:opacity-20"
         }`}
       />
 
-      {/* Only the selected lot is captioned — captions on the fanned cards
-          behind it read as loose text floating over the room. */}
       {auction && (
         <span
           className={`absolute right-3 top-3 rounded-full bg-paper/90 px-3 py-1 font-mono text-[0.6rem] uppercase tracking-[0.14em] tabular-nums text-ink backdrop-blur-md transition-opacity duration-500 ease-editorial ${

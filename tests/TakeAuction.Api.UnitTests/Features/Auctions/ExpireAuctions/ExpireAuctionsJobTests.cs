@@ -257,8 +257,6 @@ public sealed class ExpireAuctionsJobTests : IDisposable
 
         if (winningBid is { } bid)
         {
-            // Two ceilings at the same figure leave the lot exactly there, held by the one
-            // that got in first: an unopposed bid would only ever buy the asking price.
             Assert.True(auction.PlaceBid(bid.BidderId, bid.Amount, startsAt).Succeeded);
             Assert.True(auction.PlaceBid(Guid.CreateVersion7(), bid.Amount, startsAt).Succeeded);
         }

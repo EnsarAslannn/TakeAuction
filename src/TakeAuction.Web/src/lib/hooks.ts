@@ -11,7 +11,6 @@ export function useNow(intervalMs = 1000): number {
   return now;
 }
 
-/** True on narrow viewports, where the 3D stage shares height with the caption. */
 export function useIsCompact(breakpoint = 768): boolean {
   const [compact, setCompact] = useState(() => window.innerWidth < breakpoint);
 
@@ -41,10 +40,6 @@ export function usePrefersReducedMotion(): boolean {
   return reduced;
 }
 
-/**
- * Tracks visibility continuously, unlike `useInView` which latches on first entry.
- * Drives work that must stop again once the element leaves the viewport.
- */
 export function useIsVisible<T extends HTMLElement>(rootMargin = "0px") {
   const ref = useRef<T | null>(null);
   const [visible, setVisible] = useState(false);
@@ -65,7 +60,6 @@ export function useIsVisible<T extends HTMLElement>(rootMargin = "0px") {
   return { ref, visible };
 }
 
-/** Fires once when the element first crosses into view. */
 export function useInView<T extends HTMLElement>(rootMargin = "-12% 0px") {
   const ref = useRef<T | null>(null);
   const [inView, setInView] = useState(false);

@@ -1,13 +1,7 @@
-# Overlay for load runs. Without it the run measures the rate limiter rather than the
-# database: two hundred virtual users from one host all land in the same partition.
-#
-#   docker compose -f docker-compose.yml -f docker-compose.load.yml up --detach --wait
 
 services:
   api:
     environment:
       RateLimiting__PermitLimit: "1000000"
       RateLimiting__AuthPermitLimit: "1000000"
-      # Console logging is the bottleneck long before the API is, and a load run produces a
-      # request log line per bid.
       Serilog__MinimumLevel__Default: "Warning"

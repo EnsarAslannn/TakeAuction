@@ -19,8 +19,6 @@ test.describe("Eşzamanlı teklif ve canlı fiyat", () => {
     const bob = await openBidder(browser, auction);
 
     try {
-      // Both screens agree on the floor before anybody moves, which is what makes the
-      // two submissions collide on the same row version instead of queueing politely.
       expect(await alice.panel.readAmount()).toBe(STARTING_PRICE);
       expect(await bob.panel.readAmount()).toBe(STARTING_PRICE);
 
@@ -44,8 +42,6 @@ test.describe("Eşzamanlı teklif ve canlı fiyat", () => {
         `expected exactly one winner, got: ${outcomes.map((o) => `${o.kind} (${o.text})`).join(" | ")}`
       ).toHaveLength(1);
 
-      // The optimistic concurrency check is only worth anything if the database agrees
-      // with what the two screens were told.
       const persisted = await getAuction(request, auction.id);
       expect(persisted.bidCount).toBe(1);
       expect(persisted.currentPrice).toBe(STARTING_PRICE);
@@ -53,7 +49,6 @@ test.describe("Eşzamanlı teklif ve canlı fiyat", () => {
 
       const loser = aliceOutcome.kind === "leading" ? bob : alice;
 
-      // The loser never reloaded: everything below arrived over the hub.
       await expect(loser.panel.currentPrice).toHaveText(amountPattern(STARTING_PRICE));
       await expect(loser.panel.liveFeedItems).toHaveCount(1);
       await expect(loser.panel.bidCounter).toHaveText(/1 teklif verildi/);
@@ -78,8 +73,6 @@ test.describe("Eşzamanlı teklif ve canlı fiyat", () => {
     try {
       await registerBidder(aliceApi.request);
 
-      // Hold Bob's bid on the wire. His payload is now fixed at the old floor while the
-      // world moves on — the deterministic version of losing a race.
       let release: () => void = () => undefined;
       let parked: () => void = () => undefined;
 
@@ -100,10 +93,8 @@ test.describe("Eşzamanlı teklif ve canlı fiyat", () => {
       await bob.panel.submit();
       await bidLeftTheBrowser;
 
-      // Alice wins the lot while Bob's request is still parked.
       await placeBid(aliceApi.request, auction.id, STARTING_PRICE);
 
-      // Bob's screen is corrected by the hub before his own answer comes back.
       await expect(bob.panel.currentPrice).toHaveText(amountPattern(STARTING_PRICE));
       await expect(bob.panel.liveFeedItems).toHaveCount(1);
 
@@ -153,13 +144,9 @@ test.describe("Eşzamanlı teklif ve canlı fiyat", () => {
 
       const persisted = await getAuction(request, auction.id);
 
-      // A submission answered by a proxy writes two rows, so the ladder is no longer one rung
-      // per bidder — but every accepted submission is on it, and the asking price still
-      // follows from the price the lot shows.
       expect(persisted.bidCount).toBeGreaterThanOrEqual(accepted.length);
       expect(persisted.minimumAcceptableBid).toBe(persisted.currentPrice + INCREMENT);
 
-      // Every screen converges on the settled price over the hub.
       for (const bidder of bidders) {
         await expect(bidder.panel.currentPrice).toHaveText(amountPattern(persisted.currentPrice));
       }
@@ -190,8 +177,6 @@ test.describe("Eşzamanlı teklif ve canlı fiyat", () => {
     const rivalContext = await browser.newContext();
 
     try {
-      // Takes a contest to move the price: the first ceiling only buys the asking price, and
-      // it is the second one running into it that pushes the lot up.
       await registerBidder(leaderContext.request);
       await placeBid(leaderContext.request, auction.id, 2000);
 

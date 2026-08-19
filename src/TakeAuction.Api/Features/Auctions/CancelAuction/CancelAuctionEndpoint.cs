@@ -41,8 +41,6 @@ public sealed class CancelAuctionEndpoint : IEndpoint
             detail: $"No auction exists with id '{auctionId}'.",
             statusCode: StatusCodes.Status404NotFound),
 
-        // Deliberately the same answer a stranger gets for a lot that does not exist: telling
-        // them it exists but belongs to somebody else is more than they are entitled to know.
         CancelRejection.NotTheSeller => Results.Problem(
             title: "Auction not found",
             detail: $"No auction exists with id '{auctionId}'.",

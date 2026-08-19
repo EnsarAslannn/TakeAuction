@@ -9,10 +9,6 @@ public sealed class AuthCookieWriter
     public const string CsrfHeaderName = "X-CSRF-TOKEN";
     public const string RefreshCookieName = "takeauction_refresh_token";
 
-    /// <summary>
-    /// Scoped to the auth slice rather than the whole site, so the long-lived credential stays
-    /// off the wire on the hot bidding path and only travels to refresh and logout.
-    /// </summary>
     public const string RefreshCookiePath = "/api/v1/auth";
 
     private readonly AuthCookieOptions _options;
@@ -55,7 +51,6 @@ public sealed class AuthCookieWriter
             CsrfCookieName,
             BuildOptions(context, httpOnly: false, expiresAt: null, "/"));
 
-        // Deleting a cookie only works when the path matches the one it was written with.
         context.Response.Cookies.Delete(
             RefreshCookieName,
             BuildOptions(context, httpOnly: true, expiresAt: null, RefreshCookiePath));

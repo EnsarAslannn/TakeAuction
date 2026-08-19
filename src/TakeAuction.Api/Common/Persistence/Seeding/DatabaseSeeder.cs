@@ -127,13 +127,6 @@ public static class DatabaseSeeder
         await db.SaveChangesAsync(cancellationToken);
     }
 
-    /// <summary>
-    /// The showcase lots exist so a visitor can always place a bid, which stops being true the
-    /// moment their clock runs out. Reopening them on startup puts the demo back in reach
-    /// without touching the bids already on them: the price, the leader and the ceiling behind
-    /// it all stand, only the closing time moves. A lot the seller withdrew stays withdrawn —
-    /// that is a decision made in the app, not an expired demo.
-    /// </summary>
     private static async Task ReopenClosedShowcaseAuctionsAsync(
         AppDbContext db,
         DateTimeOffset now,

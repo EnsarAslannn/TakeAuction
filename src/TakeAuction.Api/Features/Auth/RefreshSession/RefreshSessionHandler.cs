@@ -49,8 +49,6 @@ public sealed class RefreshSessionHandler : IRequestHandler<RefreshSessionComman
 
         if (token.IsRevoked)
         {
-            // The only way a retired token comes back is if somebody kept a copy. The holder
-            // of the live one cannot be told apart from the thief, so the chain ends here.
             _logger.LogWarning(
                 "Refresh token reuse detected for user {UserId}; revoking session family {FamilyId}",
                 token.UserId,

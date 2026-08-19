@@ -14,8 +14,6 @@ export const API_URL = process.env.E2E_API_URL ?? `http://localhost:${API_PORT}`
 export default defineConfig({
   testDir: "./tests",
   outputDir: "./test-results",
-  // Every spec bids against rows in one shared database and the concurrency specs assert
-  // "exactly one winner", so overlapping workers would be indistinguishable from a bug.
   fullyParallel: false,
   workers: 1,
   forbidOnly: Boolean(process.env.CI),
@@ -40,8 +38,6 @@ export default defineConfig({
     {
       command: `dotnet run --no-launch-profile --project "${path.join(repoRoot, "src", "TakeAuction.Api", "TakeAuction.Api.csproj")}"`,
       cwd: repoRoot,
-      // Readiness, not liveness: the specs seed data over the API on their first line, so
-      // waiting for the process to answer is not enough — its stores have to be reachable.
       url: `${API_URL}/health/ready`,
       reuseExistingServer: !process.env.CI,
       timeout: 300_000,
@@ -51,8 +47,6 @@ export default defineConfig({
         ...process.env,
         ASPNETCORE_ENVIRONMENT: "Development",
         ASPNETCORE_URLS: API_URL,
-        // Each simulated bidder opens its own account from the same host, which would
-        // trip the production-shaped auth limiter partway through a single spec.
         RateLimiting__PermitLimit: "1000000",
         RateLimiting__AuthPermitLimit: "1000000",
       },

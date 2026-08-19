@@ -35,9 +35,6 @@ public sealed class BidConfiguration : IEntityTypeConfiguration<Bid>
         builder.Property(b => b.IdempotencyKey)
             .HasMaxLength(Bid.MaxIdempotencyKeyLength);
 
-        // Scoped to the bidder rather than global: one client's key is its own business, and
-        // two people are free to reach for the same string. The partial filter keeps bids that
-        // arrived without a key out of the constraint entirely.
         builder.HasIndex(b => new { b.BidderId, b.IdempotencyKey })
             .IsUnique()
             .HasFilter("\"IdempotencyKey\" IS NOT NULL")

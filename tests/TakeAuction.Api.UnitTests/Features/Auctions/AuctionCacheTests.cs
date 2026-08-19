@@ -91,11 +91,6 @@ public sealed class AuctionCacheTests
         Assert.NotEqual(AuctionCache.DetailKey(auctionId, "g1"), AuctionCache.DetailKey(auctionId, "g2"));
     }
 
-    /// <summary>
-    /// The property that closes the stale-write race: once a bid has invalidated the detail,
-    /// readers look at a different key, so anything an in-flight reader publishes under the
-    /// old one can never be served again.
-    /// </summary>
     [Fact]
     public async Task Invalidating_the_detail_moves_readers_to_a_new_key()
     {

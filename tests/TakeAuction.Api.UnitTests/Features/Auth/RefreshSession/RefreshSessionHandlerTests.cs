@@ -9,11 +9,6 @@ using TakeAuction.Api.UnitTests.Common;
 
 namespace TakeAuction.Api.UnitTests.Features.Auth.RefreshSession;
 
-/// <summary>
-/// Covers the branches that resolve in application code. Reuse detection and the
-/// account-disabled path revoke a whole family with a set-based update, which is a relational
-/// feature — those live in the API contract suite against a real PostgreSQL.
-/// </summary>
 public sealed class RefreshSessionHandlerTests
 {
     private static readonly JwtOptions Jwt = new()

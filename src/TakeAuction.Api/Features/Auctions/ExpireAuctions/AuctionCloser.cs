@@ -6,11 +6,6 @@ using TakeAuction.Api.Common.Persistence;
 
 namespace TakeAuction.Api.Features.Auctions.ExpireAuctions;
 
-/// <summary>
-/// Closes one lot, and is safe to ask twice. That matters because two things now ask: a job
-/// scheduled for the lot's own closing second, and the sweep that catches whatever the
-/// schedule missed. Whichever arrives second finds the lot already closed and does nothing.
-/// </summary>
 public sealed class AuctionCloser
 {
     private readonly AppDbContext _dbContext;
@@ -64,8 +59,6 @@ public sealed class AuctionCloser
         }
         catch (DbUpdateConcurrencyException)
         {
-            // A bid landed on the way in, which under the soft close may well have pushed the
-            // end out. Leaving it for the next attempt is right either way.
             _logger.LogWarning(
                 "Auction {AuctionId} changed while it was being closed; leaving it for the next attempt",
                 auctionId);

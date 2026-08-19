@@ -6,7 +6,6 @@ on:
   pull_request:
     branches: [main]
   schedule:
-    # Weekly, so newly published rules reach the existing code without waiting for a commit.
     - cron: "0 4 * * 1"
 
 concurrency:
@@ -42,8 +41,6 @@ jobs:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
 
-      # Autobuild cannot be trusted to pick the right SDK for a solution this new, so the
-      # C# database is built from an explicit restore and build.
       - name: Build the solution
         if: matrix.language == 'csharp'
         run: |

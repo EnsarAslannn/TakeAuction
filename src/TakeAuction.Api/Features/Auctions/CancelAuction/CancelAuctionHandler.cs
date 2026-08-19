@@ -70,9 +70,6 @@ public sealed class CancelAuctionHandler : IRequestHandler<CancelAuctionCommand,
             }
             catch (DbUpdateConcurrencyException)
             {
-                // Almost always a bid that landed between the read and the write. The retry
-                // re-reads and the rule refuses on its own, which is the answer the seller
-                // needs: somebody bid, so the lot is no longer theirs alone to withdraw.
                 _logger.LogWarning(
                     "Auction {AuctionId} changed while seller {SellerId} was withdrawing it (attempt {Attempt} of {MaxAttempts})",
                     command.AuctionId,

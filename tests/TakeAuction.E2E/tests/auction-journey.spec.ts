@@ -60,8 +60,6 @@ test.describe("Salondan teklife giden yol", () => {
 
     const outcome = await detail.bid(1200);
 
-    // Nobody to bid against, so the ceiling of 1200 stays sealed and the lot is taken at the
-    // asking price. What the bidder now has to clear is their own ceiling.
     expect(outcome.kind, outcome.text).toBe("leading");
     await expect(detail.currentPrice).toHaveText(amountPattern(1000));
 
@@ -101,7 +99,6 @@ test.describe("Salondan teklife giden yol", () => {
       expect(outcome.kind, outcome.text).toBe("answered");
       await expect(rival.currentPrice).toHaveText(amountPattern(1550));
 
-      // The leader never touched the keyboard, and their lot went up on its own.
       await expect(leader.currentPrice).toHaveText(amountPattern(1550));
       await expect(leader.liveFeedItems.first()).toContainText("otomatik");
 
@@ -123,8 +120,6 @@ test.describe("Salondan teklife giden yol", () => {
     await detail.setAmount(400);
     await detail.submit();
 
-    // The panel carries the floor as the input's `min`, so the browser refuses the submit
-    // outright — the request never leaves and there is nothing for the server to reject.
     await expect(page.locator("#bid-amount:invalid")).toHaveCount(1);
     await expect(detail.feedback).toHaveCount(0);
 
@@ -145,8 +140,6 @@ test.describe("Salondan teklife giden yol", () => {
     expect((await detail.bid(1200)).kind).toBe("leading");
     await expect(detail.liveFeedItems).toHaveCount(1);
 
-    // Before the history endpoint existed the feed lived only in memory, so a reload made a
-    // busy lot read as though nobody had ever bid on it.
     await page.reload();
 
     await expect(detail.liveFeedItems).toHaveCount(1);
@@ -166,7 +159,6 @@ test.describe("Salondan teklife giden yol", () => {
     await expect(detail.ownLotNotice).toBeVisible();
     await expect(detail.amountInput).toHaveCount(0);
 
-    // The listing helper is unrelated to the panel, but it proves the lot really is live.
     const persisted = await getAuction(request, auction.id);
     expect(persisted.status).toBe("Active");
   });

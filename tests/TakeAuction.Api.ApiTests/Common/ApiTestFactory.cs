@@ -16,15 +16,12 @@ public sealed class ApiTestFactory : WebApplicationFactory<Program>
         ["Jwt__Audience"] = "TakeAuction.Client",
         ["Jwt__SigningKey"] = "api-test-signing-key-at-least-32-characters",
         ["Jwt__AccessTokenLifetimeMinutes"] = "15",
-        // The test host speaks plain http, so a Secure cookie would never be echoed back
-        // by HttpClient's cookie container and every session assertion would fail.
         ["AuthCookies__SecureAlways"] = "false",
         ["AuthCookies__SameSite"] = "Lax",
         ["RateLimiting__PermitLimit"] = "1000000",
         ["RateLimiting__AuthPermitLimit"] = "1000000",
         ["Seed__Enabled"] = "false",
         ["Jobs__ServerEnabled"] = "false",
-        // On in these tests so the gate in front of it is exercised rather than assumed.
         ["Jobs__DashboardEnabled"] = "true",
         ["Jobs__QueuePollIntervalSeconds"] = "1",
         ["Jobs__ExpireAuctionsCron"] = NeverFiringCron,

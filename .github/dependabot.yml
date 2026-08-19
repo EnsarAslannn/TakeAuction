@@ -1,7 +1,5 @@
 version: 2
 
-# Updates are grouped so a quiet week produces one reviewable pull request per ecosystem
-# rather than a dozen. Major bumps stay separate: those need reading, not rubber-stamping.
 updates:
   - package-ecosystem: nuget
     directory: /

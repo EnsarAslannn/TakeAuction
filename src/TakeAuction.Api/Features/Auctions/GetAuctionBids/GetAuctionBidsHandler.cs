@@ -18,8 +18,6 @@ public sealed class GetAuctionBidsHandler
     {
         var normalized = query.Normalize();
 
-        // An unknown auction and one that has drawn no bids are different answers, so the
-        // caller gets a 404 rather than an empty page for a lot that does not exist.
         var auctionExists = await _dbContext.Auctions
             .AsNoTracking()
             .AnyAsync(auction => auction.Id == normalized.AuctionId, cancellationToken);
@@ -35,8 +33,6 @@ public sealed class GetAuctionBidsHandler
 
         var totalCount = await bids.CountAsync(cancellationToken);
 
-        // Newest first: the page opens on the top of the ladder, which is what a bidder
-        // arriving mid-auction wants to see.
         var items = await bids
             .OrderByDescending(bid => bid.Amount)
             .ThenByDescending(bid => bid.PlacedAtUtc)

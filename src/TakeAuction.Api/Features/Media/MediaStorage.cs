@@ -2,10 +2,6 @@ using Microsoft.Extensions.Options;
 
 namespace TakeAuction.Api.Features.Media;
 
-/// <summary>
-/// Resolves where uploads live on disk and the URL they are served from, so the handler
-/// and the static-file pipeline cannot drift apart.
-/// </summary>
 public sealed class MediaStorage
 {
     private readonly MediaOptions _options;

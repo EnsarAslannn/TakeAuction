@@ -43,9 +43,6 @@ public static class TestHarness
             NullLogger<DistributedCacheService>.Instance);
     }
 
-    /// <summary>
-    /// Its own meter per call, so one test's measurements are never another's to trip over.
-    /// </summary>
     public static TakeAuctionTelemetry CreateTelemetry() =>
         new(new ServiceCollection()
             .AddMetrics()

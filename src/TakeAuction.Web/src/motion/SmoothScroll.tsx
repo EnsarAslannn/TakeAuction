@@ -46,7 +46,6 @@ export function SmoothScroll({ children }: { children: React.ReactNode }) {
   return <LenisContext.Provider value={lenis}>{children}</LenisContext.Provider>;
 }
 
-/** Resets scroll position on route change, bypassing Lenis' animated scroll. */
 export function useScrollReset(key: string) {
   const lenis = useLenis();
 
@@ -56,12 +55,6 @@ export function useScrollReset(key: string) {
   }, [key, lenis]);
 }
 
-/**
- * Scrolls to the section named by the URL hash after every navigation carrying one.
- * Keyed on `location.key` so repeat clicks on the link for the section we are already
- * looking at still scroll, and so hash-only navigations (which leave the route mounted)
- * are not missed.
- */
 export function useHashScroll() {
   const { hash, key } = useLocation();
   const lenis = useLenis();
@@ -71,9 +64,6 @@ export function useHashScroll() {
 
     const id = decodeURIComponent(hash.slice(1));
 
-    // The landing page keeps growing while its sections and imagery settle, so a single
-    // scroll issued on arrival either aims at a stale offset or gets clamped to a document
-    // that is still short. Re-aim for as long as the layout is still moving.
     const deadline = performance.now() + SETTLE_MS;
     let aimedAt = "";
     let frame = window.requestAnimationFrame(function aim() {
@@ -86,9 +76,6 @@ export function useHashScroll() {
         if (signature !== aimedAt) {
           aimedAt = signature;
           if (lenis) {
-            // Lenis caches the scrollable limit and refreshes it asynchronously, so a
-            // scroll issued right after the page grew would be clamped to the old, much
-            // shorter document and stop far above the section.
             lenis.resize();
             lenis.scrollTo(target);
           } else {

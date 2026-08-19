@@ -22,8 +22,6 @@ public sealed class UploadImageEndpoint : IEndpoint
                 return Results.Ok(response);
             })
             .RequireAuthorization(policy => policy.RequireRole(nameof(UserRole.Seller), nameof(UserRole.Admin)))
-            // IFormFile binding otherwise demands ASP.NET's own antiforgery token; this API is
-            // guarded by CsrfProtectionMiddleware's double-submit cookie instead.
             .DisableAntiforgery()
             .WithName("UploadImage")
             .WithTags("Media")

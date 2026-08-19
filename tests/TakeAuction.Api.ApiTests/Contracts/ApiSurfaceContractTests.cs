@@ -43,8 +43,6 @@ public sealed class ApiSurfaceContractTests : IAsyncLifetime
         Assert.Contains("1.0", supported);
     }
 
-    // The version lives in the route template, so an unserved version never resolves an
-    // endpoint at all — routing turns it away before the versioning policy is consulted.
     [Fact]
     public async Task A_version_the_api_does_not_serve_resolves_no_endpoint()
     {
@@ -55,10 +53,6 @@ public sealed class ApiSurfaceContractTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
-    /// <summary>
-    /// The dashboard is switched on for this suite so the gate in front of it is exercised
-    /// rather than assumed. A page here rather than a challenge would mean it had come off.
-    /// </summary>
     [Fact]
     public async Task The_job_dashboard_is_never_served_to_an_anonymous_caller()
     {

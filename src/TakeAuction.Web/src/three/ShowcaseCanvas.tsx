@@ -12,15 +12,10 @@ interface ShowcaseCanvasProps {
   item: ShowcaseModel;
   drag: React.MutableRefObject<DragState>;
   onDecay: () => void;
-  /** Drives the render loop. False parks the renderer while the stage is off-screen. */
   active: boolean;
   className?: string;
 }
 
-/**
- * One persistent WebGL context for the whole showcase. Swapping `item` swaps the
- * loaded model inside the same canvas, so switching never tears down the renderer.
- */
 export function ShowcaseCanvas({ item, drag, onDecay, active, className }: ShowcaseCanvasProps) {
   const reducedMotion = usePrefersReducedMotion();
   const compact = useIsCompact();
@@ -33,8 +28,6 @@ export function ShowcaseCanvas({ item, drag, onDecay, active, className }: Showc
     <div className={className}>
       <Canvas
         shadows
-        // Parked while off-screen: the model auto-rotates and casts shadows every
-        // frame, and that competes with scrolling for the whole rest of the page.
         frameloop={active ? "always" : "never"}
         dpr={[1, 1.5]}
         gl={{ antialias: true, alpha: true, preserveDrawingBuffer: false }}
@@ -44,11 +37,7 @@ export function ShowcaseCanvas({ item, drag, onDecay, active, className }: Showc
       >
         <Suspense fallback={null}>
           <Studio float={!reducedMotion}>
-            {/* On narrow screens the stage shares its height with the caption,
-                so the model shrinks and rides higher to stay clear of it. */}
             <group position={[0, compact ? 1.15 : -0.15, 0]}>
-              {/* Scoped to the model alone so a lot that fails to load leaves
-                  the renderer and its lighting rig standing. */}
               <ErrorBoundary resetKey={item.slug} onError={() => setModelFailed(true)}>
                 <AuctionModel
                   key={item.slug}

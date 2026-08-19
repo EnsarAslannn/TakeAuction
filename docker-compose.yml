@@ -81,8 +81,6 @@ services:
       ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=${POSTGRES_DB:-takeauction};Username=${POSTGRES_USER:-takeauction};Password=${POSTGRES_PASSWORD:-takeauction_dev_pw}
       ConnectionStrings__Redis: redis:6379
       ConnectionStrings__RabbitMq: amqp://${RABBITMQ_USER:-takeauction}:${RABBITMQ_PASSWORD:-takeauction_dev_pw}@rabbitmq:5672
-      # Only the gateway ever talks to the API, and it lives on the compose bridge — without
-      # this the forwarded client IP is discarded and rate limiting partitions on nginx.
       ReverseProxy__KnownNetworks__0: 172.16.0.0/12
     volumes:
       - api_uploads:/app/App_Data/uploads
@@ -103,7 +101,6 @@ services:
     container_name: takeauction-web
     restart: unless-stopped
     healthcheck:
-      # 127.0.0.1, not localhost: that resolves to ::1 first and nginx binds IPv4 only.
       test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1/"]
       interval: 10s
       timeout: 5s

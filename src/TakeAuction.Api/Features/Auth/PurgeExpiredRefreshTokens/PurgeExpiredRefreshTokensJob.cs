@@ -6,11 +6,6 @@ using TakeAuction.Api.Common.Persistence;
 
 namespace TakeAuction.Api.Features.Auth.PurgeExpiredRefreshTokens;
 
-/// <summary>
-/// Rotation leaves one retired row behind per refresh, so the table would grow without bound.
-/// Rows are kept for a grace period past expiry: a reused token is only detectable while the
-/// row it points at still exists.
-/// </summary>
 [DisableConcurrentExecution(timeoutInSeconds: 300)]
 [AutomaticRetry(Attempts = 0)]
 public sealed class PurgeExpiredRefreshTokensJob

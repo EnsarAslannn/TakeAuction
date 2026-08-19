@@ -99,8 +99,6 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      # Testcontainers starts PostgreSQL, Redis and RabbitMQ itself over the Docker socket
-      # that GitHub-hosted runners already expose, so no service containers are declared here.
       - name: Run integration tests
         run: >
           dotnet test tests/TakeAuction.Api.IntegrationTests/TakeAuction.Api.IntegrationTests.csproj
@@ -152,8 +150,6 @@ jobs:
       - name: Build the application images
         run: docker compose build api web
 
-      # Booting the whole stack is what catches the wiring the Dockerfiles alone cannot:
-      # gateway routes, container-to-container hostnames and the readiness probe.
       - name: Boot the stack
         run: docker compose up --detach --wait
 
@@ -190,8 +186,6 @@ jobs:
             src/TakeAuction.Web/package-lock.json
             tests/TakeAuction.E2E/package-lock.json
 
-      # The browser talks to a real API, so the real backing services have to be up first.
-      # Compose's --wait blocks until every declared healthcheck reports healthy.
       - name: Start infrastructure
         run: docker compose up --detach --wait postgres redis rabbitmq
 
@@ -207,8 +201,6 @@ jobs:
         working-directory: tests/TakeAuction.E2E
         run: npx playwright install --with-deps chromium
 
-      # Prebuilding keeps `dotnet run` inside the webServer start-up budget instead of
-      # spending it on a cold restore while Playwright waits on /health.
       - name: Prebuild the API
         run: dotnet build src/TakeAuction.Api/TakeAuction.Api.csproj
 

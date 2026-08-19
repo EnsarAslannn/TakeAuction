@@ -92,8 +92,6 @@ public sealed class PlaceBidContractTests : IAsyncLifetime
         using var first = await _fixture.CreateBidderAsync();
         (await first.PostAsync(ApiRoutes.Bids(_auctionId), new { amount = 150m })).EnsureSuccessStatusCode();
 
-        // The lot still shows the asking price of 100 — the opener's ceiling is sealed — so
-        // what a challenger has to clear is 105, not whatever the leader privately agreed to.
         using var second = await _fixture.CreateBidderAsync();
         var response = await second.PostAsync(ApiRoutes.Bids(_auctionId), new { amount = 104m });
 
@@ -187,7 +185,6 @@ public sealed class PlaceBidContractTests : IAsyncLifetime
         var detail = await reader.ReadAsync<AuctionDetailResponse>(
             await reader.GetAsync(ApiRoutes.Auction(_auctionId)));
 
-        // The reader sees the answered price and nothing about the ceilings behind it.
         Assert.Equal(305m, detail.CurrentPrice);
         Assert.Equal(310m, detail.MinimumAcceptableBid);
         Assert.Equal(3, detail.BidCount);
@@ -261,11 +258,6 @@ public sealed class PlaceBidContractTests : IAsyncLifetime
         }
     }
 
-    /// <summary>
-    /// The API-level twin of the concurrency guarantee: when many callers push the identical
-    /// amount at the same instant, the row version lets exactly one through and everybody else
-    /// gets a refusal they can act on — never a silently lost update.
-    /// </summary>
     [Fact]
     public async Task Only_one_of_many_simultaneous_identical_bids_is_accepted()
     {
@@ -328,10 +320,6 @@ public sealed class PlaceBidContractTests : IAsyncLifetime
             var detail = await reader.ReadAsync<AuctionDetailResponse>(
                 await reader.GetAsync(ApiRoutes.Auction(_auctionId)));
 
-            // A receipt reports what that submission reached, which under proxies can be less
-            // than where the lot ended up: the leader's answer came after it. What every
-            // reader must agree on is that the lot is at least as high as any receipt, and
-            // that its own asking price follows from the price it shows.
             Assert.True(
                 detail.CurrentPrice >= acceptedAmounts.Max(),
                 $"the lot shows {detail.CurrentPrice}, below an accepted bid of {acceptedAmounts.Max()}");

@@ -11,18 +11,6 @@ namespace TakeAuction.Api.Common.Messaging.Outbox;
 
 public sealed class OutboxDispatcher
 {
-    /// <summary>
-    /// Claiming takes a lease rather than only a row lock. SKIP LOCKED alone stops two
-    /// dispatchers colliding inside the same statement, but the lock dies with the statement,
-    /// and the row stays unprocessed for as long as the publish takes — long enough for the
-    /// next instance to pick it up and send it a second time. The lease keeps the row
-    /// invisible until the claimer has had its turn, and expires on its own so a dispatcher
-    /// that dies mid-publish does not strand the message.
-    ///
-    /// The attempt is counted at claim time, not after a failure: a process that dies without
-    /// reporting anything still burns one, so a message that reliably kills its handler
-    /// eventually falls out of the batch instead of blocking the queue forever.
-    /// </summary>
     private const string ClaimSql = """
         WITH claimed AS (
             SELECT "Id"

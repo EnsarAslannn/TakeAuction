@@ -50,10 +50,6 @@ public sealed class AuctionSearchIndexTests : IAsyncLifetime
     {
         await SeedAsync(count: 400);
 
-        // The setting and the EXPLAIN have to share a session, so both go down the same open
-        // connection. Forcing the planner's hand is the point: on a table this size a
-        // sequential scan is genuinely cheaper, and what is being asked is whether the index
-        // can answer at all — a plain B-tree cannot serve a leading wildcard at any price.
         var plan = await _fixture.ExecuteDbContextAsync(async dbContext =>
         {
             await dbContext.Database.OpenConnectionAsync();
@@ -75,8 +71,6 @@ public sealed class AuctionSearchIndexTests : IAsyncLifetime
                     SELECT a."Id" FROM auctions AS a WHERE lower(a."Title") LIKE '%stamp%'
                     """;
 
-                // EXPLAIN comes back a row per line, and the index is named further down than
-                // the first of them.
                 var lines = new List<string>();
                 await using var reader = await explain.ExecuteReaderAsync();
 

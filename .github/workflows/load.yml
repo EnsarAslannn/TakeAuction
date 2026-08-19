@@ -1,8 +1,5 @@
 name: Load
 
-# Deliberately not on pull requests: a two-minute contention run against a stack sharing the
-# runner's two cores tells you about the runner, not about the change. It runs on a schedule
-# to catch drift, and on demand when the bidding path has been touched.
 on:
   workflow_dispatch:
     inputs:
@@ -29,7 +26,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # The overlay lifts the rate limiter, without which the run measures the limiter.
       - name: Boot the stack
         run: docker compose -f docker-compose.yml -f docker-compose.load.yml up --detach --wait
 

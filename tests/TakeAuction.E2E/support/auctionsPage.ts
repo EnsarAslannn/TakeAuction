@@ -1,6 +1,5 @@
 import { type Locator, type Page } from "@playwright/test";
 
-/** The salon listing: the shelf a visitor scans before opening a lot. */
 export class AuctionsPage {
   readonly search: Locator;
   readonly emptyState: Locator;
@@ -14,11 +13,6 @@ export class AuctionsPage {
     await this.page.goto("/auctions");
   }
 
-  /**
-   * The listing subscribes to the lobby channel on mount. Waiting for the hub's negotiate
-   * response — which every transport performs — keeps "the price moved without a reload" an
-   * assertion about SignalR rather than about luck.
-   */
   async gotoAndConnect(): Promise<void> {
     const negotiated = this.page.waitForResponse(
       (response) => response.url().includes("/hubs/auctions/negotiate") && response.ok(),
@@ -28,7 +22,6 @@ export class AuctionsPage {
     await this.goto();
     await negotiated;
 
-    // SubscribeToLobby is the next call the client makes over the connection it just opened.
     await this.page.waitForTimeout(750);
   }
 

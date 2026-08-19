@@ -27,22 +27,15 @@ public static class HealthCheckExtensions
             builder.AddRedis(redisConnectionString, name: "redis");
         }
 
-        // The RabbitMQ probe comes from MassTransit, which registers a bus health check of
-        // its own when the broker is wired up. Adding a second one here would open a second
-        // connection to report on the same thing.
-
         return services;
     }
 
     public static IEndpointRouteBuilder MapTakeAuctionHealthChecks(this IEndpointRouteBuilder builder)
     {
-        // Liveness deliberately consults nothing: a Redis blip means this instance cannot
-        // serve traffic, not that it should be killed and restarted.
         Map(builder, LivePath, "HealthLive", _ => false);
 
         Map(builder, ReadyPath, "HealthReady", _ => true);
 
-        // Kept because the reverse proxy and existing tooling already probe this path.
         Map(builder, LegacyPath, "HealthCheck", _ => true);
 
         return builder;
@@ -79,8 +72,6 @@ public static class HealthCheckExtensions
                 name = entry.Key,
                 status = Describe(entry.Value.Status),
                 durationMs = Math.Round(entry.Value.Duration.TotalMilliseconds, 2),
-                // A failed probe's message can carry connection strings and host names, so
-                // it only travels to callers that are already inside the developer loop.
                 error = environment.IsDevelopment()
                     ? entry.Value.Exception?.Message ?? entry.Value.Description
                     : null

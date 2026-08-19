@@ -39,13 +39,6 @@ public sealed class AuctionCache
     public Task InvalidateListsAsync(CancellationToken cancellationToken) =>
         _cache.SetAsync(GenerationKey, NewGenerationToken(), GenerationTtl, cancellationToken);
 
-    /// <summary>
-    /// Rolls the generation rather than deleting the entry. Deleting loses a race that a busy
-    /// lot runs constantly: a reader that missed the cache, went to the database and has not
-    /// written back yet will happily store its now-stale snapshot over the deletion, and
-    /// every later reader sees that stale price until the TTL runs out. Moving the generation
-    /// leaves the late writer stranded on a key nobody will ever ask for again.
-    /// </summary>
     public Task InvalidateDetailAsync(Guid auctionId, CancellationToken cancellationToken) =>
         _cache.SetAsync(DetailGenerationKey(auctionId), NewGenerationToken(), GenerationTtl, cancellationToken);
 

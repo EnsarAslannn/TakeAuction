@@ -41,8 +41,6 @@ public sealed class AuctionAntiSnipeTests
     [Fact]
     public void A_bid_landing_exactly_on_the_edge_of_the_window_is_inside_it()
     {
-        // The extension has to outlast the window for the boundary to be observable at all:
-        // when the two are equal, a bid on the edge lands on the close it already had.
         var auction = ClosingAuction(window: Window, extension: Window * 2);
         var snipedAt = auction.EndsAtUtc.AddSeconds(-Window);
 
@@ -81,8 +79,6 @@ public sealed class AuctionAntiSnipeTests
     [Fact]
     public void An_extension_can_only_ever_move_the_close_later()
     {
-        // A short extension on a lot that still has more time left than the extension would
-        // otherwise pull the close towards us and cut the auction short.
         var auction = ClosingAuction(window: 3600, extension: 5);
         var originalEnd = auction.EndsAtUtc;
 

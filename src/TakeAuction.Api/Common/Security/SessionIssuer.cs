@@ -6,13 +6,8 @@ namespace TakeAuction.Api.Common.Security;
 
 public interface ISessionIssuer
 {
-    /// <summary>Opens a new session chain — a fresh login or registration.</summary>
     Task<IssuedSession> StartAsync(User user, CancellationToken cancellationToken);
 
-    /// <summary>
-    /// Extends an existing chain: the presented token is retired and points at its successor,
-    /// both in a single save so a crash can never leave two live links.
-    /// </summary>
     Task<IssuedSession> RotateAsync(User user, RefreshToken current, CancellationToken cancellationToken);
 }
 

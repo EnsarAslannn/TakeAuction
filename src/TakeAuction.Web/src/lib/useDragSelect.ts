@@ -1,21 +1,11 @@
 import { useCallback, useRef, useState } from "react";
 
 interface Options {
-  /** Pixels of horizontal travel that commit one step. */
   step?: number;
-  /** Movement below this is treated as a click, not a drag. */
   threshold?: number;
   onCommit: (delta: number) => void;
 }
 
-/**
- * Horizontal drag that reports a live pixel offset for feedback and commits a
- * discrete step count on release.
- *
- * The pointer is captured only once movement passes the threshold. Capturing on
- * pointerdown would retarget the subsequent `click` to the capturing element,
- * which silently breaks clicks on the cards underneath.
- */
 export function useDragSelect({ step = 190, threshold = 6, onCommit }: Options) {
   const [offset, setOffset] = useState(0);
   const [dragging, setDragging] = useState(false);
@@ -46,7 +36,6 @@ export function useDragSelect({ step = 190, threshold = 6, onCommit }: Options) 
         event.currentTarget.setPointerCapture(event.pointerId);
       }
 
-      // Rubber-band so the strip resists rather than tracking the pointer 1:1.
       setOffset(Math.sign(dx) * Math.min(Math.abs(dx) * 0.55, step * 1.2));
     },
     [step, threshold]
@@ -72,7 +61,6 @@ export function useDragSelect({ step = 190, threshold = 6, onCommit }: Options) 
       setDragging(false);
       setOffset(0);
 
-      // Dragging left (negative dx) advances forward.
       if (steps !== 0) onCommit(-steps);
     },
     [step, onCommit]
@@ -81,7 +69,6 @@ export function useDragSelect({ step = 190, threshold = 6, onCommit }: Options) 
   return {
     offset,
     dragging,
-    /** True when the last gesture actually moved — use to suppress click-through. */
     didMove: () => moved.current,
     handlers: {
       onPointerDown,

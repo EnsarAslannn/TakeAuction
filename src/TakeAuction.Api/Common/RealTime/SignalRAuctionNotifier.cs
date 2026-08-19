@@ -32,12 +32,6 @@ public sealed class SignalRAuctionNotifier : IAuctionNotifier
             notification.AuctionId);
     }
 
-    /// <summary>
-    /// Addressed to the bidder, not to a connection. SignalR fans it out to every tab that
-    /// bidder has open and drops it if they have none — which is the honest outcome: this is a
-    /// nudge for somebody watching the salon, not a promise of delivery. Someone who has closed
-    /// the browser finds out the way they always would, by coming back.
-    /// </summary>
     public async Task OutbidAsync(
         Guid bidderId,
         OutbidNotification notification,

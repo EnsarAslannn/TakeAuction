@@ -3,12 +3,6 @@ import exec from "k6/execution";
 import { check, fail } from "k6";
 import { Counter, Rate, Trend } from "k6/metrics";
 
-// The question this run answers is not "how many requests per second". It is: how far does
-// PlaceBidHandler's retry budget stretch before bidders start seeing "please retry"?
-//
-// Every virtual user hammers the same lot at exactly the current floor, which is the worst
-// case for optimistic concurrency: they all read the same row version and race to write it.
-
 const BASE_URL = __ENV.BASE_URL || "http://localhost:8080";
 const API = `${BASE_URL}/api/v1`;
 const PASSWORD = "LoadTest!2026";
@@ -38,10 +32,7 @@ export const options = {
     },
   },
   thresholds: {
-    // Invariants, not performance targets. The point of the run is to discover the latency
-    // and conflict numbers, so gating on them would be inventing an answer in advance.
     checks: ["rate==1"],
-    // A bid must never simply vanish: every accepted response has a row behind it.
     bids_accepted: ["count>0"],
   },
   setupTimeout: "10m",
@@ -55,9 +46,6 @@ function authHeaders(token) {
   };
 }
 
-// The access token arrives as an HttpOnly cookie. Reading its value and presenting it as a
-// bearer header is what the CSRF middleware treats as a non-browser caller, which keeps the
-// double-submit dance out of the measurement.
 function tokenFrom(response) {
   const cookie = response.cookies["takeauction_access_token"];
 
@@ -79,8 +67,6 @@ function register(role, index) {
     }),
     {
       headers: { "Content-Type": "application/json" },
-      // A fresh jar per account: k6 shares one across the VU, so the previous account's
-      // session cookie would ride along and trip the CSRF double-submit check.
       jar: new http.CookieJar(),
       tags: { name: "Register" },
     }
@@ -103,7 +89,6 @@ export function setup() {
       title: `Load test lot ${now}`,
       description: "A single hot lot every virtual user competes for, to find the conflict ceiling.",
       startingPrice: 100,
-      // A one-unit increment keeps the price sane even after thousands of accepted bids.
       minimumBidIncrement: 1,
       startsAtUtc: new Date(now - 30_000).toISOString(),
       endsAtUtc: new Date(now + 3 * 60 * 60 * 1000).toISOString(),
@@ -127,8 +112,6 @@ export default function (data) {
   const token = data.tokens[exec.vu.idInTest % data.tokens.length];
   const headers = authHeaders(token);
 
-  // Reading the floor first is what the real client does, and it is the read path that the
-  // cache invalidation churns hardest under load.
   const detail = http.get(`${API}/auctions/${data.auctionId}`, { headers, jar: new http.CookieJar(), tags: { name: "GetAuction" } });
 
   if (detail.status !== 200) {
@@ -149,10 +132,8 @@ export default function (data) {
   if (response.status === 200) {
     accepted.add(1);
   } else if (response.status === 400) {
-    // Somebody else got there first and the floor moved: a losing race, not a failure.
     tooLow.add(1);
   } else if (response.status === 409) {
-    // The retry budget ran out. This is the number the run exists to find.
     conflicted.add(1);
   } else {
     check(response, {
@@ -165,9 +146,6 @@ export function teardown(data) {
   const detail = http.get(`${API}/auctions/${data.auctionId}`).json();
   const history = http.get(`${API}/auctions/${data.auctionId}/bids?pageSize=1`).json();
 
-  // The invariant the whole design exists to protect: the row's own counter, the number of
-  // bids actually stored, and the price on the row all have to tell the same story. A lost
-  // update would show up here as a bidCount that outruns the history.
   check(detail, {
     "the auction's bid count matches the stored history": () => detail.bidCount === history.totalCount,
     "the current price is the top of the history": () =>

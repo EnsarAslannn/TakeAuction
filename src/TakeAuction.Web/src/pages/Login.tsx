@@ -34,8 +34,6 @@ export function Login() {
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
       <div className="relative hidden lg:block">
-        {/* Sits behind the plate so the panel still reads as a room rather than
-            a blank column if the image is missing. */}
         <div aria-hidden className="absolute inset-0 bg-gradient-to-br from-stone-dark via-ink-soft to-ink" />
         <img
           src={VISUALS.login}

@@ -17,8 +17,6 @@ public static class TelemetryExtensions
 
         var options = section.Get<TelemetryOptions>() ?? new TelemetryOptions();
 
-        // The instruments are registered whether or not anything is exporting them: code that
-        // records a measurement should not have to care, and a test can still listen in.
         services.AddMetrics();
         services.AddSingleton<TakeAuctionTelemetry>();
 
@@ -52,8 +50,6 @@ public static class TelemetryExtensions
                     .SetSampler(new TraceIdRatioBasedSampler(options.TraceSampleRatio))
                     .AddSource(TakeAuctionTelemetry.ActivitySourceName)
                     .AddAspNetCoreInstrumentation(instrumentation =>
-                        // The scrape and the health probes would otherwise be most of the trace
-                        // volume, and none of it is about anything anybody bid on.
                         instrumentation.Filter = context => !IsPlumbing(context.Request.Path, options))
                     .AddHttpClientInstrumentation();
 

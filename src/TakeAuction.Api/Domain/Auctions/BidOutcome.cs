@@ -18,10 +18,6 @@ public sealed record BidOutcome(
 {
     public bool Succeeded => Rejection == BidRejection.None;
 
-    /// <summary>
-    /// The bid that left the lot at the price it now shows — the leader's automatic answer
-    /// when their proxy held the line, otherwise the one that was submitted.
-    /// </summary>
     public Bid? PriceSetter => AutomaticBid ?? Bid;
 
     public static BidOutcome Accepted(Bid bid, Bid? automaticBid = null, bool extended = false) =>

@@ -64,7 +64,6 @@ public sealed class AuctionProxyBiddingTests
         var auction = OpenAuction();
         auction.PlaceBid(Ada, 500m, TestHarness.Now);
 
-        // Answering 498 by the full increment would take Ada past the 500 she agreed to.
         auction.PlaceBid(Bruno, 498m, TestHarness.Now);
 
         Assert.Equal(Ada, auction.LeadingBidderId);
@@ -246,8 +245,6 @@ public sealed class AuctionProxyBiddingTests
     [Fact]
     public void A_ceiling_left_behind_by_older_data_never_collapses_the_price()
     {
-        // What a lot listed before proxy bidding looks like once the column is added: a real
-        // price with a leader, and a ceiling of zero because nobody had one to record.
         var auction = LotFromBeforeProxyBidding(currentPrice: 500m, leader: Ada);
 
         var outcome = auction.PlaceBid(Bruno, 900m, TestHarness.Now);
@@ -263,8 +260,6 @@ public sealed class AuctionProxyBiddingTests
     {
         var auction = LotFromBeforeProxyBidding(currentPrice: 500m, leader: Ada);
 
-        // 400 does not clear the visible price, so it is refused outright rather than being
-        // absorbed against a ceiling that was never recorded.
         Assert.Equal(BidRejection.BidTooLow, auction.PlaceBid(Bruno, 400m, TestHarness.Now).Rejection);
         Assert.Equal(500m, auction.CurrentPrice);
         Assert.Equal(Ada, auction.LeadingBidderId);

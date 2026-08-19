@@ -1,10 +1,5 @@
 namespace TakeAuction.Api.Domain.Users;
 
-/// <summary>
-/// One link in a session chain. Every refresh mints a new token and retires the one that
-/// bought it, so a chain has exactly one live link. A retired link coming back means somebody
-/// replayed a stolen token, and the whole family is burned.
-/// </summary>
 public sealed class RefreshToken
 {
     public Guid Id { get; private set; }

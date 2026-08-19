@@ -9,14 +9,12 @@ export const DRACO_PATH = "/draco/";
 
 interface AuctionModelProps {
   url: string;
-  /** Target size of the model's largest dimension, in world units. */
   fit?: number;
   lift?: number;
   spin?: number;
   autoRotate?: boolean;
   rotationSpeed?: number;
   drag?: React.MutableRefObject<DragState>;
-  /** Advances release momentum; driven from this component's render loop. */
   onDecay?: () => void;
 }
 
@@ -35,9 +33,6 @@ export function AuctionModel({
   const idleSpin = useRef(0);
 
   const cloned = useMemo(() => {
-    // SkeletonUtils.clone re-binds skinned meshes to the cloned skeleton;
-    // Object3D.clone() leaves them pointing at the original bones, which
-    // collapses rigged geometry (the satellite's solar arrays).
     const copy = cloneSkinned(scene);
 
     copy.traverse((node) => {

@@ -77,10 +77,6 @@ public sealed class IntegrationTestFixture : IAsyncLifetime
             .Build();
     }
 
-    /// <summary>
-    /// A connection the hub can put a name to. Messages addressed to a bidder rather than to a
-    /// lot go nowhere without one, so a test about them has to sign in like a browser would.
-    /// </summary>
     public HubConnection CreateHubConnectionAs(User user)
     {
         var server = _factory.Server;
@@ -139,11 +135,6 @@ public sealed class IntegrationTestFixture : IAsyncLifetime
         await _redis.ExecAsync(["redis-cli", "FLUSHALL"]);
     }
 
-    /// <summary>
-    /// Delivery is asynchronous by design now that events travel through the outbox, so a test
-    /// that sets the stage with a bid and then expects the next broadcast to be about a
-    /// different one has to let the stage settle first.
-    /// </summary>
     public async Task WaitForOutboxDrainAsync(TimeSpan? timeout = null)
     {
         var deadline = DateTimeOffset.UtcNow + (timeout ?? TimeSpan.FromSeconds(30));

@@ -64,8 +64,6 @@ public sealed class OutboxDispatcherTests : IAsyncLifetime
         Assert.Equal(MessageCount, messages.Count);
         Assert.All(messages, message => Assert.NotNull(message.ProcessedAtUtc));
 
-        // One claim each is the whole point of SKIP LOCKED: a second dispatcher that saw a row
-        // twice would have driven its attempt counter past one.
         Assert.All(messages, message => Assert.Equal(1, message.Attempts));
     }
 
@@ -118,8 +116,6 @@ public sealed class OutboxDispatcherTests : IAsyncLifetime
         Assert.Equal(1, message.Attempts);
         Assert.NotNull(message.LastError);
 
-        // The lease is deliberately not released on failure: it is what stops a broker outage
-        // from burning the whole attempt budget in the space of a few sweeps.
         Assert.NotNull(message.ClaimedUntilUtc);
     }
 
@@ -196,8 +192,6 @@ public sealed class OutboxDispatcherTests : IAsyncLifetime
         await using var scope = _fixture.Services.CreateAsyncScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-        // Inserted around EF rather than through it on purpose: SaveChanges would fire the
-        // commit signal and let the hosted dispatcher race the test for the row.
         await dbContext.Database.ExecuteSqlRawAsync(
             InsertSql,
             new NpgsqlParameter("id", id),

@@ -1,13 +1,9 @@
 import { useCallback, useRef, useState } from "react";
 
 export interface DragState {
-  /** Accumulated horizontal rotation, radians. */
   yaw: number;
-  /** Accumulated vertical rotation, radians, clamped. */
   pitch: number;
-  /** True while the pointer is held down. */
   active: boolean;
-  /** True while momentum is still bleeding off after release. */
   spinning: boolean;
 }
 
@@ -16,10 +12,6 @@ const SENSITIVITY = 0.0075;
 const FRICTION = 0.94;
 const STOP_THRESHOLD = 0.0004;
 
-/**
- * Left-button drag orbiting with release momentum. State lives in a ref and is read
- * inside the render loop, so dragging never triggers a React re-render.
- */
 export function useDragRotate() {
   const state = useRef<DragState>({ yaw: 0, pitch: 0, active: false, spinning: false });
   const velocity = useRef({ yaw: 0, pitch: 0 });
@@ -67,10 +59,6 @@ export function useDragRotate() {
     setDragging(false);
   }, []);
 
-  /**
-   * Advances the release momentum by one frame. Called from the render loop that is
-   * already running for the model, so no extra rAF loop is kept alive.
-   */
   const decay = useCallback(() => {
     const current = state.current;
     if (current.active || !current.spinning) return;
@@ -88,7 +76,6 @@ export function useDragRotate() {
     }
   }, []);
 
-  /** Recentres the model, e.g. when switching to a different item. */
   const reset = useCallback(() => {
     state.current.yaw = 0;
     state.current.pitch = 0;

@@ -30,9 +30,6 @@ export function BidPanel({ auction, minimumNextBid, isLive, onAccepted, onWithdr
   const [feedback, setFeedback] = useState<Feedback>({ kind: "idle" });
   const [withdrawal, setWithdrawal] = useState<Withdrawal>({ kind: "idle" });
 
-  // One key per intended bid, not per request. A second click on the same amount is the same
-  // bid being sent again — the server recognises the key and hands back the first answer
-  // instead of raising the price twice. Typing a new amount is a new intent, so a new key.
   const pendingKey = useRef<{ amount: number; key: string } | null>(null);
 
   const keyFor = (value: number) => {

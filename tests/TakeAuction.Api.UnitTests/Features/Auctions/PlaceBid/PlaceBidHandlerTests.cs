@@ -39,8 +39,6 @@ public sealed class PlaceBidHandlerTests : IDisposable
         Assert.True(result.Response.IsLeading);
         Assert.False(result.Response.AnsweredByProxy);
 
-        // Nobody to bid against yet, so a ceiling of 150 takes the lot at the asking price and
-        // stays sealed. What this bidder has to clear next is their own ceiling, not the price.
         Assert.Equal(100m, result.Response.Amount);
         Assert.Equal(150m, result.Response.MaxAmount);
         Assert.Equal(100m, result.Response.CurrentPrice);
@@ -98,7 +96,6 @@ public sealed class PlaceBidHandlerTests : IDisposable
         _bidderId = AddUser(UserRole.Bidder);
         await handler.Handle(Command(200m), CancellationToken.None);
 
-        // 200 beats the ceiling of 150, so it takes the lot at one increment over what it beat.
         await _publisher.Received(1).Publish(
             Arg.Is<BidPlacedEvent>(domainEvent =>
                 domainEvent.Amount == 155m
@@ -435,8 +432,6 @@ public sealed class PlaceBidHandlerTests : IDisposable
         Assert.True(result.Succeeded);
         Assert.Equal(125m, result.Response!.CurrentPrice);
 
-        // Three from the contest that set the price — the leader's opening ceiling, the
-        // challenge that ran into it, and the answer the house placed — plus this one.
         Assert.Equal(4, result.Response.BidCount);
     }
 
@@ -511,11 +506,6 @@ public sealed class PlaceBidHandlerTests : IDisposable
         return user.Id;
     }
 
-    /// <summary>
-    /// Takes two rivals to move the visible price now that bidding is by proxy: the first
-    /// ceiling only buys the asking price, and it is the second one running into it that
-    /// drives the lot up to <paramref name="amount"/>.
-    /// </summary>
     private void RaiseWinningPrice(decimal amount)
     {
         using var context = TestHarness.CreateDbContext(_databaseName);
@@ -530,10 +520,6 @@ public sealed class PlaceBidHandlerTests : IDisposable
         context.SaveChanges();
     }
 
-    /// <summary>
-    /// Stands in for the copy of the same request that reached the database first: it records a
-    /// bid under the shared key and leaves the sender holding the lot at their own ceiling.
-    /// </summary>
     private void RecordWinningCopy(string idempotencyKey)
     {
         using var context = TestHarness.CreateDbContext(_databaseName);

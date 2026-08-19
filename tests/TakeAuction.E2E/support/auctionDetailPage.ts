@@ -7,10 +7,6 @@ export interface BidOutcome {
   text: string;
 }
 
-/**
- * The lot page as the bidder sees it. Everything here is addressed through what the visitor
- * reads on screen, so a passing assertion means the browser really rendered it.
- */
 export class AuctionDetailPage {
   readonly amountInput: Locator;
   readonly bidForm: Locator;
@@ -33,8 +29,6 @@ export class AuctionDetailPage {
     this.submitButton = this.bidForm.getByRole("button", {
       name: /Sınırınızı gönderin|Gönderiliyor/,
     });
-    // The panel renders this paragraph only once the server has answered, so its arrival is
-    // the "request settled" signal.
     this.feedback = this.bidForm.getByTestId("bid-feedback");
 
     this.currentPrice = page
@@ -55,11 +49,6 @@ export class AuctionDetailPage {
     await this.page.goto(`/auctions/${this.auctionId}`);
   }
 
-  /**
-   * The hub reports "connected" the moment the socket opens, but the group subscription is
-   * the very next call on the wire. Racing bids through before it lands would drop the
-   * broadcast the test is about to assert on.
-   */
   async waitForLiveConnection(): Promise<void> {
     await expect(this.liveIndicator).toBeVisible();
     await this.page.waitForTimeout(750);
@@ -89,7 +78,6 @@ export class AuctionDetailPage {
       return { kind: "leading", text };
     }
 
-    // Accepted, but the leader's sealed ceiling was higher, so the house answered for them.
     if (/sınırınız yetmedi/.test(text)) {
       return { kind: "answered", text };
     }

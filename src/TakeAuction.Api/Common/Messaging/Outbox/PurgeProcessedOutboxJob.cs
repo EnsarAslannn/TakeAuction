@@ -5,11 +5,6 @@ using TakeAuction.Api.Common.Persistence;
 
 namespace TakeAuction.Api.Common.Messaging.Outbox;
 
-/// <summary>
-/// Every published message leaves its row behind, so a busy salon would grow the table by one
-/// row per bid forever. Processed rows are kept for a window first: they are the only record
-/// of what was actually handed to the broker when a downstream consumer starts disagreeing.
-/// </summary>
 [DisableConcurrentExecution(timeoutInSeconds: 300)]
 [AutomaticRetry(Attempts = 0)]
 public sealed class PurgeProcessedOutboxJob

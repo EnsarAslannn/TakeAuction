@@ -85,10 +85,6 @@ public sealed class ApiTestFixture : IAsyncLifetime
     public static string UniqueEmail(string prefix) =>
         $"{prefix.ToLowerInvariant()}.{Guid.CreateVersion7():N}@takeauction.test";
 
-    /// <summary>
-    /// Posts an auction that is already open for bidding. The create validator tolerates a
-    /// start up to a minute in the past, which is what puts the auction straight into Active.
-    /// </summary>
     public static object OpenAuctionRequest(
         string title = "Live lot under test",
         decimal startingPrice = 100m,

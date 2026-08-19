@@ -43,8 +43,6 @@ public sealed class LogoutHandler : IRequestHandler<LogoutCommand, LogoutResult>
             return new LogoutResult(SessionRevoked: false);
         }
 
-        // The whole chain goes, not just the link presented: signing out has to end the
-        // session for good, otherwise an older copy could still buy a new access token.
         var revoked = await _dbContext.RefreshTokens
             .Where(token => token.FamilyId == familyId && token.RevokedAtUtc == null)
             .ExecuteUpdateAsync(

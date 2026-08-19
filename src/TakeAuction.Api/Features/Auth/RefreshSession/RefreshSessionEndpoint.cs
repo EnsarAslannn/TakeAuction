@@ -20,8 +20,6 @@ public sealed class RefreshSessionEndpoint : IEndpoint
 
                 if (!result.Succeeded)
                 {
-                    // Any failure ends the session on this device: leaving a dead cookie behind
-                    // would have the client retry a token that can never work again.
                     cookieWriter.Clear(httpContext);
 
                     return ToProblem(result.Rejection);

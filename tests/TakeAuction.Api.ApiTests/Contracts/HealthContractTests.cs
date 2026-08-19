@@ -32,10 +32,6 @@ public sealed class HealthContractTests
         JsonAssert.HasProperties(body, "environment", "totalDurationMs", "timestamp", "checks");
     }
 
-    /// <summary>
-    /// Liveness answers "the process is running". If it consulted PostgreSQL, a database
-    /// blip would restart otherwise-healthy instances instead of just draining traffic.
-    /// </summary>
     [Fact]
     public async Task Liveness_consults_no_dependency()
     {
@@ -57,8 +53,6 @@ public sealed class HealthContractTests
 
         Assert.Contains("postgres", names);
         Assert.Contains("redis", names);
-        // MassTransit contributes this one, which is how RabbitMQ gets covered without a
-        // second connection just for probing.
         Assert.Contains("masstransit-bus", names);
     }
 
@@ -77,10 +71,6 @@ public sealed class HealthContractTests
         }
     }
 
-    /// <summary>
-    /// Probe messages can carry connection strings and host names, so outside Development
-    /// the report says which probe failed but never why.
-    /// </summary>
     [Fact]
     public async Task A_probe_never_leaks_its_failure_detail_outside_development()
     {

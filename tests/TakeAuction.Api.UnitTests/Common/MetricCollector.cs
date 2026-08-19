@@ -9,19 +9,11 @@ public sealed record Measurement(string Instrument, double Value, IReadOnlyList<
         Tags.Any(tag => tag.Key == key && Equals(tag.Value, value));
 }
 
-/// <summary>
-/// Listens to a meter the way a collector would, so a test can assert on what the process
-/// actually published rather than on the call that was supposed to publish it.
-/// </summary>
 public sealed class MetricCollector : IDisposable
 {
     private readonly MeterListener _listener = new();
     private readonly ConcurrentQueue<Measurement> _measurements = new();
 
-    /// <summary>
-    /// Bound to the meter instance, not to its name: every test builds its own, and matching
-    /// on the name would let a test running alongside pour its measurements into this one.
-    /// </summary>
     public MetricCollector(Meter meter)
     {
         _listener.InstrumentPublished = (instrument, listener) =>

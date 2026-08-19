@@ -22,12 +22,9 @@ public sealed class RefreshTokenConfiguration : IEntityTypeConfiguration<Refresh
             .HasMaxLength(128)
             .IsRequired();
 
-        // Every refresh is a lookup by hash, and the uniqueness doubles as a guard against
-        // two rows ever answering to the same presented token.
         builder.HasIndex(token => token.TokenHash)
             .IsUnique();
 
-        // Reuse detection burns a whole family at once, and the purge sweep scans by expiry.
         builder.HasIndex(token => token.FamilyId);
         builder.HasIndex(token => token.ExpiresAtUtc);
 

@@ -10,10 +10,6 @@ interface TickerEntry {
   at: number;
 }
 
-/**
- * A live proof-of-life strip. It listens on the lobby group so any bid anywhere on
- * the platform scrolls past, which is the fastest way to show the realtime layer works.
- */
 export function LiveTicker() {
   const [entries, setEntries] = useState<TickerEntry[]>([]);
   const state = useConnectionState();

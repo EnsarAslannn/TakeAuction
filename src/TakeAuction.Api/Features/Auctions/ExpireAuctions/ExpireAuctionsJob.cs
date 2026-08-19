@@ -7,11 +7,6 @@ using TakeAuction.Api.Domain.Auctions;
 
 namespace TakeAuction.Api.Features.Auctions.ExpireAuctions;
 
-/// <summary>
-/// The safety net rather than the mechanism. Each lot has a job scheduled for its own closing
-/// second; this sweep exists for the ones whose schedule was lost — a queue that was purged, a
-/// lot whose close moved after it was scheduled, or a listing that predates the schedule.
-/// </summary>
 [DisableConcurrentExecution(timeoutInSeconds: 300)]
 [AutomaticRetry(Attempts = 0)]
 public sealed class ExpireAuctionsJob

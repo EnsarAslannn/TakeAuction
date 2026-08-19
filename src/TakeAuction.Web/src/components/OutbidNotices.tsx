@@ -11,11 +11,6 @@ interface Notice extends OutbidNotification {
   key: string;
 }
 
-/**
- * Keeps the hub connection open for the length of a session and surfaces the one message that
- * is addressed to this bidder rather than to a lot. Without it a bidder only ever finds out
- * they lost a lot by going back and looking at it.
- */
 export function OutbidNotices() {
   const user = useAuthStore((state) => state.user);
   const [notices, setNotices] = useState<Notice[]>([]);
@@ -40,9 +35,7 @@ export function OutbidNotices() {
       setNotices((previous) =>
         previous.some((notice) => notice.key === key)
           ? previous
-          : // One notice per lot: a lot being bid up repeatedly is one piece of news, and
-            // stacking it would bury everything else under the same auction.
-            [{ ...notification, key }, ...previous.filter((n) => n.auctionId !== notification.auctionId)]
+          : [{ ...notification, key }, ...previous.filter((n) => n.auctionId !== notification.auctionId)]
       );
 
       window.setTimeout(

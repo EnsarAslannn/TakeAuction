@@ -107,10 +107,6 @@ public sealed class PlaceBidHandler : IRequestHandler<PlaceBidCommand, PlaceBidR
 
             if (!outcome.Succeeded)
             {
-                // The other copy of this request may have landed between the replay lookup above
-                // and this read, in which case the lot now stands at this bidder's own ceiling and
-                // the rules turn their own bid away. What came back is the bid that won, not a
-                // late one worth refusing.
                 if (idempotencyKey is not null)
                 {
                     var replay = await TryReplayAsync(command.BidderId, idempotencyKey, cancellationToken);
@@ -134,8 +130,6 @@ public sealed class PlaceBidHandler : IRequestHandler<PlaceBidCommand, PlaceBidR
                 await _dbContext.Bids.AddAsync(automaticBid, cancellationToken);
             }
 
-            // The event reports the lot, not the submission: when a proxy answered, the price
-            // on every watching screen is the leader's automatic bid, not the one just sent.
             var priceSetter = outcome.PriceSetter!;
             var leaderChanged = auction.LeadingBidderId != outbidBidderId;
 
@@ -173,8 +167,6 @@ public sealed class PlaceBidHandler : IRequestHandler<PlaceBidCommand, PlaceBidR
             }
             catch (DbUpdateException ex) when (idempotencyKey is not null && IsDuplicateKey(ex))
             {
-                // The other copy of this request got there first. Its bid is the real one, so
-                // this attempt hands back the same answer rather than raising the price twice.
                 _dbContext.ChangeTracker.Clear();
 
                 _logger.LogInformation(
@@ -242,11 +234,6 @@ public sealed class PlaceBidHandler : IRequestHandler<PlaceBidCommand, PlaceBidR
         return PlaceBidResult.Rejected(BidRejection.ConcurrencyConflict);
     }
 
-    /// <summary>
-    /// A replay answers with the bid that was actually recorded, but reads the auction as it
-    /// stands now: the caller is retrying because it never saw the first answer, and telling it
-    /// the price from a minute ago would be worse than useless on a live lot.
-    /// </summary>
     private async Task<PlaceBidResult?> TryReplayAsync(
         Guid bidderId,
         string idempotencyKey,

@@ -25,8 +25,6 @@ public sealed class JobsDashboardContractTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
-    // Signed in but not an admin, so the answer is Forbidden rather than Unauthorized: they
-    // are known, and knowing them is not enough. The dashboard can requeue and delete jobs.
     [Fact]
     public async Task A_signed_in_bidder_is_turned_away()
     {

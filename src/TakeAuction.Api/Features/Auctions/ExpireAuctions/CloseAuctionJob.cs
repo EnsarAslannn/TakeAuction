@@ -2,11 +2,6 @@ using Hangfire;
 
 namespace TakeAuction.Api.Features.Auctions.ExpireAuctions;
 
-/// <summary>
-/// One lot, at the second it is due. The retries are deliberate and slow: a lot whose close
-/// was pushed out by a late bid arrives here early, finds it is not due yet, and is worth
-/// another look shortly rather than being handed back to the once-a-minute sweep.
-/// </summary>
 [AutomaticRetry(Attempts = 0)]
 public sealed class CloseAuctionJob
 {

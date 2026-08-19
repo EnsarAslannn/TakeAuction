@@ -34,7 +34,6 @@ public sealed class RefreshSessionContractTests : IAsyncLifetime
             cookie => cookie.StartsWith($"{ApiSession.RefreshCookieName}=", StringComparison.Ordinal));
 
         Assert.Contains("httponly", refreshCookie, StringComparison.OrdinalIgnoreCase);
-        // Narrower than the access cookie on purpose: it must not ride along on every bid.
         Assert.Contains("path=/api/v1/auth", refreshCookie, StringComparison.OrdinalIgnoreCase);
         Assert.NotNull(session.RefreshToken);
     }
@@ -98,11 +97,6 @@ public sealed class RefreshSessionContractTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
-    /// <summary>
-    /// The heart of the design. A token that has already been rotated away can only be in the
-    /// hands of somebody who kept a copy, and the live holder cannot be told apart from the
-    /// thief — so the chain ends for both.
-    /// </summary>
     [Fact]
     public async Task Replaying_a_rotated_token_burns_the_whole_session()
     {
@@ -121,7 +115,6 @@ public sealed class RefreshSessionContractTests : IAsyncLifetime
         var problem = await session.ReadAsync<ProblemDetails>(replay);
         Assert.Equal("Session ended", problem.Title);
 
-        // The token the honest client is holding dies with the family.
         var afterBurn = await session.RefreshWithTokenAsync(live);
 
         Assert.Equal(HttpStatusCode.Unauthorized, afterBurn.StatusCode);
@@ -170,7 +163,6 @@ public sealed class RefreshSessionContractTests : IAsyncLifetime
 
         (await session.LogoutAsync()).EnsureSuccessStatusCode();
 
-        // Even a client that kept the cookie cannot trade it for a new access token.
         var response = await session.RefreshWithTokenAsync(refreshToken);
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);

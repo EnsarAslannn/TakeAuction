@@ -122,8 +122,6 @@ public sealed class CancelAuctionHandlerTests : IDisposable
     [Fact]
     public async Task A_bid_that_lands_mid_withdrawal_wins_and_the_lot_stays_up()
     {
-        // The conflict stands in for a bid arriving between the read and the write. On the
-        // retry the rule sees it and refuses, which is the answer the seller needs.
         var interceptor = new ConcurrencyConflictInterceptor(
             conflictCount: 1,
             onConflict: PlaceRivalBid);

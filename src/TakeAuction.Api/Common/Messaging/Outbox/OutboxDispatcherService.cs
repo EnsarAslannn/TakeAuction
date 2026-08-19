@@ -2,12 +2,6 @@ using Microsoft.Extensions.Options;
 
 namespace TakeAuction.Api.Common.Messaging.Outbox;
 
-/// <summary>
-/// Drains the outbox as soon as a commit signals it, and sweeps on a timer regardless. The
-/// signal is what keeps a live bid on the screen in milliseconds instead of a poll interval;
-/// the timer is what recovers rows this instance never heard about — ones written by another
-/// instance, or ones whose signal was lost because the process died right after committing.
-/// </summary>
 public sealed class OutboxDispatcherService : BackgroundService
 {
     private readonly IServiceScopeFactory _scopeFactory;
@@ -70,8 +64,6 @@ public sealed class OutboxDispatcherService : BackgroundService
         }
         catch (Exception ex)
         {
-            // Never let a bad sweep take the dispatcher down: the messages are durable, so the
-            // next tick gets another go at them.
             _logger.LogError(ex, "Outbox sweep failed; retrying on the next tick");
         }
     }

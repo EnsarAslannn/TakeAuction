@@ -8,10 +8,6 @@ export interface Bidder {
   panel: AuctionDetailPage;
 }
 
-/**
- * A browser context is its own cookie jar, so two of them are genuinely two signed-in
- * people rather than one session in two tabs.
- */
 export async function openBidder(browser: Browser, auction: CreatedAuction): Promise<Bidder> {
   const context = await browser.newContext();
   await registerBidder(context.request);

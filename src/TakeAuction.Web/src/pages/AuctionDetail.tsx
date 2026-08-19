@@ -41,8 +41,6 @@ export function AuctionDetail() {
     if (!id) return;
     setLoading(true);
     try {
-      // The history seeds the feed so a reload does not read as "no bids yet" on a lot that
-      // has drawn plenty. Live notifications carry on from there.
       const [data, history] = await Promise.all([
         getAuctionById(id),
         getAuctionBids(id, { pageSize: FEED_LENGTH }).catch(() => null),
@@ -75,11 +73,6 @@ export function AuctionDetail() {
       setAuction((previous) => {
         if (!previous) return previous;
 
-        // Simultaneous bids are broadcast from separate handlers, so notifications can reach
-        // us out of order — and a live auction's price never moves down. This also absorbs
-        // the echo of our own accepted bid, which onAccepted has already applied.
-        // The bidCount check matters: the opening bid is allowed to equal the starting price,
-        // and skipping it would leave the counter reading zero on a lot that has one.
         if (previous.bidCount > 0 && notification.amount <= previous.currentPrice) {
           return previous;
         }
@@ -89,9 +82,6 @@ export function AuctionDetail() {
           currentPrice: notification.amount,
           bidCount: previous.bidCount + 1,
           minimumAcceptableBid: notification.amount + previous.minimumBidIncrement,
-          // A bid in the closing seconds moves the end, and the countdown has to follow it or
-          // it will run out on a lot that is still taking bids. Only ever forward: an
-          // out-of-order notification must not wind the clock back.
           endsAtUtc: laterOf(previous.endsAtUtc, notification.endsAtUtc),
         };
       });

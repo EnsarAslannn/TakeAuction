@@ -1,18 +1,13 @@
 export interface ShowcaseModel {
   slug: string;
-  /** Must match the seeded auction title exactly. */
   title: string;
   shortLabel: string;
   category: string;
   provenance: string;
   model: string;
-  /** Product photo used on the hero carousel card. */
   card: string;
-  /** Uniform scale applied after auto-centering. */
   scale: number;
-  /** Extra Y offset in normalised units, applied after centering. */
   lift: number;
-  /** Initial Y rotation in radians. */
   spin: number;
 }
 
@@ -104,11 +99,6 @@ export function showcaseForSlug(slug: string): ShowcaseModel | undefined {
 
 export const SELLER_LISTING_CATEGORY = "Satıcı ilanı";
 
-/**
- * Only the seeded showroom lots have a bespoke 3D model. Seller-created auctions
- * return undefined so the UI shows the seller's own photo — or an empty plate —
- * instead of an unrelated product.
- */
 export function showcaseForAuction(auction: { title: string }): ShowcaseModel | undefined {
   return showcaseForTitle(auction.title);
 }

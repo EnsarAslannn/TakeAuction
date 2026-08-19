@@ -7,7 +7,6 @@ interface RevealProps {
   as?: "div" | "section" | "li" | "span";
 }
 
-/** Fade-and-rise on first entry. Kept CSS-only so it costs nothing on the main thread. */
 export function Reveal({ children, delay = 0, className = "", as = "div" }: RevealProps) {
   const { ref, inView } = useInView<HTMLDivElement>();
   const Tag = as;
@@ -31,13 +30,10 @@ interface SplitLineProps {
   delay?: number;
 }
 
-/** Word-by-word mask reveal for headline type. */
 export function SplitLine({ text, className = "", delay = 0 }: SplitLineProps) {
   const { ref, inView } = useInView<HTMLSpanElement>();
   const words = text.split(" ");
 
-  // No display utility of its own: callers stack lines by passing `block`, and a
-  // hardcoded `inline-block` here would win on stylesheet order and run them together.
   return (
     <span ref={ref} className={className}>
       {words.map((word, index) => (

@@ -6,10 +6,6 @@ using TakeAuction.Api.Features.Auth.GetCurrentUser;
 
 namespace TakeAuction.Api.ApiTests.Common;
 
-/// <summary>
-/// Drives the API the way a browser does: an HttpOnly access-token cookie carried by the
-/// handler's cookie container, plus the readable CSRF cookie echoed back as a header.
-/// </summary>
 public sealed class ApiSession : IDisposable
 {
     public const string AccessTokenCookieName = "takeauction_access_token";
@@ -97,11 +93,6 @@ public sealed class ApiSession : IDisposable
     public Task<HttpResponseMessage> LogoutAsync() =>
         PostAsync(ApiRoutes.Logout, new { });
 
-    /// <summary>
-    /// Refreshes with a specific token over a cookie-less client, which is how a replayed or
-    /// stolen credential would arrive. With no access cookie in play the CSRF double-submit
-    /// check does not apply, so this isolates the refresh rules themselves.
-    /// </summary>
     public async Task<HttpResponseMessage> RefreshWithTokenAsync(string refreshToken)
     {
         using var client = _fixture.CreateRawClient();
@@ -130,17 +121,9 @@ public sealed class ApiSession : IDisposable
         return body;
     }
 
-    /// <summary>
-    /// Deserializes from the string form so a helper and the test that called it can both
-    /// read the same response: the content stream is consumed by whoever reads it first.
-    /// </summary>
     private static async Task<T?> ReadJsonAsync<T>(HttpResponseMessage response) =>
         JsonSerializer.Deserialize<T>(await response.Content.ReadAsStringAsync(), ApiTestFixture.JsonOptions);
 
-    /// <summary>
-    /// A client that carries the session's JWT as a bearer header and no cookies at all —
-    /// the shape a native or server-to-server caller uses, which is exempt from CSRF.
-    /// </summary>
     public HttpClient CreateBearerClient()
     {
         var client = _fixture.CreateRawClient();
@@ -209,10 +192,6 @@ public static class ApiRoutes
 
 public static class LocationAssert
 {
-    /// <summary>
-    /// Some slices answer with a relative Location and others let routing expand it to an
-    /// absolute URL, so assertions compare the tail rather than the whole string.
-    /// </summary>
     public static void PointsAt(string expectedPath, Uri? location)
     {
         Assert.NotNull(location);

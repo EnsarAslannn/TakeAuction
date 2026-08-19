@@ -60,10 +60,6 @@ export function uniqueTitle(prefix = "E2E lot"): string {
   return `${prefix} ${unique("ref")}`;
 }
 
-/**
- * The API only enforces the double-submit token once a session cookie exists, but reading
- * it back for every mutation is exactly what the SPA's axios interceptor does.
- */
 async function csrfHeaders(context: APIRequestContext): Promise<Record<string, string>> {
   const { cookies } = await context.storageState();
   const token = cookies.find((cookie) => cookie.name === CSRF_COOKIE)?.value;
@@ -139,10 +135,6 @@ async function createAuction(
   return { id: created.id, title, startingPrice, minimumBidIncrement };
 }
 
-/**
- * Creates a lot whose window is already open. The create validator tolerates a start up to a
- * minute in the past, which is what puts the auction straight into Active without waiting.
- */
 export function createOpenAuction(
   context: APIRequestContext,
   options: CreateAuctionOptions = {}
@@ -161,7 +153,6 @@ export function createScheduledAuction(
   });
 }
 
-/** Registers a throwaway seller on its own context and hands back an open lot. */
 export async function seedOpenAuction(
   context: APIRequestContext,
   options: CreateAuctionOptions = {}

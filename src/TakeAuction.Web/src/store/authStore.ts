@@ -84,9 +84,6 @@ export const useAuthStore = create<AuthState>((set) => ({
   clearError: () => set({ error: null }),
 }));
 
-// A refresh rotates the CSRF cookie too, and the hub bakes that header in when it connects.
-// Without a reset the socket keeps working but its next reconnect would negotiate with a
-// token the server no longer recognises.
 onSessionRefreshed(() => {
   void auctionHub.reset();
 });

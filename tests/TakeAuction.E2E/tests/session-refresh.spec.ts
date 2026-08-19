@@ -7,11 +7,6 @@ const ACCESS_COOKIE = "takeauction_access_token";
 const REFRESH_COOKIE = "takeauction_refresh_token";
 const STARTING_PRICE = 1000;
 
-/**
- * Dropping the access cookie is how an expired token looks to the browser: the long-lived
- * refresh cookie survives and the very next call comes back 401. Waiting out a real fifteen
- * minute lifetime would test the same code path and cost fifteen minutes.
- */
 test.describe("Oturum sessiz yenileme", () => {
   test("erişim çerezi düştüğünde teklif sessizce yenilenip tamamlanır", async ({ browser, request }) => {
     const auction = await seedOpenAuction(request, {
@@ -35,7 +30,6 @@ test.describe("Oturum sessiz yenileme", () => {
       const refreshResponse = await refreshCall;
       expect(refreshResponse.status(), "the client should have refreshed on its own").toBe(200);
 
-      // The user never saw a login screen: the bid they clicked is the bid that landed.
       expect(outcome.kind, outcome.text).toBe("leading");
       await expect(bidder.panel.currentPrice).toHaveText(amountPattern(STARTING_PRICE));
 
@@ -61,8 +55,6 @@ test.describe("Oturum sessiz yenileme", () => {
       await bidder.panel.setAmount(STARTING_PRICE);
       await bidder.panel.submit();
 
-      // Nothing left to refresh with, so the panel falls back to the signed-out invitation
-      // instead of leaving the bidder staring at a form that can never succeed.
       await expect(bidder.panel.signInPrompt).toBeVisible();
 
       const persisted = await getAuction(request, auction.id);

@@ -12,7 +12,6 @@ public enum RefreshRejection
     UnknownToken = 2,
     ExpiredToken = 3,
 
-    /// <summary>A token that had already been rotated away came back — treat it as theft.</summary>
     ReusedToken = 4,
     AccountUnavailable = 5
 }

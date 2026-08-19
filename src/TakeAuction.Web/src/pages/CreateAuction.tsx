@@ -165,8 +165,6 @@ export function CreateAuction() {
             className="absolute inset-0 h-full w-full object-cover"
           />
         )}
-        {/* Two scrims: a heavy top band keeps the fixed nav legible over the vitrine
-            highlight, a bottom band carries the headline into the paper section. */}
         <div
           aria-hidden
           className="absolute inset-0"
@@ -429,8 +427,6 @@ function Section({
   note?: string;
   children: React.ReactNode;
 }) {
-  // Deliberately not wrapped in Reveal: scroll-gated opacity would leave required
-  // inputs invisible until the section scrolls into view.
   return (
     <section>
       <div className="flex items-baseline gap-5 border-b border-ink/12 pb-4">

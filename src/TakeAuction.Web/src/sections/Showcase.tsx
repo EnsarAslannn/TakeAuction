@@ -6,9 +6,6 @@ import { useIsVisible } from "@/lib/hooks";
 import { formatMoney } from "@/lib/format";
 import type { AuctionListItem } from "@/api/types";
 
-// three.js, R3F and drei are the heaviest dependency in the app by a wide margin.
-// Loading them lazily keeps them out of the landing page's critical path entirely —
-// a visitor who never scrolls to the stage never pays for them.
 const ShowcaseCanvas = lazy(() =>
   import("@/three/ShowcaseCanvas").then((module) => ({ default: module.ShowcaseCanvas }))
 );
@@ -17,29 +14,18 @@ interface ShowcaseProps {
   auctions: AuctionListItem[];
 }
 
-/**
- * The 3D stage. Where the hero is for browsing the catalogue, this is for
- * inspecting one lot: the real GLB model, rotatable by dragging. Selection is
- * driven only by the arrows, so page scroll passes through untouched.
- */
 export function Showcase({ auctions }: ShowcaseProps) {
   const [index, setIndex] = useState(0);
   const { state: dragState, dragging, reset, decay, handlers } = useDragRotate();
   const { ref: stageRef, visible } = useIsVisible<HTMLElement>();
 
-  // Mounting the canvas is what pulls the first ~6MB model and opens the WebGL
-  // context, so it waits until the stage is actually reached. It never unmounts
-  // again — tearing the context down would re-download everything on the way back.
   const [armed, setArmed] = useState(false);
   useEffect(() => {
     if (visible) setArmed(true);
   }, [visible]);
 
-  // A fresh model should start from its authored angle, not the previous one's.
   useEffect(() => reset(), [index, reset]);
 
-  // The catalogue is ~28MB of geometry, so only the neighbours of the current lot
-  // are warmed, and only after the current one has had a head start on the network.
   useEffect(() => {
     if (!visible) return;
 
@@ -91,8 +77,6 @@ export function Showcase({ auctions }: ShowcaseProps) {
         </Suspense>
       )}
 
-      {/* Drag surface. `pan-y` keeps vertical page scrolling available on touch
-          while horizontal drags rotate the model. */}
       <div
         {...handlers}
         role="application"

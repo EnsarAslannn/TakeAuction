@@ -26,10 +26,6 @@ public sealed class RefreshTokenGeneratorTests
         Assert.All(token.Value, character => Assert.True(Uri.IsHexDigit(character)));
     }
 
-    /// <summary>
-    /// The refresh endpoint finds the stored row by hashing what the caller presented, so the
-    /// same input has to land on the same hash every time.
-    /// </summary>
     [Fact]
     public void Hashing_is_deterministic()
     {
