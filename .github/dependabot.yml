@@ -14,6 +14,9 @@ updates:
       # MediatR moved to a paid licence at v13; v12 is the last freely licensed line.
       - dependency-name: MediatR
         update-types: [version-update:semver-major]
+      # Same for MassTransit at v9.
+      - dependency-name: MassTransit*
+        update-types: [version-update:semver-major]
 
   - package-ecosystem: npm
     directory: /src/TakeAuction.Web
@@ -24,6 +27,19 @@ updates:
     groups:
       web-minor-and-patch:
         update-types: [minor, patch]
+    ignore:
+      # React 19 needs @react-three/fiber v9 and drei v10; the versions pinned here still
+      # declare a React 16-18 peer range, so npm cannot resolve the tree. Revisit together.
+      - dependency-name: react
+        update-types: [version-update:semver-major]
+      - dependency-name: react-dom
+        update-types: [version-update:semver-major]
+      - dependency-name: "@types/react"
+        update-types: [version-update:semver-major]
+      - dependency-name: "@types/react-dom"
+        update-types: [version-update:semver-major]
+      - dependency-name: "@vitejs/plugin-react"
+        update-types: [version-update:semver-major]
 
   - package-ecosystem: npm
     directory: /tests/TakeAuction.E2E
