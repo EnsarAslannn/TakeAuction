@@ -198,9 +198,18 @@ jobs:
         working-directory: tests/TakeAuction.E2E
         run: npm ci
 
+      - name: Restore the Playwright browser cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('tests/TakeAuction.E2E/package-lock.json') }}
+
+      # No --with-deps: the runner image already has every library Chromium links against,
+      # so apt only adds CJK fonts, and it has stalled this job for half an hour.
       - name: Install Playwright browsers
         working-directory: tests/TakeAuction.E2E
-        run: npx playwright install --with-deps chromium
+        timeout-minutes: 10
+        run: npx playwright install chromium
 
       - name: Prebuild the API
         run: dotnet build src/TakeAuction.Api/TakeAuction.Api.csproj
