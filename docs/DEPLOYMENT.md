@@ -21,9 +21,29 @@ cookies stay first-party with `SameSite=Lax`, CORS never enters the picture, and
 `imageUrl` values the media slice returns resolve without change.
 
 The SignalR hub is the exception: Vercel does not proxy WebSocket upgrades, so the client
-connects straight to Railway. That works because `AuctionHub` is `[AllowAnonymous]` — the
-connection carries no cookie and needs none. It does need Railway's CORS to name the Vercel
-origin, because the negotiate step is a cross-origin POST.
+connects straight to Railway. Being a different site, that connection carries no cookie —
+`AuctionHub` is `[AllowAnonymous]`, so it opens anyway and the group broadcasts arrive. It
+does need Railway's CORS to name the Vercel origin, because the negotiate step is a
+cross-origin POST.
+
+### Why the hub needs a ticket of its own
+
+Group broadcasts are enough for the price ticking on a lot everyone is watching. The outbid
+notice is not a broadcast: `SignalRAuctionNotifier.OutbidAsync` sends to
+`Clients.User(bidderId)`, which only resolves if the hub connection carries an identity. A
+cookieless cross-site connection has none, so on this topology that notice would reach
+nobody — and it would still work locally, where the SPA and the API share an origin, so no
+test would catch it.
+
+The client therefore fetches a ticket before it connects. `GET /api/v1/auth/hub-ticket`
+goes through the Vercel rewrite, so it is same-origin and the session cookie rides along;
+it hands back a JWT that lives for `Jwt__HubTicketLifetimeSeconds` (60 by default). The
+SignalR client passes it through `accessTokenFactory`, which puts it in the `Authorization`
+header on negotiate and in the `access_token` query string on the WebSocket itself.
+
+The ticket carries a `token_use` claim of `hub`, and `OnTokenValidated` refuses a `hub`
+token on anything outside `/hubs`. A leaked ticket is therefore worth one minute of
+listening on a hub and nothing else — it cannot place a bid.
 
 ## 1. Railway
 
@@ -81,6 +101,13 @@ value brings it back.
 
 `KnownNetworks` still has to trust everything, because Railway's internal addresses are not fixed
 and its private network is IPv6, hence both the v4 and v6 entries.
+
+Naming it is not optional here. When neither `KnownProxies` nor `KnownNetworks` is set, the API
+falls back to trusting the private ranges only (`127.0.0.0/8`, `10.0.0.0/8`, `172.16.0.0/12`,
+`192.168.0.0/16`, `::1/128`, `fc00::/7`) and says so on the startup log. That default is right for
+Docker Compose, where nginx reaches the API from the bridge network, and it deliberately refuses a
+forwarding header from a public address. Railway's edge is not on a private address, so without the
+two entries above every anonymous caller would land in one rate limiting partition.
 
 #### What that costs the rate limiter
 
@@ -158,6 +185,37 @@ Then, from the deployed SPA:
   both tabs end up as the same person. The other screen moving without a refresh means the hub
   connected; if it did not, the browser console will name the CORS origin to add. Bid above the
   standing bidder's ceiling, or the proxy answers and the price moves by one increment only.
+
+## Session behaviour worth knowing
+
+**Two refreshes at once do not end the session.** Rotation claims the presented token with a
+single conditional `UPDATE` that sets `RevokedAtUtc` and `ReplacedByTokenId` together, so exactly
+one caller can rotate it. The one that loses gets `409` with its cookies untouched, and the SPA
+treats that as "somebody already refreshed me" and retries the original call.
+
+Presenting a token that was rotated within `Jwt__RefreshRotationGraceSeconds` (30 by default) is
+read the same way — a race, not a theft — and the family survives. Past that window it is reuse:
+the whole family is revoked and every device on it is signed out. Setting the grace to `0` turns
+the leniency off entirely and makes any second presentation fatal.
+
+A token revoked by signing out is never forgiven, whatever the grace: only a token that carries a
+`ReplacedByTokenId` counts as a rotation, and sign-out does not set one.
+
+**Signing out does not kill the access token already in the browser.** It revokes the refresh
+family, so no new access token can be minted, but the one in hand stays valid until it expires —
+at most `Jwt__AccessTokenLifetimeMinutes` (15 by default). Shorten that value if the window
+matters more than the round trips.
+
+## Uploaded images have a lifetime
+
+`POST /media/images` writes the file before any auction points at it, so an abandoned "create
+auction" form leaves a file behind. A Hangfire job (`media:purge-orphan-images`,
+`Jobs__PurgeOrphanImagesCron`, 03:30 UTC by default) deletes uploads that no `auctions.ImageUrl`
+claims and that were last written more than `Media__OrphanRetentionHours` ago — 24 by default, so
+a slow form is never caught mid-fill.
+
+Uploading is also rated on its own: `RateLimiting__MediaUploadPermitLimit` per
+`RateLimiting__MediaUploadWindowSeconds`, 20 an hour per signed-in user by default.
 
 ## What is not deployed
 
