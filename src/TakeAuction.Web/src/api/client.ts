@@ -64,7 +64,13 @@ export function toApiError(error: unknown): ApiError {
   return new ApiError(0, { title: "Beklenmeyen hata", detail: String(error) });
 }
 
-const SESSION_ROUTES = ["/auth/login", "/auth/register", "/auth/refresh", "/auth/logout"];
+const SESSION_ROUTES = [
+  "/auth/login",
+  "/auth/register",
+  "/auth/refresh",
+  "/auth/logout",
+  "/auth/hub-ticket",
+];
 
 type SessionListener = () => void;
 
