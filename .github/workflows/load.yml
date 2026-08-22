@@ -34,7 +34,7 @@ jobs:
           docker run --rm \
             --network takeauction_takeauction-network \
             -v "$PWD/tests/TakeAuction.LoadTests:/scripts" \
-            -e BASE_URL=http://nginx \
+            -e BASE_URL=http://api:8080 \
             -e PEAK_VUS=${{ inputs.peak_vus || '100' }} \
             -e STAGE_DURATION=${{ inputs.stage_duration || '20s' }} \
             -e K6_SUMMARY_EXPORT=/scripts/summary.json \

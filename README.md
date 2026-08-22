@@ -101,7 +101,9 @@ Hangfire                       → lot bazlı kapanış planlaması ve periyodik
 
 Her şeyin önünde bir nginx gateway durur: `/api`, `/hubs` ve `/uploads` isteklerini
 API'ye, geri kalan her şeyi SPA'ya yönlendirir; böylece tarayıcı tek bir origin ile
-konuşur.
+konuşur. Gateway ayrıca ilk savunma hattıdır: `/api` için saniyede 20, giriş ve kayıt
+uçları için saniyede 1 istek sınırı uygular, hub bağlantılarını IP başına 20 ile
+sınırlar. Uygulama katmanındaki limitler bunun arkasında ikinci kez çalışır.
 
 Frontend, backend'den bağımsız ayrı bir React + TypeScript projesi olarak geliştirilmiştir
 (`src/TakeAuction.Web`) ve API ile REST ve SignalR üzerinden konuşur.

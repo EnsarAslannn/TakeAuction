@@ -92,7 +92,10 @@ Hangfire                       → per-lot close scheduling and the recurring sw
 ```
 
 An nginx gateway sits in front of everything: it routes `/api`, `/hubs` and `/uploads` to
-the API and everything else to the SPA, so the browser only ever talks to one origin.
+the API and everything else to the SPA, so the browser only ever talks to one origin. The
+gateway is also the first line of defence: 20 requests per second for `/api`, one per
+second for sign-in and registration, and 20 concurrent hub connections per address. The
+application's own limits run again behind it.
 
 The frontend is a separate React + TypeScript project (`src/TakeAuction.Web`), talking to
 the API over REST and SignalR.
