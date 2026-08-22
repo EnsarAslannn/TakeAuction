@@ -49,10 +49,10 @@ jobs:
           cache-dependency-path: src/TakeAuction.Web/package-lock.json
 
       - name: Restore
-        run: dotnet restore TakeAuction.slnx
+        run: dotnet restore TakeAuction.slnx -warnaserror
 
       - name: Build solution
-        run: dotnet build TakeAuction.slnx --configuration Release --no-restore
+        run: dotnet build TakeAuction.slnx --configuration Release --no-restore -warnaserror
 
       - name: Install web dependencies
         working-directory: src/TakeAuction.Web
@@ -79,6 +79,7 @@ jobs:
           --configuration Release
           --logger "trx;LogFileName=unit-tests.trx"
           --collect:"XPlat Code Coverage"
+          --settings coverlet.unit.runsettings
           --results-directory artifacts/test-results
 
       - uses: actions/upload-artifact@v7
@@ -105,6 +106,7 @@ jobs:
           --configuration Release
           --logger "trx;LogFileName=integration-tests.trx"
           --collect:"XPlat Code Coverage"
+          --settings coverlet.runsettings
           --results-directory artifacts/test-results
 
       - uses: actions/upload-artifact@v7
@@ -131,6 +133,7 @@ jobs:
           --configuration Release
           --logger "trx;LogFileName=api-tests.trx"
           --collect:"XPlat Code Coverage"
+          --settings coverlet.runsettings
           --results-directory artifacts/test-results
 
       - uses: actions/upload-artifact@v7
@@ -158,6 +161,31 @@ jobs:
           curl --fail --silent --show-error http://localhost:8080/health/ready
           curl --fail --silent --show-error "http://localhost:8080/api/v1/auctions?pageSize=1" > /dev/null
           curl --fail --silent --show-error http://localhost:8080/ | grep -q "<!doctype html>"
+
+      - name: The gateway hands back the security headers
+        run: |
+          curl --fail --silent --show-error --output /dev/null --dump-header api.headers \
+            "http://localhost:8080/api/v1/auctions?pageSize=1"
+          grep -qi "^x-content-type-options: nosniff" api.headers
+          grep -qi "^content-security-policy:" api.headers
+
+          curl --fail --silent --show-error --output /dev/null --dump-header web.headers \
+            http://localhost:8080/
+          grep -qi "^x-content-type-options: nosniff" web.headers
+          grep -qi "^x-frame-options: DENY" web.headers
+
+      - name: The gateway throttles a burst of sign-in attempts
+        run: |
+          rejected=0
+          for _ in $(seq 1 30); do
+            status=$(curl --silent --output /dev/null --write-out "%{http_code}" \
+              --header "Content-Type: application/json" \
+              --data '{"email":"nobody@takeauction.local","password":"not-the-password"}' \
+              http://localhost:8080/api/v1/auth/login)
+            if [ "$status" = "429" ]; then rejected=$((rejected + 1)); fi
+          done
+          echo "rejected $rejected of 30"
+          [ "$rejected" -gt 0 ]
 
       - name: Collect service logs
         if: failure()
