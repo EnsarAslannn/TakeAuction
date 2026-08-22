@@ -11,4 +11,6 @@ public sealed class RealTimeOptions
     public int KeepAliveSeconds { get; set; } = 15;
 
     public int ClientTimeoutSeconds { get; set; } = 30;
+
+    public int MaxAuctionSubscriptionsPerConnection { get; set; } = 20;
 }
