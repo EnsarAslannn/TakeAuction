@@ -82,10 +82,16 @@ export function onSessionLost(listener: SessionListener): void {
 async function requestRefresh(): Promise<void> {
   const token = readCookie(CSRF_COOKIE);
 
-  await axios.post(`${API_BASE}/auth/refresh`, null, {
-    withCredentials: true,
-    headers: token ? { [CSRF_HEADER]: token } : undefined,
-  });
+  try {
+    await axios.post(`${API_BASE}/auth/refresh`, null, {
+      withCredentials: true,
+      headers: token ? { [CSRF_HEADER]: token } : undefined,
+    });
+  } catch (error) {
+    if ((error as AxiosError).response?.status !== 409) {
+      throw error;
+    }
+  }
 }
 
 let inFlight: Promise<void> | null = null;

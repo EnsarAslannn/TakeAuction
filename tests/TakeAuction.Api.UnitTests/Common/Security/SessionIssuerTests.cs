@@ -63,7 +63,7 @@ public sealed class SessionIssuerTests
     }
 
     [Fact]
-    public async Task Rotating_retires_the_presented_token_and_keeps_the_family()
+    public async Task Continuing_a_family_issues_a_fresh_token_under_the_same_family_and_id()
     {
         var user = await AddUserAsync();
         var issuer = CreateIssuer();
@@ -73,24 +73,20 @@ public sealed class SessionIssuerTests
 
         _time.Advance(TimeSpan.FromMinutes(20));
 
-        var second = await issuer.RotateAsync(user, current, CancellationToken.None);
+        var replacementId = Guid.CreateVersion7();
+        var second = await issuer.ContinueAsync(user, current.FamilyId, replacementId, CancellationToken.None);
 
         var tokens = await _dbContext.RefreshTokens.OrderBy(token => token.CreatedAtUtc).ToListAsync();
 
         Assert.Equal(2, tokens.Count);
-        Assert.Single(tokens, token => token.IsActive(_time.GetUtcNow()));
-
-        var retired = tokens[0];
-        var live = tokens[1];
-
-        Assert.True(retired.IsRevoked);
-        Assert.Equal(live.Id, retired.ReplacedByTokenId);
-        Assert.Equal(retired.FamilyId, live.FamilyId);
+        Assert.All(tokens, token => Assert.Equal(current.FamilyId, token.FamilyId));
+        Assert.Equal(replacementId, tokens[1].Id);
+        Assert.Equal(_refreshTokens.Hash(second.RefreshToken.Value), tokens[1].TokenHash);
         Assert.NotEqual(first.RefreshToken.Value, second.RefreshToken.Value);
     }
 
     [Fact]
-    public async Task Rotating_extends_the_horizon_from_the_moment_of_the_refresh()
+    public async Task Continuing_extends_the_horizon_from_the_moment_of_the_refresh()
     {
         var user = await AddUserAsync();
         var issuer = CreateIssuer();
@@ -100,7 +96,11 @@ public sealed class SessionIssuerTests
 
         _time.Advance(TimeSpan.FromDays(3));
 
-        var rotated = await issuer.RotateAsync(user, current, CancellationToken.None);
+        var rotated = await issuer.ContinueAsync(
+            user,
+            current.FamilyId,
+            Guid.CreateVersion7(),
+            CancellationToken.None);
 
         Assert.Equal(_time.GetUtcNow().AddDays(Jwt.RefreshTokenLifetimeDays), rotated.RefreshToken.ExpiresAtUtc);
     }

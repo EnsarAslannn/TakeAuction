@@ -8,6 +8,8 @@ namespace TakeAuction.Api.ApiTests.Contracts;
 [Collection(ApiTestCollection.Name)]
 public sealed class RefreshSessionContractTests : IAsyncLifetime
 {
+    private static readonly TimeSpan PastTheRotationGrace = TimeSpan.FromMilliseconds(1200);
+
     private readonly ApiTestFixture _fixture;
 
     public RefreshSessionContractTests(ApiTestFixture fixture) => _fixture = fixture;
@@ -98,6 +100,57 @@ public sealed class RefreshSessionContractTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Only_one_of_two_simultaneous_refreshes_rotates_the_token()
+    {
+        using var session = await _fixture.CreateBidderAsync();
+        var presented = session.RefreshToken!;
+
+        var responses = await Task.WhenAll(
+            session.RefreshWithTokenAsync(presented),
+            session.RefreshWithTokenAsync(presented));
+
+        try
+        {
+            var winner = Assert.Single(responses, response => response.StatusCode == HttpStatusCode.OK);
+            var loser = Assert.Single(responses, response => response.StatusCode != HttpStatusCode.OK);
+
+            Assert.Equal(HttpStatusCode.Conflict, loser.StatusCode);
+
+            var problem = await session.ReadAsync<ProblemDetails>(loser);
+            Assert.Equal("Session already refreshed", problem.Title);
+
+            var rotated = ReadCookie(winner, ApiSession.RefreshCookieName);
+            Assert.NotNull(rotated);
+            Assert.NotEqual(presented, rotated);
+
+            using var afterTheRace = await session.RefreshWithTokenAsync(rotated);
+
+            Assert.Equal(HttpStatusCode.OK, afterTheRace.StatusCode);
+        }
+        finally
+        {
+            foreach (var response in responses)
+            {
+                response.Dispose();
+            }
+        }
+    }
+
+    [Fact]
+    public async Task A_losing_refresh_leaves_the_cookies_alone()
+    {
+        using var session = await _fixture.CreateBidderAsync();
+        var presented = session.RefreshToken!;
+
+        (await session.RefreshWithTokenAsync(presented)).EnsureSuccessStatusCode();
+
+        using var loser = await session.RefreshWithTokenAsync(presented);
+
+        Assert.Equal(HttpStatusCode.Conflict, loser.StatusCode);
+        Assert.False(loser.Headers.Contains("Set-Cookie"));
+    }
+
+    [Fact]
     public async Task Replaying_a_rotated_token_burns_the_whole_session()
     {
         using var session = await _fixture.CreateBidderAsync();
@@ -107,6 +160,8 @@ public sealed class RefreshSessionContractTests : IAsyncLifetime
         var live = session.RefreshToken!;
 
         Assert.NotEqual(stolen, live);
+
+        await Task.Delay(PastTheRotationGrace);
 
         var replay = await session.RefreshWithTokenAsync(stolen);
 
@@ -130,6 +185,8 @@ public sealed class RefreshSessionContractTests : IAsyncLifetime
         var second = session.RefreshToken!;
         (await session.PostAsync(ApiRoutes.Refresh, new { })).EnsureSuccessStatusCode();
 
+        await Task.Delay(PastTheRotationGrace);
+
         (await session.RefreshWithTokenAsync(first)).EnsureUnauthorized();
 
         foreach (var token in new[] { first, second, session.RefreshToken! })
@@ -148,6 +205,8 @@ public sealed class RefreshSessionContractTests : IAsyncLifetime
 
         (await session.PostAsync(ApiRoutes.Refresh, new { })).EnsureSuccessStatusCode();
 
+        await Task.Delay(PastTheRotationGrace);
+
         var replay = await session.RefreshWithTokenAsync(stolen);
         var cookies = replay.Headers.GetValues("Set-Cookie").ToArray();
 
@@ -164,6 +223,19 @@ public sealed class RefreshSessionContractTests : IAsyncLifetime
         (await session.LogoutAsync()).EnsureSuccessStatusCode();
 
         var response = await session.RefreshWithTokenAsync(refreshToken);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task The_rotation_grace_does_not_forgive_a_token_that_was_signed_out()
+    {
+        using var session = await _fixture.CreateBidderAsync();
+        var refreshToken = session.RefreshToken!;
+
+        (await session.LogoutAsync()).EnsureSuccessStatusCode();
+
+        using var response = await session.RefreshWithTokenAsync(refreshToken);
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
@@ -194,6 +266,25 @@ public sealed class RefreshSessionContractTests : IAsyncLifetime
         var response = await session.PostAsync(ApiRoutes.Refresh, new { }, withCsrf: false);
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    private static string? ReadCookie(HttpResponseMessage response, string name)
+    {
+        if (!response.Headers.TryGetValues("Set-Cookie", out var cookies))
+        {
+            return null;
+        }
+
+        var match = cookies.FirstOrDefault(cookie => cookie.StartsWith($"{name}=", StringComparison.Ordinal));
+
+        if (match is null)
+        {
+            return null;
+        }
+
+        var value = match[(name.Length + 1)..].Split(';')[0];
+
+        return string.IsNullOrEmpty(value) ? null : value;
     }
 }
 

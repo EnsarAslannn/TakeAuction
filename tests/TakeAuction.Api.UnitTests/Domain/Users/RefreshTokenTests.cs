@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using TakeAuction.Api.Domain.Users;
 using TakeAuction.Api.UnitTests.Common;
 
@@ -46,34 +47,49 @@ public sealed class RefreshTokenTests
     }
 
     [Fact]
-    public void Replacing_retires_the_old_link_and_points_it_at_the_new_one()
+    public async Task A_token_rotated_moments_ago_reads_as_a_concurrent_refresh()
     {
-        var current = Issue();
-        var replacement = Issue();
         var rotatedAt = TestHarness.Now.AddMinutes(10);
+        var token = await RotatedAsync(rotatedAt);
 
-        current.ReplaceWith(replacement, rotatedAt);
+        Assert.True(token.IsRevoked);
+        Assert.Equal(rotatedAt, token.RevokedAtUtc);
+        Assert.NotNull(token.ReplacedByTokenId);
 
-        Assert.True(current.IsRevoked);
-        Assert.Equal(rotatedAt, current.RevokedAtUtc);
-        Assert.Equal(replacement.Id, current.ReplacedByTokenId);
-        Assert.True(replacement.IsActive(rotatedAt));
+        Assert.True(token.WasRotatedWithin(rotatedAt, TimeSpan.FromSeconds(30)));
+        Assert.True(token.WasRotatedWithin(rotatedAt.AddSeconds(30), TimeSpan.FromSeconds(30)));
+        Assert.False(token.WasRotatedWithin(rotatedAt.AddSeconds(31), TimeSpan.FromSeconds(30)));
     }
 
     [Fact]
-    public void A_token_cannot_be_replaced_by_one_from_another_family()
+    public void A_token_revoked_without_a_replacement_is_never_a_concurrent_refresh()
     {
-        var current = Issue();
-        var stranger = RefreshToken.Issue(
-            UserId,
-            Guid.CreateVersion7(),
-            "another-family-hash",
-            TestHarness.Now,
-            TestHarness.Now.AddDays(7));
+        var token = Issue();
+        var revokedAt = TestHarness.Now.AddMinutes(10);
 
-        Assert.Throws<ArgumentException>(() => current.ReplaceWith(stranger, TestHarness.Now));
+        token.Revoke(revokedAt);
+
+        Assert.False(token.WasRotatedWithin(revokedAt, TimeSpan.FromSeconds(30)));
     }
 
+    [Fact]
+    public void A_live_token_is_never_a_concurrent_refresh()
+    {
+        Assert.False(Issue().WasRotatedWithin(TestHarness.Now, TimeSpan.FromSeconds(30)));
+    }
+
+    [Fact]
+    public void An_explicit_token_id_is_honoured_and_may_not_be_empty()
+    {
+        var id = Guid.CreateVersion7();
+
+        Assert.Equal(
+            id,
+            RefreshToken.Issue(UserId, FamilyId, "hash", TestHarness.Now, TestHarness.Now.AddDays(7), id).Id);
+
+        Assert.Throws<ArgumentException>(() =>
+            RefreshToken.Issue(UserId, FamilyId, "hash", TestHarness.Now, TestHarness.Now.AddDays(7), Guid.Empty));
+    }
     [Theory]
     [InlineData("")]
     [InlineData("   ")]
@@ -98,6 +114,24 @@ public sealed class RefreshTokenTests
 
         Assert.Throws<ArgumentException>(() =>
             RefreshToken.Issue(UserId, Guid.Empty, "hash", TestHarness.Now, TestHarness.Now.AddDays(7)));
+    }
+
+    private static async Task<RefreshToken> RotatedAsync(DateTimeOffset rotatedAt)
+    {
+        using var dbContext = TestHarness.CreateDbContext();
+
+        var token = Issue();
+        dbContext.RefreshTokens.Add(token);
+        await dbContext.SaveChangesAsync();
+
+        var entry = dbContext.Entry(token);
+        entry.Property(candidate => candidate.RevokedAtUtc).CurrentValue = rotatedAt;
+        entry.Property(candidate => candidate.ReplacedByTokenId).CurrentValue = Guid.CreateVersion7();
+        await dbContext.SaveChangesAsync();
+
+        dbContext.ChangeTracker.Clear();
+
+        return await dbContext.RefreshTokens.SingleAsync(candidate => candidate.Id == token.Id);
     }
 
     private static RefreshToken Issue(DateTimeOffset? expiresAt = null) =>

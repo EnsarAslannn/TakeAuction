@@ -13,7 +13,8 @@ public enum RefreshRejection
     ExpiredToken = 3,
 
     ReusedToken = 4,
-    AccountUnavailable = 5
+    AccountUnavailable = 5,
+    ConcurrentRotation = 6
 }
 
 public sealed record RefreshSessionResult(
@@ -22,6 +23,8 @@ public sealed record RefreshSessionResult(
     IssuedSession? Session)
 {
     public bool Succeeded => Rejection == RefreshRejection.None;
+
+    public bool EndsTheSession => Rejection is not (RefreshRejection.None or RefreshRejection.ConcurrentRotation);
 
     public static RefreshSessionResult Accepted(AuthenticatedUserResponse user, IssuedSession session) =>
         new(RefreshRejection.None, user, session);

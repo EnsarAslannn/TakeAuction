@@ -8,7 +8,11 @@ public interface ISessionIssuer
 {
     Task<IssuedSession> StartAsync(User user, CancellationToken cancellationToken);
 
-    Task<IssuedSession> RotateAsync(User user, RefreshToken current, CancellationToken cancellationToken);
+    Task<IssuedSession> ContinueAsync(
+        User user,
+        Guid familyId,
+        Guid tokenId,
+        CancellationToken cancellationToken);
 }
 
 public sealed record IssuedSession(AccessToken AccessToken, IssuedRefreshToken RefreshToken);
@@ -38,24 +42,19 @@ public sealed class SessionIssuer : ISessionIssuer
     }
 
     public Task<IssuedSession> StartAsync(User user, CancellationToken cancellationToken) =>
-        IssueAsync(user, Guid.CreateVersion7(), rotating: null, cancellationToken);
+        ContinueAsync(user, Guid.CreateVersion7(), Guid.CreateVersion7(), cancellationToken);
 
-    public Task<IssuedSession> RotateAsync(User user, RefreshToken current, CancellationToken cancellationToken) =>
-        IssueAsync(user, current.FamilyId, current, cancellationToken);
-
-    private async Task<IssuedSession> IssueAsync(
+    public async Task<IssuedSession> ContinueAsync(
         User user,
         Guid familyId,
-        RefreshToken? rotating,
+        Guid tokenId,
         CancellationToken cancellationToken)
     {
         var now = _timeProvider.GetUtcNow();
         var expiresAt = now.AddDays(_options.RefreshTokenLifetimeDays);
 
         var value = _refreshTokens.Generate();
-        var token = RefreshToken.Issue(user.Id, familyId, value.Hash, now, expiresAt);
-
-        rotating?.ReplaceWith(token, now);
+        var token = RefreshToken.Issue(user.Id, familyId, value.Hash, now, expiresAt, tokenId);
 
         await _dbContext.RefreshTokens.AddAsync(token, cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);

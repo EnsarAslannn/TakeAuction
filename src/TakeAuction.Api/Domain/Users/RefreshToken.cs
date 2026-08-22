@@ -18,7 +18,8 @@ public sealed class RefreshToken
         Guid familyId,
         string tokenHash,
         DateTimeOffset nowUtc,
-        DateTimeOffset expiresAtUtc)
+        DateTimeOffset expiresAtUtc,
+        Guid? tokenId = null)
     {
         if (userId == Guid.Empty)
         {
@@ -40,9 +41,14 @@ public sealed class RefreshToken
             throw new ArgumentException("Refresh token must expire in the future.", nameof(expiresAtUtc));
         }
 
+        if (tokenId == Guid.Empty)
+        {
+            throw new ArgumentException("Token id must not be empty.", nameof(tokenId));
+        }
+
         return new RefreshToken
         {
-            Id = Guid.CreateVersion7(),
+            Id = tokenId ?? Guid.CreateVersion7(),
             UserId = userId,
             FamilyId = familyId,
             TokenHash = tokenHash,
@@ -57,6 +63,12 @@ public sealed class RefreshToken
 
     public bool IsActive(DateTimeOffset nowUtc) => !IsRevoked && !IsExpired(nowUtc);
 
+    public bool WasRotatedWithin(DateTimeOffset nowUtc, TimeSpan grace) =>
+        ReplacedByTokenId is not null
+        && RevokedAtUtc is { } revokedAt
+        && nowUtc >= revokedAt
+        && nowUtc - revokedAt <= grace;
+
     public void Revoke(DateTimeOffset nowUtc)
     {
         if (IsRevoked)
@@ -65,20 +77,5 @@ public sealed class RefreshToken
         }
 
         RevokedAtUtc = nowUtc;
-    }
-
-    public void ReplaceWith(RefreshToken replacement, DateTimeOffset nowUtc)
-    {
-        ArgumentNullException.ThrowIfNull(replacement);
-
-        if (replacement.FamilyId != FamilyId)
-        {
-            throw new ArgumentException(
-                "A refresh token may only be replaced by one from the same family.",
-                nameof(replacement));
-        }
-
-        Revoke(nowUtc);
-        ReplacedByTokenId = replacement.Id;
     }
 }

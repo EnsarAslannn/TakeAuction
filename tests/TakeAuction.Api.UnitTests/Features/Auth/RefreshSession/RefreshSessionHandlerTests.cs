@@ -1,4 +1,3 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using TakeAuction.Api.Common.Persistence;
@@ -34,6 +33,7 @@ public sealed class RefreshSessionHandlerTests
 
         Assert.False(result.Succeeded);
         Assert.Equal(RefreshRejection.MissingToken, result.Rejection);
+        Assert.True(result.EndsTheSession);
         Assert.Null(result.Session);
     }
 
@@ -46,6 +46,7 @@ public sealed class RefreshSessionHandlerTests
             .Handle(new RefreshSessionCommand("a-token-that-was-never-issued"), CancellationToken.None);
 
         Assert.Equal(RefreshRejection.UnknownToken, result.Rejection);
+        Assert.True(result.EndsTheSession);
     }
 
     [Fact]
@@ -58,51 +59,16 @@ public sealed class RefreshSessionHandlerTests
         var result = await CreateHandler().Handle(new RefreshSessionCommand(token), CancellationToken.None);
 
         Assert.Equal(RefreshRejection.ExpiredToken, result.Rejection);
+        Assert.True(result.EndsTheSession);
     }
 
     [Fact]
-    public async Task A_live_token_buys_a_new_pair_and_retires_itself()
+    public void A_concurrent_rotation_leaves_the_session_standing()
     {
-        var (user, token) = await AddUserWithSessionAsync();
+        var result = RefreshSessionResult.Rejected(RefreshRejection.ConcurrentRotation);
 
-        _time.Advance(TimeSpan.FromMinutes(20));
-
-        var result = await CreateHandler().Handle(new RefreshSessionCommand(token), CancellationToken.None);
-
-        Assert.True(result.Succeeded);
-        Assert.NotNull(result.Session);
-        Assert.NotEqual(token, result.Session.RefreshToken.Value);
-
-        Assert.NotNull(result.User);
-        Assert.Equal(user.Id, result.User.Id);
-        Assert.Equal(user.Email, result.User.Email);
-        Assert.Equal(nameof(UserRole.Bidder), result.User.Role);
-        Assert.Equal(result.Session.AccessToken.ExpiresAtUtc, result.User.ExpiresAtUtc);
-
-        var stored = await _dbContext.RefreshTokens.OrderBy(entity => entity.CreatedAtUtc).ToListAsync();
-
-        Assert.Equal(2, stored.Count);
-        Assert.True(stored[0].IsRevoked);
-        Assert.True(stored[1].IsActive(_time.GetUtcNow()));
-    }
-
-    [Fact]
-    public async Task The_retired_token_stops_working_the_moment_it_is_rotated()
-    {
-        var (_, token) = await AddUserWithSessionAsync();
-        var handler = CreateHandler();
-
-        var first = await handler.Handle(new RefreshSessionCommand(token), CancellationToken.None);
-        Assert.True(first.Succeeded);
-
-        _dbContext.ChangeTracker.Clear();
-
-        var replayed = await _dbContext.RefreshTokens
-            .Where(entity => entity.TokenHash == _refreshTokens.Hash(token))
-            .SingleAsync();
-
-        Assert.True(replayed.IsRevoked);
-        Assert.NotNull(replayed.ReplacedByTokenId);
+        Assert.False(result.Succeeded);
+        Assert.False(result.EndsTheSession);
     }
 
     private RefreshSessionHandler CreateHandler() =>
@@ -115,6 +81,7 @@ public sealed class RefreshSessionHandlerTests
                 _refreshTokens,
                 Options.Create(Jwt),
                 _time),
+            Options.Create(Jwt),
             _time,
             NullLogger<RefreshSessionHandler>.Instance);
 

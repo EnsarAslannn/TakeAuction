@@ -20,7 +20,10 @@ public sealed class RefreshSessionEndpoint : IEndpoint
 
                 if (!result.Succeeded)
                 {
-                    cookieWriter.Clear(httpContext);
+                    if (result.EndsTheSession)
+                    {
+                        cookieWriter.Clear(httpContext);
+                    }
 
                     return ToProblem(result.Rejection);
                 }
@@ -35,11 +38,17 @@ public sealed class RefreshSessionEndpoint : IEndpoint
             .WithTags("Auth")
             .WithSummary("Rotates the refresh cookie and issues a new access token.")
             .Produces<AuthenticatedUserResponse>()
-            .ProducesProblem(StatusCodes.Status401Unauthorized);
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status409Conflict);
     }
 
     private static IResult ToProblem(RefreshRejection rejection) => rejection switch
     {
+        RefreshRejection.ConcurrentRotation => Results.Problem(
+            title: "Session already refreshed",
+            detail: "Another request rotated this session a moment ago. The session is intact; retry the call.",
+            statusCode: StatusCodes.Status409Conflict),
+
         RefreshRejection.ReusedToken => Results.Problem(
             title: "Session ended",
             detail: "This session was ended because its refresh token was presented twice.",
