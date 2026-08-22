@@ -66,8 +66,7 @@ public sealed class RefreshToken
     public bool WasRotatedWithin(DateTimeOffset nowUtc, TimeSpan grace) =>
         ReplacedByTokenId is not null
         && RevokedAtUtc is { } revokedAt
-        && nowUtc >= revokedAt
-        && nowUtc - revokedAt <= grace;
+        && (nowUtc - revokedAt).Duration() <= grace;
 
     public void Revoke(DateTimeOffset nowUtc)
     {

@@ -62,6 +62,18 @@ public sealed class RefreshTokenTests
     }
 
     [Fact]
+    public async Task A_rotation_stamped_just_after_the_reader_read_the_clock_is_still_a_race()
+    {
+        var rotatedAt = TestHarness.Now.AddMinutes(10);
+        var token = await RotatedAsync(rotatedAt);
+
+        var readTheClockFirst = rotatedAt.AddMilliseconds(-40);
+
+        Assert.True(token.WasRotatedWithin(readTheClockFirst, TimeSpan.FromSeconds(30)));
+        Assert.False(token.WasRotatedWithin(rotatedAt.AddSeconds(-31), TimeSpan.FromSeconds(30)));
+    }
+
+    [Fact]
     public void A_token_revoked_without_a_replacement_is_never_a_concurrent_refresh()
     {
         var token = Issue();

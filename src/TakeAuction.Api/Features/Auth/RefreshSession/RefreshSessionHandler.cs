@@ -80,7 +80,7 @@ public sealed class RefreshSessionHandler : IRequestHandler<RefreshSessionComman
 
         if (claimed == 0)
         {
-            return await ResolveLostClaimAsync(presented.Id, now, cancellationToken);
+            return await ResolveLostClaimAsync(presented.Id, cancellationToken);
         }
 
         var session = await _sessionIssuer.ContinueAsync(user, presented.FamilyId, replacementId, cancellationToken);
@@ -102,7 +102,6 @@ public sealed class RefreshSessionHandler : IRequestHandler<RefreshSessionComman
 
     private async Task<RefreshSessionResult> ResolveLostClaimAsync(
         Guid tokenId,
-        DateTimeOffset nowUtc,
         CancellationToken cancellationToken)
     {
         var current = await _dbContext.RefreshTokens
@@ -113,6 +112,8 @@ public sealed class RefreshSessionHandler : IRequestHandler<RefreshSessionComman
         {
             return RefreshSessionResult.Rejected(RefreshRejection.UnknownToken);
         }
+
+        var nowUtc = _timeProvider.GetUtcNow();
 
         if (current.WasRotatedWithin(nowUtc, _rotationGrace))
         {
