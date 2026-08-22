@@ -13,9 +13,18 @@ public sealed record GetAuctionsQuery(
 {
     public const int MaxPageSize = 100;
 
+    public const int MaxPage = 10_000;
+
+    public const int MaxSearchLength = 100;
+
     public GetAuctionsQuery Normalize() => this with
     {
-        Page = Page < 1 ? 1 : Page,
+        Page = Page switch
+        {
+            < 1 => 1,
+            > MaxPage => MaxPage,
+            _ => Page
+        },
         PageSize = PageSize switch
         {
             < 1 => 20,
