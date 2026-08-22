@@ -43,11 +43,22 @@ public sealed class InvalidateAuctionCacheOnBidPlacedTests
     }
 
     [Fact]
-    public async Task Rotates_the_list_generation()
+    public async Task Leaves_the_list_generation_alone_so_a_hot_lot_cannot_flush_every_page()
     {
         var before = await _auctionCache.GetListGenerationAsync(CancellationToken.None);
 
         await _handler.Handle(Event(), CancellationToken.None);
+
+        var after = await _auctionCache.GetListGenerationAsync(CancellationToken.None);
+        Assert.Equal(before, after);
+    }
+
+    [Fact]
+    public async Task Rotates_the_list_generation_when_the_bid_moved_the_closing_time()
+    {
+        var before = await _auctionCache.GetListGenerationAsync(CancellationToken.None);
+
+        await _handler.Handle(Event(extended: true), CancellationToken.None);
 
         var after = await _auctionCache.GetListGenerationAsync(CancellationToken.None);
         Assert.NotEqual(before, after);
@@ -84,7 +95,7 @@ public sealed class InvalidateAuctionCacheOnBidPlacedTests
         Guid.CreateVersion7(),
         "Demo Seller");
 
-    private static BidPlacedEvent Event() => new(
+    private static BidPlacedEvent Event(bool extended = false) => new(
         AuctionId,
         Guid.CreateVersion7(),
         Guid.CreateVersion7(),
@@ -93,6 +104,6 @@ public sealed class InvalidateAuctionCacheOnBidPlacedTests
         100m,
         null,
         TestHarness.Now.AddDays(2),
-        false,
+        extended,
         TestHarness.Now);
 }
