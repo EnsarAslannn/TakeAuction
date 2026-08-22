@@ -10,6 +10,7 @@ public static class MediaFeatureExtensions
             .Bind(configuration.GetSection(MediaOptions.SectionName));
 
         services.AddSingleton<MediaStorage>();
+        services.AddScoped<PurgeOrphanImages.PurgeOrphanImagesJob>();
 
         return services;
     }

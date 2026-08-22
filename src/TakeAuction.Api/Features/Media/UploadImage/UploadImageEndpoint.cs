@@ -22,6 +22,7 @@ public sealed class UploadImageEndpoint : IEndpoint
                 return Results.Ok(response);
             })
             .RequireAuthorization(policy => policy.RequireRole(nameof(UserRole.Seller), nameof(UserRole.Admin)))
+            .RequireRateLimiting(RateLimitingExtensions.MediaUploadPolicy)
             .DisableAntiforgery()
             .WithName("UploadImage")
             .WithTags("Media")
@@ -29,6 +30,7 @@ public sealed class UploadImageEndpoint : IEndpoint
             .Produces<UploadImageResponse>()
             .ProducesValidationProblem()
             .ProducesProblem(StatusCodes.Status401Unauthorized)
-            .ProducesProblem(StatusCodes.Status403Forbidden);
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status429TooManyRequests);
     }
 }

@@ -18,6 +18,7 @@ public sealed class TakeAuctionApiFactory : WebApplicationFactory<Program>
         ["Jwt__AccessTokenLifetimeMinutes"] = "15",
         ["RateLimiting__PermitLimit"] = "1000000",
         ["RateLimiting__AuthPermitLimit"] = "1000000",
+        ["RateLimiting__MediaUploadPermitLimit"] = "1000000",
         ["Seed__Enabled"] = "false",
         ["Jobs__ServerEnabled"] = "true",
         ["Jobs__WorkerCount"] = "2",

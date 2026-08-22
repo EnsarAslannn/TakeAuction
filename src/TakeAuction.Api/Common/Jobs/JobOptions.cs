@@ -22,5 +22,7 @@ public sealed class JobOptions
 
     public string PurgeOutboxCron { get; set; } = "15 3 * * *";
 
+    public string PurgeOrphanImagesCron { get; set; } = "30 3 * * *";
+
     public int RefreshTokenRetentionDays { get; set; } = 7;
 }

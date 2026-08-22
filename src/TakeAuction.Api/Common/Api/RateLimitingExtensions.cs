@@ -10,6 +10,8 @@ public static class RateLimitingExtensions
 {
     public const string AuthPolicy = "auth";
 
+    public const string MediaUploadPolicy = "media-upload";
+
     public static IServiceCollection AddTakeAuctionRateLimiting(
         this IServiceCollection services,
         IConfiguration configuration)
@@ -42,6 +44,17 @@ public static class RateLimitingExtensions
                     {
                         PermitLimit = options.AuthPermitLimit,
                         Window = TimeSpan.FromSeconds(options.AuthWindowSeconds),
+                        QueueLimit = 0,
+                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst
+                    }));
+
+            limiter.AddPolicy(MediaUploadPolicy, context =>
+                RateLimitPartition.GetFixedWindowLimiter(
+                    ResolvePartitionKey(context),
+                    _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = options.MediaUploadPermitLimit,
+                        Window = TimeSpan.FromSeconds(options.MediaUploadWindowSeconds),
                         QueueLimit = 0,
                         QueueProcessingOrder = QueueProcessingOrder.OldestFirst
                     }));

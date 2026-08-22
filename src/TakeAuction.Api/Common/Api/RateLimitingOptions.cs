@@ -13,4 +13,8 @@ public sealed class RateLimitingOptions
     public int AuthPermitLimit { get; init; } = 5;
 
     public int AuthWindowSeconds { get; init; } = 60;
+
+    public int MediaUploadPermitLimit { get; init; } = 20;
+
+    public int MediaUploadWindowSeconds { get; init; } = 3600;
 }
