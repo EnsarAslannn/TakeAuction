@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using TakeAuction.Api.Common.Persistence;
@@ -9,7 +10,7 @@ using TakeAuction.Api.IntegrationTests.Common;
 namespace TakeAuction.Api.IntegrationTests.Features.Auctions;
 
 [Collection(IntegrationTestCollection.Name)]
-public sealed class AuctionSearchIndexTests : IAsyncLifetime
+public sealed partial class AuctionSearchIndexTests : IAsyncLifetime
 {
     private readonly IntegrationTestFixture _fixture;
 
@@ -46,12 +47,26 @@ public sealed class AuctionSearchIndexTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task The_search_still_compiles_to_a_pattern_match_the_index_can_answer()
+    {
+        var sql = await _fixture.ExecuteDbContextAsync(dbContext =>
+            Task.FromResult(SearchQuery(dbContext).ToQueryString()));
+
+        Assert.Contains("lower(", sql, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(" LIKE ", sql, StringComparison.Ordinal);
+        Assert.DoesNotContain("strpos(", sql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("position(", sql, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task The_planner_reaches_for_it_once_a_scan_would_cost_more()
     {
         await SeedAsync(count: 400);
 
         var plan = await _fixture.ExecuteDbContextAsync(async dbContext =>
         {
+            var query = SearchQuery(dbContext).ToQueryString();
+
             await dbContext.Database.OpenConnectionAsync();
 
             try
@@ -65,11 +80,16 @@ public sealed class AuctionSearchIndexTests : IAsyncLifetime
                 }
 
                 await using var explain = connection.CreateCommand();
-                explain.CommandText =
-                    """
-                    EXPLAIN (FORMAT TEXT)
-                    SELECT a."Id" FROM auctions AS a WHERE lower(a."Title") LIKE '%stamp%'
-                    """;
+                explain.CommandText = $"EXPLAIN (FORMAT TEXT)\n{StripParameterComments(query)}";
+
+                foreach (var (name, value) in ReadParameters(query))
+                {
+                    var parameter = explain.CreateParameter();
+                    parameter.ParameterName = name;
+                    parameter.Value = value;
+
+                    explain.Parameters.Add(parameter);
+                }
 
                 var lines = new List<string>();
                 await using var reader = await explain.ExecuteReaderAsync();
@@ -89,6 +109,32 @@ public sealed class AuctionSearchIndexTests : IAsyncLifetime
 
         Assert.Contains("IX_auctions_title_trgm", plan, StringComparison.Ordinal);
     }
+
+    private static IQueryable<Guid> SearchQuery(AppDbContext dbContext)
+    {
+        var pattern = "stamp";
+
+        return dbContext.Auctions
+            .AsNoTracking()
+            .Where(auction => auction.Title.ToLower().Contains(pattern))
+            .Select(auction => auction.Id);
+    }
+
+    private static string StripParameterComments(string query) =>
+        string.Join(
+            '\n',
+            query.Split('\n').Where(line => !line.TrimStart().StartsWith("--", StringComparison.Ordinal)));
+
+    private static IEnumerable<(string Name, string Value)> ReadParameters(string query)
+    {
+        foreach (Match match in ParameterComment().Matches(query))
+        {
+            yield return (match.Groups["name"].Value, match.Groups["value"].Value);
+        }
+    }
+
+    [GeneratedRegex(@"^--\s*@(?<name>\w+)='(?<value>[^']*)'", RegexOptions.Multiline)]
+    private static partial Regex ParameterComment();
 
     [Fact]
     public async Task Search_still_finds_a_lot_by_any_part_of_its_title_whatever_the_case()
