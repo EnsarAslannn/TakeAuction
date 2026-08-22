@@ -29,6 +29,7 @@ try
     builder.Services.AddTakeAuctionCors(builder.Configuration);
     builder.Services.AddTakeAuctionApiVersioning();
     builder.Services.AddTakeAuctionSwagger();
+    builder.Services.AddTakeAuctionSecurityHeaders(builder.Configuration);
     builder.Services.AddTakeAuctionRateLimiting(builder.Configuration);
     builder.Services.AddTakeAuctionAuthentication(builder.Configuration);
     builder.Services.AddTakeAuctionPersistence(builder.Configuration);
@@ -49,6 +50,13 @@ try
     var app = builder.Build();
 
     app.UseForwardedHeaders();
+    app.UseTakeAuctionSecurityHeaders();
+
+    if (!app.Environment.IsDevelopment())
+    {
+        app.UseHsts();
+    }
+
     app.UseTakeAuctionRequestLogging();
     app.UseExceptionHandler();
     app.UseStatusCodePages();
