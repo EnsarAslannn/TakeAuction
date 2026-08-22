@@ -21,8 +21,27 @@ public sealed class JwtTokenGenerator : IJwtTokenGenerator
     public AccessToken Generate(User user)
     {
         var issuedAt = _timeProvider.GetUtcNow();
-        var expiresAt = issuedAt.AddMinutes(_options.AccessTokenLifetimeMinutes);
 
+        return Issue(
+            user,
+            issuedAt,
+            issuedAt.AddMinutes(_options.AccessTokenLifetimeMinutes),
+            TakeAuctionClaims.AccessTokenUse);
+    }
+
+    public AccessToken GenerateHubTicket(User user)
+    {
+        var issuedAt = _timeProvider.GetUtcNow();
+
+        return Issue(
+            user,
+            issuedAt,
+            issuedAt.AddSeconds(_options.HubTicketLifetimeSeconds),
+            TakeAuctionClaims.HubTicketUse);
+    }
+
+    private AccessToken Issue(User user, DateTimeOffset issuedAt, DateTimeOffset expiresAt, string tokenUse)
+    {
         var claims = new List<Claim>
         {
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
@@ -30,7 +49,8 @@ public sealed class JwtTokenGenerator : IJwtTokenGenerator
             new(JwtRegisteredClaimNames.Jti, Guid.CreateVersion7().ToString()),
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(ClaimTypes.Name, user.DisplayName),
-            new(ClaimTypes.Role, user.Role.ToString())
+            new(ClaimTypes.Role, user.Role.ToString()),
+            new(TakeAuctionClaims.TokenUse, tokenUse)
         };
 
         var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.SigningKey));

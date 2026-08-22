@@ -24,3 +24,12 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   const { status, data } = await http.get<CurrentUser>("/auth/me");
   return status === 204 ? null : data;
 }
+
+export async function getHubTicket(): Promise<string | null> {
+  try {
+    const { data } = await http.get<{ token: string; expiresAtUtc: string }>("/auth/hub-ticket");
+    return data.token;
+  } catch {
+    return null;
+  }
+}

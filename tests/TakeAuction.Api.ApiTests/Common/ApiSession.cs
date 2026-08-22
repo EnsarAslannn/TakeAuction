@@ -181,6 +181,8 @@ public static class ApiRoutes
     public const string Logout = "/api/v1/auth/logout";
     public const string Refresh = "/api/v1/auth/refresh";
     public const string Me = "/api/v1/auth/me";
+    public const string HubTicket = "/api/v1/auth/hub-ticket";
+    public const string DiagnosticsInfo = "/api/v1/diagnostics/info";
     public const string Auctions = "/api/v1/auctions";
 
     public static string Auction(Guid id) => $"/api/v1/auctions/{id}";

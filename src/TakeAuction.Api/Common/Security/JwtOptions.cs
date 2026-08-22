@@ -21,4 +21,10 @@ public sealed class JwtOptions
 
     [Range(1, 90)]
     public int RefreshTokenLifetimeDays { get; init; } = 7;
+
+    [Range(10, 300)]
+    public int HubTicketLifetimeSeconds { get; init; } = 60;
+
+    [Range(0, 3600)]
+    public int RefreshRotationGraceSeconds { get; init; } = 30;
 }

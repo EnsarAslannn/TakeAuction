@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -7,6 +8,10 @@ namespace TakeAuction.Api.Common.Security;
 public static class AuthenticationExtensions
 {
     public const string AccessTokenCookieName = "takeauction_access_token";
+
+    public const string HubPathPrefix = "/hubs";
+
+    public const string HubTicketQueryParameter = "access_token";
 
     public static IServiceCollection AddTakeAuctionAuthentication(
         this IServiceCollection services,
@@ -53,9 +58,35 @@ public static class AuthenticationExtensions
                 {
                     OnMessageReceived = context =>
                     {
-                        if (string.IsNullOrEmpty(context.Token))
+                        if (!string.IsNullOrEmpty(context.Token))
                         {
-                            context.Token = context.Request.Cookies[AccessTokenCookieName];
+                            return Task.CompletedTask;
+                        }
+
+                        if (IsHubRequest(context.HttpContext))
+                        {
+                            var ticket = context.Request.Query[HubTicketQueryParameter].ToString();
+
+                            if (!string.IsNullOrEmpty(ticket))
+                            {
+                                context.Token = ticket;
+
+                                return Task.CompletedTask;
+                            }
+                        }
+
+                        context.Token = context.Request.Cookies[AccessTokenCookieName];
+
+                        return Task.CompletedTask;
+                    },
+
+                    OnTokenValidated = context =>
+                    {
+                        var tokenUse = context.Principal?.FindFirstValue(TakeAuctionClaims.TokenUse);
+
+                        if (tokenUse == TakeAuctionClaims.HubTicketUse && !IsHubRequest(context.HttpContext))
+                        {
+                            context.Fail("A hub ticket cannot authenticate an API request.");
                         }
 
                         return Task.CompletedTask;
@@ -67,4 +98,7 @@ public static class AuthenticationExtensions
 
         return services;
     }
+
+    public static bool IsHubRequest(HttpContext context) =>
+        context.Request.Path.StartsWithSegments(HubPathPrefix, StringComparison.OrdinalIgnoreCase);
 }
