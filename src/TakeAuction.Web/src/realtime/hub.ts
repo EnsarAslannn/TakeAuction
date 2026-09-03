@@ -56,7 +56,8 @@ class AuctionHubClient {
     const connection = new HubConnectionBuilder()
       .withUrl(HUB_URL, {
         withCredentials: true,
-        accessTokenFactory: async () => (await getHubTicket()) ?? "",
+        accessTokenFactory: async () =>
+          readCookie(CSRF_COOKIE) === null ? "" : ((await getHubTicket()) ?? ""),
         headers: csrf ? { [CSRF_HEADER]: csrf } : {},
       })
       .withAutomaticReconnect([0, 2000, 5000, 10000, 20000])
