@@ -2,11 +2,13 @@ import { useEffect, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { canSell, useAuthStore } from "@/store/authStore";
 import { useNavTheme } from "@/lib/useNavTheme";
+import { LanguageSwitch } from "@/components/LanguageSwitch";
+import { useT, type TranslationKey } from "@/i18n";
 
-const LINKS = [
-  { to: "/auctions", label: "Salon" },
-  { to: "/#how-it-works", label: "Nasıl çalışır" },
-  { to: "/#capabilities", label: "Alıcı ve satıcı" },
+const LINKS: { to: string; labelKey: TranslationKey }[] = [
+  { to: "/auctions", labelKey: "nav.hall" },
+  { to: "/#how-it-works", labelKey: "nav.howItWorks" },
+  { to: "/#capabilities", labelKey: "nav.parties" },
 ];
 
 const ctaClass = (dark: boolean) =>
@@ -21,6 +23,7 @@ export function Nav() {
   const location = useLocation();
   const theme = useNavTheme(location.pathname);
   const dark = theme === "dark";
+  const t = useT();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -44,14 +47,20 @@ export function Nav() {
     >
       <div className={`shell mx-auto max-w-shell ${scrolled ? "py-4" : "py-6"} transition-all duration-700`}>
         <div className="flex items-center justify-between gap-6">
-          <Link
-            to="/"
-            className={`font-display text-lg font-medium tracking-tightest transition-colors duration-700 hover:opacity-60 ${
-              dark ? "text-paper" : "text-ink"
-            }`}
-          >
-            take<span className={dark ? "text-sand" : "text-sand-deep"}>auction</span>
-          </Link>
+          <div className="flex items-center gap-4 md:gap-5">
+            <LanguageSwitch dark={dark} />
+
+            <span aria-hidden className={`h-4 w-px ${dark ? "bg-paper/20" : "bg-ink/15"}`} />
+
+            <Link
+              to="/"
+              className={`font-display text-lg font-medium tracking-tightest transition-colors duration-700 hover:opacity-60 ${
+                dark ? "text-paper" : "text-ink"
+              }`}
+            >
+              take<span className={dark ? "text-sand" : "text-sand-deep"}>auction</span>
+            </Link>
+          </div>
 
           <nav className="hidden items-center gap-9 md:flex">
             {LINKS.map((link) => (
@@ -70,7 +79,7 @@ export function Nav() {
                   }`
                 }
               >
-                {link.label}
+                {t(link.labelKey)}
               </NavLink>
             ))}
           </nav>
@@ -87,7 +96,7 @@ export function Nav() {
                         : "border-ink/20 text-ink hover:border-ink hover:bg-ink hover:text-paper"
                     }`}
                   >
-                    İlan açın
+                    {t("nav.createListing")}
                   </Link>
                 )}
                 <span
@@ -98,7 +107,7 @@ export function Nav() {
                   {user.displayName}
                 </span>
                 <button type="button" onClick={handleLogout} className={ctaClass(dark)}>
-                  Çıkış
+                  {t("nav.logout")}
                 </button>
               </>
             ) : (
@@ -109,10 +118,10 @@ export function Nav() {
                     dark ? "text-paper/50 hover:text-paper" : "text-stone hover:text-ink"
                   }`}
                 >
-                  Giriş
+                  {t("nav.login")}
                 </Link>
                 <Link to="/register" className={ctaClass(dark)}>
-                  Kaydolun
+                  {t("nav.register")}
                 </Link>
               </>
             )}
@@ -121,7 +130,7 @@ export function Nav() {
           <button
             type="button"
             onClick={() => setOpen((value) => !value)}
-            aria-label="Menü"
+            aria-label={t("nav.menu")}
             aria-expanded={open}
             className="flex h-9 w-9 flex-col items-center justify-center gap-1.5 md:hidden"
           >
@@ -147,7 +156,7 @@ export function Nav() {
         <nav className="shell mx-auto flex max-w-shell flex-col gap-5 py-8">
           {LINKS.map((link) => (
             <Link key={link.to} to={link.to} className="font-display text-2xl font-light text-ink">
-              {link.label}
+              {t(link.labelKey)}
             </Link>
           ))}
           <div className="rule my-2" />
@@ -155,7 +164,7 @@ export function Nav() {
             <>
               {canSell(user) && (
                 <Link to="/auctions/new" className="font-display text-2xl font-light text-ink">
-                  İlan açın
+                  {t("nav.createListing")}
                 </Link>
               )}
               <button
@@ -163,16 +172,16 @@ export function Nav() {
                 onClick={handleLogout}
                 className="text-left font-display text-2xl font-light text-sand-deep"
               >
-                Çıkış yapın
+                {t("nav.logoutLong")}
               </button>
             </>
           ) : (
             <>
               <Link to="/login" className="font-display text-2xl font-light text-ink">
-                Giriş
+                {t("nav.login")}
               </Link>
               <Link to="/register" className="font-display text-2xl font-light text-sand-deep">
-                Kaydolun
+                {t("nav.register")}
               </Link>
             </>
           )}

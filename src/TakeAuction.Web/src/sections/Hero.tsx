@@ -5,7 +5,7 @@ import { SHOWCASE, showcaseForTitle, type ShowcaseModel } from "@/content/catalo
 import { useDragSelect } from "@/lib/useDragSelect";
 import { usePrefersReducedMotion } from "@/lib/hooks";
 import { SplitLine } from "@/motion/Reveal";
-import { formatMoney } from "@/lib/format";
+import { useFormat, useT } from "@/i18n";
 import type { AuctionListItem } from "@/api/types";
 
 interface HeroProps {
@@ -55,6 +55,8 @@ export function Hero({ auctions }: HeroProps) {
   const [index, setIndex] = useState(0);
   const total = SHOWCASE.length;
   const reducedMotion = usePrefersReducedMotion();
+  const t = useT();
+  const format = useFormat();
 
   const goTo = useCallback(
     (target: number) => setIndex(Math.min(total - 1, Math.max(0, target))),
@@ -172,27 +174,26 @@ export function Hero({ auctions }: HeroProps) {
           <div className="max-w-[34rem]">
             <p className="mb-5 flex items-center gap-3 font-mono text-eyebrow uppercase text-paper/60">
               <span aria-hidden className="h-px w-7 bg-sand" />
-              Canlı müzayede salonu
+              {t("hero.eyebrow")}
             </p>
 
             <h1 className="font-display text-giant font-light leading-[0.88] text-paper">
-              <SplitLine text="Nadir olanı hak eden alır" />
+              <SplitLine text={t("hero.title")} />
             </h1>
 
             <p className="mt-6 max-w-[38ch] font-sans text-sm leading-relaxed text-paper/60">
-              Seçilmiş, sınırlı sayıda parça tek bir salonda toplanır. Her teklif geldiği anda
-              sıraya girer — kaybolan teklif yok, yanlış kazanan yok.
+              {t("hero.lede")}
             </p>
 
             <div className="mt-9 flex flex-wrap items-center gap-4">
               <Link to="/auctions" className="btn bg-sand text-ink hover:bg-paper">
-                Salona girin
+                {t("hero.enterHall")}
               </Link>
               <Link
                 to="/#how-it-works"
                 className="btn border border-paper/25 text-paper hover:border-paper hover:bg-paper hover:text-ink"
               >
-                Nasıl işliyor
+                {t("hero.howItWorks")}
               </Link>
             </div>
           </div>
@@ -200,9 +201,11 @@ export function Hero({ auctions }: HeroProps) {
           <div className="min-w-0">
             <div className="mb-4 flex items-center justify-center gap-3">
               <span aria-hidden className="h-px w-7 bg-sand/70" />
-              <p className="font-mono text-eyebrow uppercase text-paper/55">Şu an açık artırmada</p>
+              <p className="font-mono text-eyebrow uppercase text-paper/55">
+                {t("hero.onBlockNow")}
+              </p>
               <span className="font-mono text-eyebrow uppercase tabular-nums text-paper/30">
-                {String(total).padStart(2, "0")} parça
+                {t("hero.lotCount", { n: String(total).padStart(2, "0") })}
               </span>
             </div>
 
@@ -260,13 +263,13 @@ export function Hero({ auctions }: HeroProps) {
               direction="prev"
               disabled={atStart}
               onClick={() => goTo(index - 1)}
-              label="Önceki parça"
+              label={t("hero.prevLot")}
             />
             <ArrowButton
               direction="next"
               disabled={atEnd}
               onClick={() => goTo(index + 1)}
-              label="Sonraki parça"
+              label={t("hero.nextLot")}
             />
 
             {active ? (
@@ -274,12 +277,12 @@ export function Hero({ auctions }: HeroProps) {
                 to={`/auctions/${active.id}`}
                 className="btn ml-1 whitespace-nowrap border border-paper/25 px-5 text-paper hover:border-sand hover:bg-sand hover:text-ink md:ml-2 md:px-7"
               >
-                Teklif verin
-                <span className="hidden sm:inline"> · {formatMoney(active.currentPrice)}</span>
+                {t("hero.placeBid")}
+                <span className="hidden sm:inline"> · {format.money(active.currentPrice)}</span>
               </Link>
             ) : (
               <span className="btn ml-1 border border-paper/10 text-paper/30 md:ml-2">
-                Yükleniyor…
+                {t("app.loading")}
               </span>
             )}
           </div>
@@ -316,13 +319,16 @@ function CarouselCard({
   onSelect: () => void;
 }) {
   const [failed, setFailed] = useState(false);
+  const t = useT();
+  const format = useFormat();
+  const label = t(item.labelKey);
 
   return (
     <button
       type="button"
       onClick={onSelect}
       aria-current={isActive}
-      aria-label={`${item.shortLabel} parçasını seçin`}
+      aria-label={t("hero.selectLot", { lot: label })}
       className={`group relative block h-[var(--card-h)] w-full overflow-hidden rounded-2xl bg-ink text-left transition-shadow duration-700 ease-editorial ${
         isActive
           ? "shadow-[0_38px_90px_-34px_rgba(0,0,0,0.95)] ring-1 ring-sand/50"
@@ -334,7 +340,7 @@ function CarouselCard({
       ) : (
         <img
           src={item.card}
-          alt={item.shortLabel}
+          alt={label}
           loading="lazy"
           draggable={false}
           onError={() => setFailed(true)}
@@ -356,7 +362,7 @@ function CarouselCard({
             isActive ? "opacity-100" : "opacity-0"
           }`}
         >
-          {formatMoney(auction.currentPrice)}
+          {format.money(auction.currentPrice)}
         </span>
       )}
 
@@ -366,11 +372,9 @@ function CarouselCard({
         }`}
       >
         <p className="font-mono text-[0.6rem] uppercase tracking-[0.18em] text-paper/60">
-          {item.category}
+          {t(item.categoryKey)}
         </p>
-        <p className="mt-1.5 font-display text-lg font-light leading-tight text-paper">
-          {item.shortLabel}
-        </p>
+        <p className="mt-1.5 font-display text-lg font-light leading-tight text-paper">{label}</p>
       </div>
     </button>
   );

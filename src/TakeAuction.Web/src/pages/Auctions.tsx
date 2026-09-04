@@ -4,13 +4,14 @@ import { toApiError } from "@/api/client";
 import { AuctionCard } from "@/components/AuctionCard";
 import { useLobbyChannel } from "@/realtime/useAuctionHub";
 import { SplitLine } from "@/motion/Reveal";
+import { useT, type TranslationKey } from "@/i18n";
 import type { AuctionListItem, AuctionStatus, PagedResult } from "@/api/types";
 
-const FILTERS: { label: string; value: AuctionStatus | "All" }[] = [
-  { label: "Tümü", value: "All" },
-  { label: "Canlı", value: "Active" },
-  { label: "Planlandı", value: "Scheduled" },
-  { label: "Sona erdi", value: "Ended" },
+const FILTERS: { labelKey: TranslationKey; value: AuctionStatus | "All" }[] = [
+  { labelKey: "auctions.filter.all", value: "All" },
+  { labelKey: "auctions.filter.active", value: "Active" },
+  { labelKey: "auctions.filter.scheduled", value: "Scheduled" },
+  { labelKey: "auctions.filter.ended", value: "Ended" },
 ];
 
 const PAGE_SIZE = 12;
@@ -22,6 +23,7 @@ export function Auctions() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const t = useT();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -81,9 +83,9 @@ export function Auctions() {
   return (
     <div className="min-h-screen bg-paper pb-32 pt-36 md:pt-44">
       <div className="shell mx-auto max-w-shell">
-        <p className="eyebrow">Salon</p>
+        <p className="eyebrow">{t("auctions.eyebrow")}</p>
         <h1 className="mt-6 font-display text-giant font-light leading-[0.9] text-ink">
-          <SplitLine text="açık artırmalar" />
+          <SplitLine text={t("auctions.title")} />
         </h1>
 
         <div className="mt-14 flex flex-col gap-6 border-b border-ink/12 pb-6 md:flex-row md:items-end md:justify-between">
@@ -102,7 +104,7 @@ export function Auctions() {
                     : "border border-ink/15 text-stone hover:border-ink/40 hover:text-ink"
                 }`}
               >
-                {filter.label}
+                {t(filter.labelKey)}
               </button>
             ))}
           </div>
@@ -115,7 +117,7 @@ export function Auctions() {
                 setSearch(event.target.value);
                 setPage(1);
               }}
-              placeholder="Parça arayın…"
+              placeholder={t("auctions.search")}
               className="field"
             />
           </div>
@@ -123,10 +125,10 @@ export function Auctions() {
 
         {error && (
           <div className="mt-10 border border-ink/15 bg-paper-pure p-8">
-            <p className="font-display text-xl font-light text-ink">Liste yüklenemedi</p>
+            <p className="font-display text-xl font-light text-ink">{t("auctions.loadFailed")}</p>
             <p className="mt-2 font-sans text-sm text-ink/60">{error}</p>
             <button type="button" onClick={load} className="btn-ghost mt-6">
-              Tekrar deneyin
+              {t("auctions.retry")}
             </button>
           </div>
         )}
@@ -144,10 +146,8 @@ export function Auctions() {
 
         {result && result.items.length === 0 && !loading && (
           <div className="mt-20 text-center">
-            <p className="font-display text-3xl font-light text-ink">Aradığınız parça salonda yok</p>
-            <p className="mt-3 font-sans text-sm text-ink/55">
-              Filtreyi değiştirin ya da aramayı temizleyin.
-            </p>
+            <p className="font-display text-3xl font-light text-ink">{t("auctions.emptyTitle")}</p>
+            <p className="mt-3 font-sans text-sm text-ink/55">{t("auctions.emptyBody")}</p>
           </div>
         )}
 
@@ -172,7 +172,7 @@ export function Auctions() {
                   onClick={() => setPage((value) => Math.max(1, value - 1))}
                   className="btn-ghost"
                 >
-                  ← Önceki
+                  {t("auctions.prev")}
                 </button>
                 <span className="font-mono text-eyebrow uppercase tabular-nums text-stone">
                   {result.page} / {result.totalPages}
@@ -183,7 +183,7 @@ export function Auctions() {
                   onClick={() => setPage((value) => value + 1)}
                   className="btn-ghost"
                 >
-                  Sonraki →
+                  {t("auctions.next")}
                 </button>
               </div>
             )}

@@ -5,6 +5,7 @@ import { AuctionModel } from "./AuctionModel";
 import { Studio } from "./Studio";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useIsCompact, usePrefersReducedMotion } from "@/lib/hooks";
+import { useT } from "@/i18n";
 import type { DragState } from "./useDragRotate";
 import type { ShowcaseModel } from "@/content/catalog";
 
@@ -21,6 +22,7 @@ export function ShowcaseCanvas({ item, drag, onDecay, active, className }: Showc
   const compact = useIsCompact();
   const [ready, setReady] = useState(false);
   const [modelFailed, setModelFailed] = useState(false);
+  const t = useT();
 
   useEffect(() => setModelFailed(false), [item.slug]);
 
@@ -60,7 +62,7 @@ export function ShowcaseCanvas({ item, drag, onDecay, active, className }: Showc
 
       {modelFailed && (
         <p className="pointer-events-none absolute inset-0 flex items-center justify-center font-mono text-eyebrow uppercase text-paper/35">
-          3B model yüklenemedi
+          {t("showcase.modelFailed")}
         </p>
       )}
     </div>

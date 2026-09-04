@@ -1,5 +1,6 @@
 import { useId, useRef, useState } from "react";
 import { ACCEPTED_IMAGE_TYPES, MAX_IMAGE_SIZE_BYTES } from "@/api/auctions";
+import { useT } from "@/i18n";
 
 const MAX_MB = Math.round(MAX_IMAGE_SIZE_BYTES / (1024 * 1024));
 
@@ -21,6 +22,7 @@ export function ImageDropzone({
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const [over, setOver] = useState(false);
+  const t = useT();
 
   const take = (files: FileList | null) => {
     const file = files?.[0];
@@ -36,11 +38,17 @@ export function ImageDropzone({
             className="absolute inset-0 scale-110 bg-cover bg-center opacity-25 blur-2xl"
             style={{ backgroundImage: `url(${preview})` }}
           />
-          <img src={preview} alt="Yüklenen görsel" className="absolute inset-0 h-full w-full object-contain p-5" />
+          <img
+            src={preview}
+            alt={t("dropzone.uploadedAlt")}
+            className="absolute inset-0 h-full w-full object-contain p-5"
+          />
 
           {uploading && (
             <div className="absolute inset-0 flex items-center justify-center bg-ink/55">
-              <span className="font-mono text-eyebrow uppercase text-paper/70">Yükleniyor…</span>
+              <span className="font-mono text-eyebrow uppercase text-paper/70">
+                {t("dropzone.uploading")}
+              </span>
             </div>
           )}
         </div>
@@ -51,14 +59,14 @@ export function ImageDropzone({
             onClick={() => inputRef.current?.click()}
             className="font-mono text-eyebrow uppercase text-stone underline underline-offset-4 transition-colors hover:text-ink"
           >
-            Değiştirin
+            {t("dropzone.replace")}
           </button>
           <button
             type="button"
             onClick={onClear}
             className="font-mono text-eyebrow uppercase text-stone underline underline-offset-4 transition-colors hover:text-sand-deep"
           >
-            Kaldırın
+            {t("dropzone.remove")}
           </button>
         </div>
 
@@ -101,11 +109,10 @@ export function ImageDropzone({
           +
         </span>
         <span className="font-mono text-eyebrow uppercase text-stone">
-          {uploading ? "Yükleniyor…" : "Görseli sürükleyin veya seçin"}
+          {uploading ? t("dropzone.uploading") : t("dropzone.prompt")}
         </span>
         <span className="max-w-[34ch] font-sans text-xs leading-relaxed text-ink/45">
-          JPEG, PNG, WebP veya AVIF · en fazla {MAX_MB} MB. Görsel eklemeden de ilanınızı
-          yayınlayabilirsiniz.
+          {t("dropzone.hint", { mb: MAX_MB })}
         </span>
       </label>
 

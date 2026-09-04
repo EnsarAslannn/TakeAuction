@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { SELLER_LISTING_CATEGORY, showcaseForAuction } from "@/content/catalog";
-import { STATUS_LABEL, formatMoney, formatCountdown } from "@/lib/format";
+import { showcaseForAuction } from "@/content/catalog";
+import { useFormat, useT } from "@/i18n";
 import { useNow } from "@/lib/hooks";
 import type { AuctionListItem } from "@/api/types";
 
@@ -14,6 +14,8 @@ const STATUS_TONE: Record<string, string> = {
 
 export function AuctionCard({ auction, index }: { auction: AuctionListItem; index: number }) {
   const now = useNow(1000);
+  const t = useT();
+  const format = useFormat();
   const showcase = showcaseForAuction(auction);
   const remaining = new Date(auction.endsAtUtc).getTime() - now;
   const isLive = auction.status === "Active" && remaining > 0;
@@ -51,26 +53,26 @@ export function AuctionCard({ auction, index }: { auction: AuctionListItem; inde
               {auction.title}
             </h3>
             <p className="mt-2 font-mono text-eyebrow uppercase text-stone">
-              {showcase?.category ?? SELLER_LISTING_CATEGORY}
+              {showcase ? t(showcase.categoryKey) : t("catalog.sellerListing")}
             </p>
           </div>
         </div>
 
         <div className="md:col-span-2">
-          <p className="font-mono text-eyebrow uppercase text-stone">Güncel</p>
+          <p className="font-mono text-eyebrow uppercase text-stone">{t("card.current")}</p>
           <p className="mt-1.5 font-display text-xl font-light tabular-nums text-ink">
-            {formatMoney(auction.currentPrice)}
+            {format.money(auction.currentPrice)}
           </p>
         </div>
 
         <div className="md:col-span-2">
           <p className="font-mono text-eyebrow uppercase text-stone">
-            {isLive ? "Kalan süre" : "Durum"}
+            {isLive ? t("card.timeLeft") : t("card.status")}
           </p>
           <p
             className={`mt-1.5 font-mono text-sm tabular-nums ${STATUS_TONE[auction.status] ?? "text-ink"}`}
           >
-            {isLive ? formatCountdown(remaining) : STATUS_LABEL[auction.status] ?? auction.status}
+            {isLive ? format.countdown(remaining) : format.status(auction.status)}
           </p>
         </div>
 
@@ -78,7 +80,9 @@ export function AuctionCard({ auction, index }: { auction: AuctionListItem; inde
           {isLive && (
             <span className="flex items-center gap-2">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-sand-deep" />
-              <span className="font-mono text-eyebrow uppercase text-sand-deep">Canlı</span>
+              <span className="font-mono text-eyebrow uppercase text-sand-deep">
+                {t("card.live")}
+              </span>
             </span>
           )}
           <span

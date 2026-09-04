@@ -1,9 +1,11 @@
+import type { TranslationKey } from "@/i18n";
+
 export interface ShowcaseModel {
   slug: string;
   title: string;
-  shortLabel: string;
-  category: string;
-  provenance: string;
+  labelKey: TranslationKey;
+  categoryKey: TranslationKey;
+  provenanceKey: TranslationKey;
   model: string;
   card: string;
   scale: number;
@@ -15,9 +17,9 @@ export const SHOWCASE: ShowcaseModel[] = [
   {
     slug: "bmw-m5",
     title: "BMW M5 G90 — 2024 Sıfır Ayarında",
-    shortLabel: "M5 G90",
-    category: "Otomotiv",
-    provenance: "Tek sahipli · Tam servis geçmişi",
+    labelKey: "catalog.bmw-m5.label",
+    categoryKey: "catalog.bmw-m5.category",
+    provenanceKey: "catalog.bmw-m5.provenance",
     model: "/models/bmw-m5.glb",
     card: "/cards/bmw-m5.webp",
     scale: 1.0,
@@ -27,9 +29,9 @@ export const SHOWCASE: ShowcaseModel[] = [
   {
     slug: "iphone-17",
     title: "iPhone 17 Pro Max — Mühürlü Kutu",
-    shortLabel: "iPhone 17 Pro Max",
-    category: "Teknoloji",
-    provenance: "Mühürlü kutu · Aktifleştirilmemiş",
+    labelKey: "catalog.iphone-17.label",
+    categoryKey: "catalog.iphone-17.category",
+    provenanceKey: "catalog.iphone-17.provenance",
     model: "/models/iphone-17.glb",
     card: "/cards/iphone-17.webp",
     scale: 1.0,
@@ -39,9 +41,9 @@ export const SHOWCASE: ShowcaseModel[] = [
   {
     slug: "canon-5d",
     title: "Canon EOS 5D Mark IV — Stüdyo Seti",
-    shortLabel: "EOS 5D IV",
-    category: "Optik",
-    provenance: "Stüdyo bakımlı · 40 bin altı deklanşör",
+    labelKey: "catalog.canon-5d.label",
+    categoryKey: "catalog.canon-5d.category",
+    provenanceKey: "catalog.canon-5d.provenance",
     model: "/models/canon-5d.glb",
     card: "/cards/canon-5d.webp",
     scale: 1.0,
@@ -51,9 +53,9 @@ export const SHOWCASE: ShowcaseModel[] = [
   {
     slug: "vintage-sofa",
     title: "Vintage Deri Chesterfield Koltuk",
-    shortLabel: "Chesterfield",
-    category: "Mobilya",
-    provenance: "Mid-century · Orijinal patina",
+    labelKey: "catalog.vintage-sofa.label",
+    categoryKey: "catalog.vintage-sofa.category",
+    provenanceKey: "catalog.vintage-sofa.provenance",
     model: "/models/sofa.glb",
     card: "/cards/sofa.webp",
     scale: 1.0,
@@ -63,9 +65,9 @@ export const SHOWCASE: ShowcaseModel[] = [
   {
     slug: "satellite",
     title: "Referans Serisi Satellite Hoparlör",
-    shortLabel: "Satellite Hoparlör",
-    category: "Ses Sistemi",
-    provenance: "Stüdyo referansı · Bi-wiring destekli",
+    labelKey: "catalog.satellite.label",
+    categoryKey: "catalog.satellite.category",
+    provenanceKey: "catalog.satellite.provenance",
     model: "/models/satellite.glb",
     card: "/cards/satellite.webp",
     scale: 1.0,
@@ -75,9 +77,9 @@ export const SHOWCASE: ShowcaseModel[] = [
   {
     slug: "fridge",
     title: "Ankastre Panel Uyumlu Buzdolabı",
-    shortLabel: "Kolon Buzdolabı",
-    category: "Beyaz Eşya",
-    provenance: "Teşhir ünitesi · Garantili",
+    labelKey: "catalog.fridge.label",
+    categoryKey: "catalog.fridge.category",
+    provenanceKey: "catalog.fridge.provenance",
     model: "/models/fridge.glb",
     card: "/cards/fridge.webp",
     scale: 1.0,
@@ -96,8 +98,6 @@ export function showcaseForTitle(title: string): ShowcaseModel | undefined {
 export function showcaseForSlug(slug: string): ShowcaseModel | undefined {
   return BY_SLUG.get(slug);
 }
-
-export const SELLER_LISTING_CATEGORY = "Satıcı ilanı";
 
 export function showcaseForAuction(auction: { title: string }): ShowcaseModel | undefined {
   return showcaseForTitle(auction.title);

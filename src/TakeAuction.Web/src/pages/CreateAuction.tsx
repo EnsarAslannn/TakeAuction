@@ -9,7 +9,7 @@ import {
 import { ApiError, toApiError } from "@/api/client";
 import { ImageDropzone } from "@/components/ImageDropzone";
 import { VISUALS } from "@/content/catalog";
-import { formatMoney } from "@/lib/format";
+import { useFormat, useT, type Translate } from "@/i18n";
 import { SplitLine } from "@/motion/Reveal";
 
 function toLocalInputValue(date: Date): string {
@@ -17,7 +17,7 @@ function toLocalInputValue(date: Date): string {
   return new Date(date.getTime() - offset).toISOString().slice(0, 16);
 }
 
-function formatDuration(startsAt: string, endsAt: string): string | null {
+function formatDuration(t: Translate, startsAt: string, endsAt: string): string | null {
   const span = new Date(endsAt).getTime() - new Date(startsAt).getTime();
   if (!Number.isFinite(span) || span <= 0) return null;
 
@@ -26,12 +26,14 @@ function formatDuration(startsAt: string, endsAt: string): string | null {
   const minutes = Math.floor((span % 3_600_000) / 60_000);
 
   const parts = [
-    days > 0 ? `${days} gün` : null,
-    hours > 0 ? `${hours} saat` : null,
-    days === 0 && minutes > 0 ? `${minutes} dakika` : null,
+    days > 0 ? t(days === 1 ? "create.duration.day" : "create.duration.days", { n: days }) : null,
+    hours > 0 ? t(hours === 1 ? "create.duration.hour" : "create.duration.hours", { n: hours }) : null,
+    days === 0 && minutes > 0
+      ? t(minutes === 1 ? "create.duration.minute" : "create.duration.minutes", { n: minutes })
+      : null,
   ].filter(Boolean);
 
-  return parts.length > 0 ? parts.join(" ") : "5 dakikadan kısa";
+  return parts.length > 0 ? parts.join(" ") : t("create.duration.short");
 }
 
 const DEFAULT_START = new Date(Date.now() + 2 * 60_000);
@@ -56,6 +58,8 @@ export function CreateAuction() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [pending, setPending] = useState(false);
   const [visualFailed, setVisualFailed] = useState(false);
+  const t = useT();
+  const format = useFormat();
 
   const objectUrl = useRef<string | null>(null);
 
@@ -87,12 +91,14 @@ export function CreateAuction() {
 
   const selectImage = async (file: File) => {
     if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-      setImageError("Yalnızca JPEG, PNG, WebP veya AVIF yükleyebilirsiniz.");
+      setImageError(t("create.image.typeError"));
       return;
     }
 
     if (file.size > MAX_IMAGE_SIZE_BYTES) {
-      setImageError(`Görsel ${Math.round(MAX_IMAGE_SIZE_BYTES / (1024 * 1024))} MB sınırını aşıyor.`);
+      setImageError(
+        t("create.image.sizeError", { mb: Math.round(MAX_IMAGE_SIZE_BYTES / (1024 * 1024)) })
+      );
       return;
     }
 
@@ -146,7 +152,7 @@ export function CreateAuction() {
     }
   };
 
-  const duration = formatDuration(form.startsAt, form.endsAt);
+  const duration = formatDuration(t, form.startsAt, form.endsAt);
   const startingPrice = Number(form.startingPrice);
 
   return (
@@ -177,15 +183,13 @@ export function CreateAuction() {
 
         <div className="shell relative mx-auto w-full max-w-shell">
           <div className="max-w-3xl">
-            <p className="font-mono text-eyebrow uppercase text-sand">Satıcı · Yeni kayıt</p>
+            <p className="font-mono text-eyebrow uppercase text-sand">{t("create.eyebrow")}</p>
             <h1 className="mt-6 font-display text-giant font-light leading-[0.9] text-paper">
-              <SplitLine text="yeni ilan" />
+              <SplitLine text={t("create.title")} />
             </h1>
             <div aria-hidden className="mt-10 h-px w-24 bg-sand/70" />
             <p className="mt-8 max-w-[54ch] font-sans text-base leading-relaxed text-paper/70">
-              Parçanızı ne kadar iyi anlatırsanız o kadar iyi teklif alırsınız. Açık artırma en az 5
-              dakika, en fazla 30 gün sürebilir; başlangıç zamanı geçmişte olamaz. Yayınladıktan sonra
-              kapanışla ilgilenmeniz gerekmez — süre dolduğunda salon kendiliğinden kapanır.
+              {t("create.lede")}
             </p>
           </div>
         </div>
@@ -195,10 +199,10 @@ export function CreateAuction() {
         <form onSubmit={submit} className="grid gap-16 lg:grid-cols-12 lg:gap-12">
           <div className="lg:col-span-7 lg:col-start-6">
             <div className="space-y-16">
-              <Section index="01" title="Parça">
+              <Section index="01" title={t("create.section.lot")}>
                 <div>
                   <label htmlFor="title" className="eyebrow mb-3 block">
-                    Başlık
+                    {t("create.titleLabel")}
                   </label>
                   <input
                     id="title"
@@ -208,7 +212,7 @@ export function CreateAuction() {
                     value={form.title}
                     onChange={(event) => setForm({ ...form, title: event.target.value })}
                     className="field font-display text-2xl"
-                    placeholder="Örn. 1968 Omega Seamaster"
+                    placeholder={t("create.titlePlaceholder")}
                   />
                   {errorFor("title") && (
                     <p className="mt-2 font-sans text-xs text-sand-deep">{errorFor("title")}</p>
@@ -217,7 +221,7 @@ export function CreateAuction() {
 
                 <div>
                   <label htmlFor="description" className="eyebrow mb-3 block">
-                    Açıklama
+                    {t("create.descriptionLabel")}
                   </label>
                   <textarea
                     id="description"
@@ -228,7 +232,7 @@ export function CreateAuction() {
                     value={form.description}
                     onChange={(event) => setForm({ ...form, description: event.target.value })}
                     className="field resize-none"
-                    placeholder="Parçanın durumu, kökeni ve varsa belgeleri…"
+                    placeholder={t("create.descriptionPlaceholder")}
                   />
                   <p className="mt-2 font-mono text-eyebrow uppercase tabular-nums text-stone">
                     {form.description.length} / 4000
@@ -239,7 +243,11 @@ export function CreateAuction() {
                 </div>
               </Section>
 
-              <Section index="02" title="Görsel" note="İsteğe bağlı">
+              <Section
+                index="02"
+                title={t("create.section.image")}
+                note={t("create.section.imageNote")}
+              >
                 <ImageDropzone
                   preview={preview}
                   uploading={uploading}
@@ -252,11 +260,11 @@ export function CreateAuction() {
                 )}
               </Section>
 
-              <Section index="03" title="Fiyatlandırma">
+              <Section index="03" title={t("create.section.pricing")}>
                 <div className="grid gap-8 sm:grid-cols-2">
                   <div>
                     <label htmlFor="startingPrice" className="eyebrow mb-3 block">
-                      Başlangıç fiyatı (₺)
+                      {t("create.startingPrice")}
                     </label>
                     <input
                       id="startingPrice"
@@ -275,7 +283,7 @@ export function CreateAuction() {
 
                   <div>
                     <label htmlFor="minimumBidIncrement" className="eyebrow mb-3 block">
-                      Minimum artış (₺)
+                      {t("create.minIncrement")}
                     </label>
                     <input
                       id="minimumBidIncrement"
@@ -298,11 +306,11 @@ export function CreateAuction() {
                 </div>
               </Section>
 
-              <Section index="04" title="Takvim">
+              <Section index="04" title={t("create.section.schedule")}>
                 <div className="grid gap-8 sm:grid-cols-2">
                   <div>
                     <label htmlFor="startsAt" className="eyebrow mb-3 block">
-                      Başlama zamanı
+                      {t("create.startsAt")}
                     </label>
                     <input
                       id="startsAt"
@@ -319,7 +327,7 @@ export function CreateAuction() {
 
                   <div>
                     <label htmlFor="endsAt" className="eyebrow mb-3 block">
-                      Bitiş zamanı
+                      {t("create.endsAt")}
                     </label>
                     <input
                       id="endsAt"
@@ -345,10 +353,10 @@ export function CreateAuction() {
 
                 <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
                   <button type="submit" disabled={pending || uploading} className="btn-primary">
-                    {pending ? "Yayınlanıyor…" : "İlanı yayınlayın"}
+                    {pending ? t("create.publishing") : t("create.publish")}
                   </button>
                   <p className="max-w-[42ch] font-sans text-xs leading-relaxed text-ink/45">
-                    Yayınladığınız anda parça salonda listelenir ve teklifler canlı olarak akmaya başlar.
+                    {t("create.publishNote")}
                   </p>
                 </div>
               </div>
@@ -357,7 +365,7 @@ export function CreateAuction() {
 
           <aside className="lg:col-span-4 lg:col-start-1 lg:row-start-1">
             <div className="lg:sticky lg:top-28">
-              <p className="eyebrow">Vitrin önizlemesi</p>
+              <p className="eyebrow">{t("create.preview")}</p>
 
               <div className="relative mt-6 aspect-[4/5] overflow-hidden bg-ink">
                 {preview ? (
@@ -377,7 +385,7 @@ export function CreateAuction() {
                 ) : (
                   <div className="absolute inset-5 flex items-center justify-center border border-paper/12">
                     <span className="font-mono text-eyebrow uppercase text-paper/30">
-                      Görsel eklenmedi
+                      {t("create.preview.noImage")}
                     </span>
                   </div>
                 )}
@@ -393,20 +401,28 @@ export function CreateAuction() {
               </div>
 
               <h2 className="mt-8 text-balance font-display text-3xl font-light leading-tight text-ink">
-                {form.title.trim() || "Başlıksız parça"}
+                {form.title.trim() || t("create.preview.untitled")}
               </h2>
 
               <dl className="mt-8 space-y-4 border-t border-ink/12 pt-6">
                 <PreviewRow
-                  label="Açılış"
+                  label={t("create.preview.opening")}
                   value={
                     Number.isFinite(startingPrice) && startingPrice > 0
-                      ? formatMoney(startingPrice)
+                      ? format.money(startingPrice)
                       : "—"
                   }
                 />
-                <PreviewRow label="Süre" value={duration ?? "Geçersiz aralık"} />
-                <PreviewRow label="Görsel" value={imageUrl ? "Eklendi" : "Yok"} />
+                <PreviewRow
+                  label={t("create.preview.duration")}
+                  value={duration ?? t("create.preview.invalidRange")}
+                />
+                <PreviewRow
+                  label={t("create.preview.image")}
+                  value={
+                    imageUrl ? t("create.preview.imageAdded") : t("create.preview.imageNone")
+                  }
+                />
               </dl>
             </div>
           </aside>

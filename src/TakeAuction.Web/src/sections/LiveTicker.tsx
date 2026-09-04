@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLobbyChannel } from "@/realtime/useAuctionHub";
 import { useConnectionState } from "@/realtime/useAuctionHub";
-import { formatMoney } from "@/lib/format";
+import { useFormat, useT } from "@/i18n";
 import type { BidPlacedNotification } from "@/api/types";
 
 interface TickerEntry {
@@ -13,6 +13,8 @@ interface TickerEntry {
 export function LiveTicker() {
   const [entries, setEntries] = useState<TickerEntry[]>([]);
   const state = useConnectionState();
+  const t = useT();
+  const format = useFormat();
 
   useLobbyChannel({
     onBidPlaced: (notification: BidPlacedNotification) => {
@@ -31,12 +33,12 @@ export function LiveTicker() {
 
   const label =
     state === "connected"
-      ? "Salon canlı"
+      ? t("ticker.live")
       : state === "reconnecting"
-        ? "Yeniden bağlanıyor"
+        ? t("ticker.reconnecting")
         : state === "connecting"
-          ? "Salona bağlanılıyor"
-          : "Bağlantı yok";
+          ? t("ticker.connecting")
+          : t("ticker.offline");
 
   return (
     <div className="border-y border-ink/10 bg-paper-pure">
@@ -54,9 +56,7 @@ export function LiveTicker() {
 
         <div className="flex-1 overflow-hidden">
           {entries.length === 0 ? (
-            <p className="font-mono text-eyebrow uppercase text-stone/60">
-              Yeni teklif bekleniyor…
-            </p>
+            <p className="font-mono text-eyebrow uppercase text-stone/60">{t("ticker.waiting")}</p>
           ) : (
             <ul className="flex gap-8">
               {entries.map((entry) => (
@@ -64,7 +64,7 @@ export function LiveTicker() {
                   key={entry.id}
                   className="shrink-0 animate-veil-up font-mono text-eyebrow uppercase tabular-nums text-ink/70"
                 >
-                  <span className="text-sand-deep">▲</span> {formatMoney(entry.amount)}
+                  <span className="text-sand-deep">▲</span> {format.money(entry.amount)}
                 </li>
               ))}
             </ul>

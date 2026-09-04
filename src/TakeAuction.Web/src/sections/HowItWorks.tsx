@@ -1,30 +1,17 @@
 import { VISUALS } from "@/content/catalog";
 import { Reveal, SplitLine } from "@/motion/Reveal";
+import { useT, type TranslationKey } from "@/i18n";
 
-const STEPS = [
-  {
-    number: "01",
-    title: "Hesabınızı açın",
-    body: "Bir e-posta ve parola yeter. Alıcı olarak girerseniz salondaki her parçaya teklif verebilirsiniz; satıcı olarak girerseniz kendi parçanızı sergilemeye hemen başlarsınız.",
-  },
-  {
-    number: "02",
-    title: "Parçayı inceleyin",
-    body: "Her ilanda güncel fiyatı, o ana kadar kaç teklif geldiğini ve kapanışa ne kadar kaldığını görürsünüz. Bazı parçaları üç boyutlu olarak çevirip her açıdan inceleyebilirsiniz.",
-  },
-  {
-    number: "03",
-    title: "Teklifinizi verin",
-    body: "Teklifiniz, güncel fiyatın belirli bir tutar üzerinde olmalı — bu alt sınır ilanda yazar. Teklifiniz kabul edildiği anda salondaki herkesin ekranında fiyat değişir; sayfayı yenilemenize gerek kalmaz.",
-  },
-  {
-    number: "04",
-    title: "Sayaç sıfırlanır, kazanan belli olur",
-    body: "Süre dolduğu anda açık artırma kendiliğinden kapanır ve en yüksek teklif kazanır. Son saniyede gelen teklifler de sıraya doğru girer; kimsenin bir butona basması gerekmez.",
-  },
+const STEPS: { number: string; titleKey: TranslationKey; bodyKey: TranslationKey }[] = [
+  { number: "01", titleKey: "how.step1.title", bodyKey: "how.step1.body" },
+  { number: "02", titleKey: "how.step2.title", bodyKey: "how.step2.body" },
+  { number: "03", titleKey: "how.step3.title", bodyKey: "how.step3.body" },
+  { number: "04", titleKey: "how.step4.title", bodyKey: "how.step4.body" },
 ];
 
 export function HowItWorks() {
+  const t = useT();
+
   return (
     <section
       id="how-it-works"
@@ -44,13 +31,13 @@ export function HowItWorks() {
 
       <div className="shell relative z-10 mx-auto max-w-shell">
         <div className="flex items-baseline justify-between gap-8">
-          <p className="eyebrow text-paper/40">02 — Nasıl çalışır</p>
-          <p className="eyebrow hidden text-paper/40 md:block">Dört adım</p>
+          <p className="eyebrow text-paper/40">{t("how.eyebrow")}</p>
+          <p className="eyebrow hidden text-paper/40 md:block">{t("how.eyebrowRight")}</p>
         </div>
 
         <h2 className="mt-10 max-w-[16ch] font-display text-giant font-light leading-[0.9]">
-          <SplitLine text="teklif verin." className="block" />
-          <SplitLine text="anında yayılır." className="block text-sand" delay={100} />
+          <SplitLine text={t("how.title1")} className="block" />
+          <SplitLine text={t("how.title2")} className="block text-sand" delay={100} />
         </h2>
 
         <ol className="mt-20 grid gap-px border border-paper/10 bg-paper/10 md:grid-cols-2">
@@ -61,10 +48,10 @@ export function HowItWorks() {
                   <span className="font-mono text-eyebrow text-sand">{step.number}</span>
                   <div>
                     <h3 className="font-display text-2xl font-light leading-tight text-paper md:text-3xl">
-                      {step.title}
+                      {t(step.titleKey)}
                     </h3>
                     <p className="mt-4 max-w-[42ch] font-sans text-sm leading-relaxed text-paper/55">
-                      {step.body}
+                      {t(step.bodyKey)}
                     </p>
                   </div>
                 </div>

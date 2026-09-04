@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { SHOWCASE, showcaseForTitle } from "@/content/catalog";
 import { useDragRotate } from "@/three/useDragRotate";
 import { useIsVisible } from "@/lib/hooks";
-import { formatMoney } from "@/lib/format";
+import { useFormat, useT } from "@/i18n";
 import type { AuctionListItem } from "@/api/types";
 
 const ShowcaseCanvas = lazy(() =>
@@ -18,6 +18,8 @@ export function Showcase({ auctions }: ShowcaseProps) {
   const [index, setIndex] = useState(0);
   const { state: dragState, dragging, reset, decay, handlers } = useDragRotate();
   const { ref: stageRef, visible } = useIsVisible<HTMLElement>();
+  const t = useT();
+  const format = useFormat();
 
   const [armed, setArmed] = useState(false);
   useEffect(() => {
@@ -45,6 +47,7 @@ export function Showcase({ auctions }: ShowcaseProps) {
   );
 
   const item = SHOWCASE[index];
+  const itemLabel = t(item.labelKey);
   const live = auctions.find((auction) => showcaseForTitle(auction.title)?.slug === item.slug);
   const atStart = index === 0;
   const atEnd = index === SHOWCASE.length - 1;
@@ -80,14 +83,14 @@ export function Showcase({ auctions }: ShowcaseProps) {
       <div
         {...handlers}
         role="application"
-        aria-label={`${item.shortLabel} — sürükleyerek döndürün`}
+        aria-label={t("showcase.dragAria", { lot: itemLabel })}
         className={`absolute inset-0 z-10 ${dragging ? "cursor-grabbing" : "cursor-grab"}`}
         style={{ touchAction: "pan-y" }}
       />
 
       <div className="shell pointer-events-none relative z-20 mx-auto flex h-full max-w-shell flex-col justify-between py-10 md:py-14">
         <div className="flex items-start justify-between gap-6">
-          <p className="eyebrow text-paper/45">Yakından inceleyin</p>
+          <p className="eyebrow text-paper/45">{t("showcase.eyebrow")}</p>
           <p className="font-mono text-eyebrow uppercase tracking-[0.22em] text-paper/45">
             {String(index + 1).padStart(2, "0")} / {String(SHOWCASE.length).padStart(2, "0")}
           </p>
@@ -95,14 +98,16 @@ export function Showcase({ auctions }: ShowcaseProps) {
 
         <div className="flex flex-col gap-10 md:flex-row md:items-end md:justify-between">
           <div className="max-w-[34rem]">
-            <p className="eyebrow mb-4 text-sand">{item.category}</p>
+            <p className="eyebrow mb-4 text-sand">{t(item.categoryKey)}</p>
             <h2
               key={item.slug}
               className="animate-veil-up font-display text-huge font-light leading-[0.92] text-paper"
             >
-              {item.shortLabel}
+              {itemLabel}
             </h2>
-            <p className="mt-5 font-sans text-sm leading-relaxed text-paper/55">{item.provenance}</p>
+            <p className="mt-5 font-sans text-sm leading-relaxed text-paper/55">
+              {t(item.provenanceKey)}
+            </p>
             <p
               className={`mt-7 flex items-center gap-2.5 font-mono text-eyebrow uppercase text-paper/30 transition-opacity duration-500 ${
                 dragging ? "opacity-0" : "opacity-100"
@@ -111,7 +116,7 @@ export function Showcase({ auctions }: ShowcaseProps) {
               <span aria-hidden className="text-sand/60">
                 ↔
               </span>
-              Sürükleyerek döndürün
+              {t("showcase.dragToRotate")}
             </p>
           </div>
 
@@ -119,21 +124,21 @@ export function Showcase({ auctions }: ShowcaseProps) {
             {live ? (
               <>
                 <div className="md:text-right">
-                  <p className="eyebrow mb-2 text-paper/40">Güncel teklif</p>
+                  <p className="eyebrow mb-2 text-paper/40">{t("showcase.currentBid")}</p>
                   <p className="font-display text-4xl font-light tabular-nums text-sand">
-                    {formatMoney(live.currentPrice)}
+                    {format.money(live.currentPrice)}
                   </p>
                 </div>
                 <Link
                   to={`/auctions/${live.id}`}
                   className="btn border border-paper/25 text-paper transition-colors hover:border-sand hover:bg-sand hover:text-ink"
                 >
-                  Teklif verin
+                  {t("showcase.placeBid")}
                 </Link>
               </>
             ) : (
               <p className="max-w-[24ch] font-sans text-sm text-paper/40 md:text-right">
-                Bu parçanın açık artırması yükleniyor.
+                {t("showcase.pending")}
               </p>
             )}
           </div>
@@ -146,7 +151,7 @@ export function Showcase({ auctions }: ShowcaseProps) {
                 key={entry.slug}
                 type="button"
                 onClick={() => goTo(entryIndex)}
-                aria-label={`${entry.shortLabel} parçasını gösterin`}
+                aria-label={t("showcase.showLot", { lot: t(entry.labelKey) })}
                 aria-current={entryIndex === index}
                 className="pointer-events-auto group h-4 flex-1 pt-[7px]"
               >
@@ -165,13 +170,13 @@ export function Showcase({ auctions }: ShowcaseProps) {
               direction="prev"
               disabled={atStart}
               onClick={() => goTo(index - 1)}
-              label="Önceki modeli göster"
+              label={t("showcase.prev")}
             />
             <ShowcaseArrow
               direction="next"
               disabled={atEnd}
               onClick={() => goTo(index + 1)}
-              label="Sonraki modeli göster"
+              label={t("showcase.next")}
             />
           </div>
         </div>

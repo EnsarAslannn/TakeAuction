@@ -3,11 +3,13 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { VISUALS } from "@/content/catalog";
 import { useAuthStore } from "@/store/authStore";
 import { SplitLine } from "@/motion/Reveal";
+import { useT } from "@/i18n";
 
 export function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const login = useAuthStore((state) => state.login);
+  const t = useT();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -46,15 +48,15 @@ export function Login() {
 
       <div className="flex items-center justify-center bg-paper px-6 py-32">
         <div className="w-full max-w-md">
-          <p className="eyebrow">Giriş</p>
+          <p className="eyebrow">{t("login.eyebrow")}</p>
           <h1 className="mt-6 font-display text-huge font-light leading-[0.95] text-ink">
-            <SplitLine text="tekrar hoş geldiniz" />
+            <SplitLine text={t("login.title")} />
           </h1>
 
           <form onSubmit={submit} className="mt-12 space-y-8">
             <div>
               <label htmlFor="email" className="eyebrow mb-3 block">
-                E-posta
+                {t("login.email")}
               </label>
               <input
                 id="email"
@@ -64,13 +66,13 @@ export function Login() {
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 className="field"
-                placeholder="ornek@takeauction.local"
+                placeholder={t("login.emailPlaceholder")}
               />
             </div>
 
             <div>
               <label htmlFor="password" className="eyebrow mb-3 block">
-                Parola
+                {t("login.password")}
               </label>
               <input
                 id="password"
@@ -91,14 +93,14 @@ export function Login() {
             )}
 
             <button type="submit" disabled={pending} className="btn-primary w-full">
-              {pending ? "Giriş yapılıyor…" : "Giriş yapın"}
+              {pending ? t("login.submitting") : t("login.submit")}
             </button>
           </form>
 
           <p className="mt-10 border-t border-ink/12 pt-8 font-sans text-sm text-ink/55">
-            Hesabınız yok mu?{" "}
+            {t("login.noAccount")}{" "}
             <Link to="/register" className="text-sand-deep underline underline-offset-4">
-              Kaydolun
+              {t("login.register")}
             </Link>
           </p>
         </div>

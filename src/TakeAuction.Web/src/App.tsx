@@ -2,6 +2,7 @@ import { Suspense, lazy, useEffect } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/Footer";
+import { LanguageSwitch } from "@/components/LanguageSwitch";
 import { OutbidNotices } from "@/components/OutbidNotices";
 import { SmoothScroll, useHashScroll, useScrollReset } from "@/motion/SmoothScroll";
 import { Landing } from "@/pages/Landing";
@@ -9,6 +10,7 @@ import { Auctions } from "@/pages/Auctions";
 import { Login } from "@/pages/Login";
 import { Register } from "@/pages/Register";
 import { canSell, useAuthStore } from "@/store/authStore";
+import { useLanguageStore, useT } from "@/i18n";
 
 const AuctionDetail = lazy(() =>
   import("@/pages/AuctionDetail").then((module) => ({ default: module.AuctionDetail }))
@@ -21,11 +23,12 @@ function RequireAuth({ children, sellerOnly = false }: { children: React.ReactNo
   const user = useAuthStore((state) => state.user);
   const status = useAuthStore((state) => state.status);
   const location = useLocation();
+  const t = useT();
 
   if (status !== "ready") {
     return (
       <div className="flex min-h-screen items-center justify-center bg-paper">
-        <p className="font-mono text-eyebrow uppercase text-stone">Oturum kontrol ediliyor…</p>
+        <p className="font-mono text-eyebrow uppercase text-stone">{t("app.checkingSession")}</p>
       </div>
     );
   }
@@ -42,23 +45,45 @@ function RequireAuth({ children, sellerOnly = false }: { children: React.ReactNo
 }
 
 function RouteFallback() {
+  const t = useT();
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-paper">
-      <p className="font-mono text-eyebrow uppercase text-stone">Yükleniyor…</p>
+      <p className="font-mono text-eyebrow uppercase text-stone">{t("app.loading")}</p>
     </div>
   );
+}
+
+function useDocumentLanguage() {
+  const language = useLanguageStore((state) => state.language);
+  const t = useT();
+
+  useEffect(() => {
+    document.documentElement.lang = language;
+    document.title = t("meta.title");
+
+    const description = document.querySelector('meta[name="description"]');
+    description?.setAttribute("content", t("meta.description"));
+  }, [language, t]);
 }
 
 function Shell() {
   const location = useLocation();
   useScrollReset(location.pathname);
   useHashScroll();
+  useDocumentLanguage();
 
   const bare = ["/login", "/register"].includes(location.pathname);
 
   return (
     <>
-      {!bare && <Nav />}
+      {bare ? (
+        <div className="fixed left-6 top-6 z-50 rounded-full bg-paper/90 px-3.5 py-2 backdrop-blur-md md:left-10 md:top-8">
+          <LanguageSwitch />
+        </div>
+      ) : (
+        <Nav />
+      )}
       <main>
         <Suspense fallback={<RouteFallback />}>
           <Routes>

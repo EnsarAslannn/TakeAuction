@@ -1,4 +1,5 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
+import { translate } from "@/i18n";
 import type { ProblemDetails } from "./types";
 
 export const API_BASE = import.meta.env.VITE_API_BASE ?? "/api/v1";
@@ -35,7 +36,7 @@ export class ApiError extends Error {
   readonly problem: ProblemDetails;
 
   constructor(status: number, problem: ProblemDetails) {
-    super(problem.detail || problem.title || "İstek başarısız oldu.");
+    super(problem.detail || problem.title || translate("api.requestFailed"));
     this.name = "ApiError";
     this.status = status;
     this.problem = problem;
@@ -56,12 +57,12 @@ export function toApiError(error: unknown): ApiError {
       return new ApiError(axiosError.response.status, axiosError.response.data ?? {});
     }
     return new ApiError(0, {
-      title: "Sunucuya ulaşılamıyor",
-      detail: "API çalışmıyor olabilir. Backend'i başlatıp tekrar deneyin.",
+      title: translate("api.unreachableTitle"),
+      detail: translate("api.unreachableDetail"),
     });
   }
 
-  return new ApiError(0, { title: "Beklenmeyen hata", detail: String(error) });
+  return new ApiError(0, { title: translate("api.unexpected"), detail: String(error) });
 }
 
 const SESSION_ROUTES = [

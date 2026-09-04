@@ -5,9 +5,9 @@ import { toApiError } from "@/api/client";
 import { useAuthStore } from "@/store/authStore";
 import { AuctionStage } from "@/components/AuctionStage";
 import { BidPanel } from "@/components/BidPanel";
-import { SELLER_LISTING_CATEGORY, showcaseForAuction } from "@/content/catalog";
+import { showcaseForAuction } from "@/content/catalog";
 import { useAuctionChannel, useConnectionState } from "@/realtime/useAuctionHub";
-import { STATUS_LABEL, formatCountdown, formatDateTime, formatMoney } from "@/lib/format";
+import { useFormat, useT } from "@/i18n";
 import { useNow, usePrefersReducedMotion } from "@/lib/hooks";
 import type { AuctionDetail as AuctionDetailModel, BidPlacedNotification } from "@/api/types";
 
@@ -36,6 +36,8 @@ export function AuctionDetail() {
   const reducedMotion = usePrefersReducedMotion();
   const connection = useConnectionState();
   const user = useAuthStore((state) => state.user);
+  const t = useT();
+  const format = useFormat();
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -127,7 +129,7 @@ export function AuctionDetail() {
   if (loading && !auction) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-paper">
-        <p className="font-mono text-eyebrow uppercase text-stone">Yükleniyor…</p>
+        <p className="font-mono text-eyebrow uppercase text-stone">{t("app.loading")}</p>
       </div>
     );
   }
@@ -135,10 +137,10 @@ export function AuctionDetail() {
   if (error || !auction) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-paper px-6 text-center">
-        <p className="font-display text-4xl font-light text-ink">Bu parça salonda değil</p>
+        <p className="font-display text-4xl font-light text-ink">{t("detail.notFound")}</p>
         <p className="max-w-[40ch] font-sans text-sm text-ink/60">{error}</p>
         <Link to="/auctions" className="btn-ghost">
-          Salona dönün
+          {t("detail.backButton")}
         </Link>
       </div>
     );
@@ -158,7 +160,7 @@ export function AuctionDetail() {
           to="/auctions"
           className="font-mono text-eyebrow uppercase text-stone transition-colors hover:text-ink"
         >
-          ← Salon
+          {t("detail.backToHall")}
         </Link>
 
         <div className="mt-10 grid gap-14 lg:grid-cols-12 lg:gap-10">
@@ -171,7 +173,7 @@ export function AuctionDetail() {
             />
 
             <div className="mt-12">
-              <p className="eyebrow">Açıklama</p>
+              <p className="eyebrow">{t("detail.description")}</p>
               <p className="mt-5 max-w-[60ch] font-sans text-base leading-relaxed text-ink/75">
                 {auction.description}
               </p>
@@ -179,12 +181,18 @@ export function AuctionDetail() {
 
             <dl className="mt-12 grid grid-cols-2 gap-x-8 gap-y-8 border-t border-ink/12 pt-10 md:grid-cols-4">
               {[
-                { label: "Satıcı", value: auction.sellerDisplayName },
-                { label: "Kategori", value: showcase?.category ?? SELLER_LISTING_CATEGORY },
-                { label: "Başlangıç", value: formatMoney(auction.startingPrice) },
-                { label: "Min. artış", value: formatMoney(auction.minimumBidIncrement) },
-                { label: "Başlama", value: formatDateTime(auction.startsAtUtc) },
-                { label: "Bitiş", value: formatDateTime(auction.endsAtUtc) },
+                { label: t("detail.seller"), value: auction.sellerDisplayName },
+                {
+                  label: t("detail.category"),
+                  value: showcase ? t(showcase.categoryKey) : t("catalog.sellerListing"),
+                },
+                { label: t("detail.startingPrice"), value: format.money(auction.startingPrice) },
+                {
+                  label: t("detail.minIncrement"),
+                  value: format.money(auction.minimumBidIncrement),
+                },
+                { label: t("detail.startsAt"), value: format.dateTime(auction.startsAtUtc) },
+                { label: t("detail.endsAt"), value: format.dateTime(auction.endsAtUtc) },
               ].map((entry) => (
                 <div key={entry.label}>
                   <dt className="font-mono text-eyebrow uppercase text-stone">{entry.label}</dt>
@@ -196,37 +204,39 @@ export function AuctionDetail() {
 
           <div className="lg:col-span-5">
             <div className="lg:sticky lg:top-28">
-              <p className="eyebrow">{showcase?.category ?? SELLER_LISTING_CATEGORY}</p>
+              <p className="eyebrow">
+                {showcase ? t(showcase.categoryKey) : t("catalog.sellerListing")}
+              </p>
               <h1 className="mt-5 font-display text-huge font-light leading-[0.95] text-ink">
                 {auction.title}
               </h1>
 
               <div className="mt-10 flex items-end justify-between gap-6 border-b border-ink/12 pb-8">
                 <div>
-                  <p className="eyebrow mb-3">Güncel teklif</p>
+                  <p className="eyebrow mb-3">{t("detail.currentBid")}</p>
                   <p
                     className={`font-display text-5xl font-light tabular-nums transition-colors duration-500 ${
                       flash ? "text-sand-deep" : "text-ink"
                     }`}
                   >
-                    {formatMoney(auction.currentPrice)}
+                    {format.money(auction.currentPrice)}
                   </p>
                 </div>
 
                 <div className="text-right">
-                  <p className="eyebrow mb-3">{isLive ? "Kalan" : "Durum"}</p>
+                  <p className="eyebrow mb-3">
+                    {isLive ? t("detail.remaining") : t("detail.status")}
+                  </p>
                   <p
                     className={`font-mono text-lg tabular-nums transition-colors duration-500 ${
                       extended ? "text-sand-deep" : "text-ink"
                     }`}
                   >
-                    {isLive
-                      ? formatCountdown(remaining)
-                      : STATUS_LABEL[auction.status] ?? auction.status}
+                    {isLive ? format.countdown(remaining) : format.status(auction.status)}
                   </p>
                   {extended && (
                     <p className="mt-2 font-mono text-eyebrow uppercase text-sand-deep">
-                      Süre uzatıldı
+                      {t("detail.extended")}
                     </p>
                   )}
                 </div>
@@ -241,17 +251,17 @@ export function AuctionDetail() {
                   />
                   <span className="font-mono text-eyebrow uppercase text-stone">
                     {connection === "connected"
-                      ? "Salon canlı"
+                      ? t("detail.hallLive")
                       : connection === "reconnecting"
-                        ? "Yeniden bağlanıyor"
-                        : "Bağlantı bekleniyor"}
+                        ? t("detail.reconnecting")
+                        : t("detail.awaitingConnection")}
                   </span>
                 </span>
 
                 <span className="font-mono text-eyebrow uppercase tabular-nums text-stone">
                   {auction.bidCount === 0
-                    ? "Henüz teklif yok"
-                    : `${auction.bidCount} teklif verildi`}
+                    ? t("detail.noBidsYet")
+                    : t("detail.bidCount", { n: auction.bidCount })}
                 </span>
               </div>
 
@@ -287,11 +297,9 @@ export function AuctionDetail() {
               </div>
 
               <div className="mt-10">
-                <p className="eyebrow mb-5">Canlı teklif akışı</p>
+                <p className="eyebrow mb-5">{t("detail.feed")}</p>
                 {feed.length === 0 ? (
-                  <p className="font-sans text-sm text-ink/45">
-                    Bu parçaya henüz teklif verilmedi. İlk teklifi siz verebilirsiniz.
-                  </p>
+                  <p className="font-sans text-sm text-ink/45">{t("detail.feedEmpty")}</p>
                 ) : (
                   <ul className="space-y-0">
                     {feed.map((entry) => (
@@ -301,21 +309,21 @@ export function AuctionDetail() {
                       >
                         <span className="flex items-center gap-3">
                           <span className="font-mono text-eyebrow uppercase text-stone">
-                            {new Date(entry.at).toLocaleTimeString("tr-TR")}
+                            {format.time(entry.at)}
                           </span>
                           {user?.id === entry.bidderId && (
                             <span className="font-mono text-eyebrow uppercase text-sand-deep">
-                              sizin
+                              {t("detail.yours")}
                             </span>
                           )}
                           {entry.automatic && (
                             <span className="font-mono text-eyebrow uppercase text-stone">
-                              otomatik
+                              {t("detail.automatic")}
                             </span>
                           )}
                         </span>
                         <span className="font-display text-lg font-light tabular-nums text-ink">
-                          {formatMoney(entry.amount)}
+                          {format.money(entry.amount)}
                         </span>
                       </li>
                     ))}

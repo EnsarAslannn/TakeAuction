@@ -4,6 +4,7 @@ import { AuctionModel } from "@/three/AuctionModel";
 import { Studio } from "@/three/Studio";
 import { useDragRotate } from "@/three/useDragRotate";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { useT } from "@/i18n";
 import type { ShowcaseModel } from "@/content/catalog";
 
 const GLOW =
@@ -18,6 +19,7 @@ interface AuctionStageProps {
 
 export function AuctionStage({ title, imageUrl, showcase, reducedMotion }: AuctionStageProps) {
   const [imageFailed, setImageFailed] = useState(false);
+  const t = useT();
 
   if (imageUrl && !imageFailed) {
     return (
@@ -46,9 +48,9 @@ export function AuctionStage({ title, imageUrl, showcase, reducedMotion }: Aucti
     <Frame>
       <div aria-hidden className="pointer-events-none absolute inset-0" style={{ background: GLOW }} />
       <div className="absolute inset-6 flex flex-col items-center justify-center gap-4 border border-paper/12 md:inset-10">
-        <span className="font-mono text-eyebrow uppercase text-paper/35">Görsel eklenmedi</span>
+        <span className="font-mono text-eyebrow uppercase text-paper/35">{t("stage.noImage")}</span>
         <p className="max-w-[28ch] text-center font-sans text-sm leading-relaxed text-paper/45">
-          Satıcı bu parça için fotoğraf paylaşmadı. Açıklamadaki ayrıntılar ve satıcı bilgisi aşağıda.
+          {t("stage.noImageBody")}
         </p>
       </div>
     </Frame>
@@ -66,6 +68,7 @@ function ModelStage({
 }) {
   const [modelFailed, setModelFailed] = useState(false);
   const { state: dragState, dragging, decay, handlers } = useDragRotate();
+  const t = useT();
 
   return (
     <Frame>
@@ -97,14 +100,14 @@ function ModelStage({
 
       {modelFailed && (
         <p className="pointer-events-none absolute inset-0 flex items-center justify-center font-mono text-eyebrow uppercase text-paper/35">
-          3B model yüklenemedi
+          {t("stage.modelFailed")}
         </p>
       )}
 
       <div
         {...handlers}
         role="application"
-        aria-label={`${title} — sürükleyerek döndürün`}
+        aria-label={t("stage.dragAria", { title })}
         className={`absolute inset-0 ${dragging ? "cursor-grabbing" : "cursor-grab"}`}
         style={{ touchAction: "pan-y" }}
       />
@@ -114,7 +117,7 @@ function ModelStage({
           dragging ? "opacity-0" : "opacity-100"
         }`}
       >
-        Sürükleyerek döndürün
+        {t("stage.dragToRotate")}
       </p>
     </Frame>
   );

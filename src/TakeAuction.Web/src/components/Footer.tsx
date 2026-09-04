@@ -1,21 +1,19 @@
 import { Link } from "react-router-dom";
 import { VISUALS } from "@/content/catalog";
+import { useT, type TranslationKey } from "@/i18n";
 
-const LINKS = [
-  { to: "/auctions", label: "Salondaki parçalar" },
-  { to: "/#how-it-works", label: "Nasıl çalışır" },
-  { to: "/#capabilities", label: "Alıcı ve satıcı" },
-  { to: "/register", label: "Hesap açın" },
+const LINKS: { to: string; labelKey: TranslationKey }[] = [
+  { to: "/auctions", labelKey: "footer.link.lots" },
+  { to: "/#how-it-works", labelKey: "footer.link.how" },
+  { to: "/#capabilities", labelKey: "footer.link.parties" },
+  { to: "/register", labelKey: "footer.link.register" },
 ];
 
-const RULES = [
-  "Teklifiniz, güncel fiyatın en az bir adım üzerinde olmalı — alt sınır her ilanda yazar.",
-  "Açık artırma bitiş saatinde kendiliğinden kapanır; en yüksek teklif kazanır.",
-  "Kendi ilanınıza teklif veremezsiniz.",
-  "Biri sizi geçtiğinde sayfayı yenilemenize gerek kalmadan haberiniz olur.",
-];
+const RULES: TranslationKey[] = ["footer.rule1", "footer.rule2", "footer.rule3", "footer.rule4"];
 
 export function Footer() {
+  const t = useT();
+
   return (
     <footer data-nav-theme="dark" className="relative overflow-hidden bg-ink text-paper">
       <div className="absolute inset-0">
@@ -31,7 +29,7 @@ export function Footer() {
       <div className="shell relative z-10 mx-auto max-w-shell py-24 md:py-32">
         <div className="flex flex-col gap-14 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="eyebrow mb-8 text-paper/40">Salona girin</p>
+            <p className="eyebrow mb-8 text-paper/40">{t("footer.enterHall")}</p>
             <h2 className="font-display text-giant font-light leading-[0.88]">
               take<span className="text-sand">auction</span>
             </h2>
@@ -42,17 +40,17 @@ export function Footer() {
               to="/auctions"
               className="btn border border-paper/25 text-paper hover:border-sand hover:bg-sand hover:text-ink"
             >
-              Açık artırmalar
+              {t("footer.auctions")}
             </Link>
             <Link to="/register" className="btn bg-paper text-ink hover:bg-sand">
-              Hesap açın
+              {t("footer.openAccount")}
             </Link>
           </div>
         </div>
 
         <div className="mt-20 grid gap-12 border-t border-paper/12 pt-14 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] md:gap-20">
           <div>
-            <p className="eyebrow mb-6 text-paper/40">Salonda gezin</p>
+            <p className="eyebrow mb-6 text-paper/40">{t("footer.navigate")}</p>
             <ul className="space-y-3">
               {LINKS.map((link) => (
                 <li key={link.to}>
@@ -60,7 +58,7 @@ export function Footer() {
                     to={link.to}
                     className="font-sans text-base text-paper/70 transition-colors hover:text-sand"
                   >
-                    {link.label}
+                    {t(link.labelKey)}
                   </Link>
                 </li>
               ))}
@@ -68,13 +66,13 @@ export function Footer() {
           </div>
 
           <div>
-            <p className="eyebrow mb-6 text-paper/40">Teklif vermeden önce</p>
+            <p className="eyebrow mb-6 text-paper/40">{t("footer.beforeBidding")}</p>
             <ul className="space-y-4">
-              {RULES.map((rule) => (
-                <li key={rule} className="flex gap-4">
+              {RULES.map((ruleKey) => (
+                <li key={ruleKey} className="flex gap-4">
                   <span aria-hidden className="mt-2.5 h-px w-5 shrink-0 bg-sand/50" />
                   <span className="max-w-[52ch] font-sans text-sm leading-relaxed text-paper/60">
-                    {rule}
+                    {t(ruleKey)}
                   </span>
                 </li>
               ))}
