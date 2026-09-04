@@ -26,12 +26,14 @@ function build(language: Language): Formatters {
   const currency = new Intl.NumberFormat(locale, {
     style: "currency",
     currency: "TRY",
+    currencyDisplay: "narrowSymbol",
     maximumFractionDigits: 0,
   });
 
   const currencyPrecise = new Intl.NumberFormat(locale, {
     style: "currency",
     currency: "TRY",
+    currencyDisplay: "narrowSymbol",
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
