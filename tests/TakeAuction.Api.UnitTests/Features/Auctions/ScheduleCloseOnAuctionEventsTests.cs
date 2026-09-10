@@ -20,7 +20,14 @@ public sealed class ScheduleCloseOnAuctionEventsTests
         var endsAt = TestHarness.Now.AddDays(2);
 
         await handler.Handle(
-            new AuctionCreatedEvent(AuctionId, Guid.CreateVersion7(), 100m, "Active", endsAt, TestHarness.Now),
+            new AuctionCreatedEvent(
+                AuctionId,
+                Guid.CreateVersion7(),
+                100m,
+                "Active",
+                TestHarness.Now,
+                endsAt,
+                TestHarness.Now),
             CancellationToken.None);
 
         _schedule.Received(1).ScheduleClose(AuctionId, endsAt, TestHarness.Now);

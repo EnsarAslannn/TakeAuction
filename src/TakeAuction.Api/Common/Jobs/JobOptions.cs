@@ -18,6 +18,10 @@ public sealed class JobOptions
 
     public int ExpireAuctionsBatchSize { get; set; } = 200;
 
+    public string ActivateAuctionsCron { get; set; } = "* * * * *";
+
+    public int ActivateAuctionsBatchSize { get; set; } = 200;
+
     public string PurgeRefreshTokensCron { get; set; } = "0 3 * * *";
 
     public string PurgeOutboxCron { get; set; } = "15 3 * * *";

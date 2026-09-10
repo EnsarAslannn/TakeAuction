@@ -268,6 +268,28 @@ public sealed class Auction
         return CancelOutcome.Accepted();
     }
 
+    public bool Open(DateTimeOffset nowUtc)
+    {
+        if (Status is not AuctionStatus.Scheduled)
+        {
+            return false;
+        }
+
+        if (nowUtc < StartsAtUtc)
+        {
+            return false;
+        }
+
+        if (nowUtc >= EndsAtUtc)
+        {
+            return false;
+        }
+
+        Status = AuctionStatus.Active;
+
+        return true;
+    }
+
     public bool End(DateTimeOffset nowUtc)
     {
         if (Status is AuctionStatus.Ended or AuctionStatus.Cancelled)

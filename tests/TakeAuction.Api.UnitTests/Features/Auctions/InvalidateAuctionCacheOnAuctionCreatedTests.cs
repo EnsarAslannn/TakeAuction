@@ -37,6 +37,7 @@ public sealed class InvalidateAuctionCacheOnAuctionCreatedTests
         Guid.CreateVersion7(),
         100m,
         nameof(AuctionStatus.Active),
+        TestHarness.Now,
         TestHarness.Now.AddDays(1),
         TestHarness.Now);
 }

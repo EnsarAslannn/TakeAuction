@@ -12,6 +12,8 @@ public sealed class IntegrationEventTypeRegistryTests
     [InlineData(typeof(BidPlacedIntegrationEvent))]
     [InlineData(typeof(AuctionCreatedIntegrationEvent))]
     [InlineData(typeof(AuctionEndedIntegrationEvent))]
+    [InlineData(typeof(AuctionOpenedIntegrationEvent))]
+    [InlineData(typeof(AuctionCancelledIntegrationEvent))]
     public void Resolves_every_contract_that_can_be_queued(Type contract)
     {
         Assert.Equal(contract, _registry.Resolve(IntegrationEventTypeRegistry.NameOf(contract)));

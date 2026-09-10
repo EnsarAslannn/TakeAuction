@@ -1,12 +1,11 @@
 using TakeAuction.Api.Common.Messaging;
 
-namespace TakeAuction.Api.Features.Auctions.CreateAuction;
+namespace TakeAuction.Api.Features.Auctions.OpenAuctions;
 
-public sealed record AuctionCreatedEvent(
+public sealed record AuctionOpenedEvent(
     Guid AuctionId,
     Guid SellerId,
-    decimal StartingPrice,
-    string Status,
+    decimal CurrentPrice,
     DateTimeOffset StartsAtUtc,
     DateTimeOffset EndsAtUtc,
     DateTimeOffset OccurredAtUtc) : IDomainEvent;

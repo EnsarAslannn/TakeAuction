@@ -71,6 +71,7 @@ public sealed class CreateAuctionHandler : IRequestHandler<CreateAuctionCommand,
                 auction.SellerId,
                 auction.StartingPrice,
                 auction.Status.ToString(),
+                auction.StartsAtUtc,
                 auction.EndsAtUtc,
                 now),
             cancellationToken);
