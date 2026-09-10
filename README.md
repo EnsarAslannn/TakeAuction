@@ -36,8 +36,11 @@ kanıtlayacak metriklerle desteklenen uçtan uca bir sistem ortaya koymaktır.
   sadece bir artış payı öder
 - Liderin tavanını geçemeyen bir rakip otomatik olarak yanıtlanır; eşitlikte mevcut lider
   kazanır
-- Tavan değerleri hiçbir yerde ifşa edilmez — ne detay endpoint'inde, ne teklif
-  geçmişinde, ne de hub üzerinden
+- Tavan alanı (`MaxAmount`) hiçbir yanıtta taşınmaz — ne detay endpoint'inde, ne teklif
+  geçmişinde, ne de hub üzerinden; bir alıcı yalnızca kendi tavanını geri okur
+- Kamuya açık olan tek şey oluşan fiyattır. Bir düello bir artış payı içinde
+  sonuçlandığında bu fiyat, yenilen tavanın tam üstüne oturabilir — eBay'de olduğu gibi:
+  gizli kalan, kazananın nereye kadar gitmeye razı olduğudur
 
 ### 📡 Transactional Outbox → RabbitMQ
 

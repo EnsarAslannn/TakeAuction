@@ -35,7 +35,11 @@ by the metrics needed to prove it.
   willing to spend
 - A challenger who can't clear the leader's ceiling is answered automatically; ties go to
   the incumbent
-- Ceilings are never exposed — not on the detail endpoint, the bid history, or the hub
+- The ceiling column (`MaxAmount`) is served nowhere — not on the detail endpoint, the
+  bid history, or the hub; a bidder only ever reads back their own
+- What is public is the settled price. When a duel ends within one increment that price
+  can land squarely on the beaten ceiling — as it does on eBay: what stays sealed is how
+  far the winner was willing to go
 
 ### 📡 Transactional Outbox → RabbitMQ
 
