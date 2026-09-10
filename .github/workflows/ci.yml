@@ -153,8 +153,21 @@ jobs:
       - name: Build the application images
         run: docker compose build api web
 
-      - name: Boot the stack
-        run: docker compose up --detach --wait
+      # Two API replicas, not one: the outbox, the SignalR backplane and the Hangfire
+      # sweeps are all built to run side by side, and a `container_name` on the service
+      # would silently make this impossible.
+      - name: Boot the stack behind the gateway with two API replicas
+        run: docker compose up --detach --wait --scale api=2
+
+      - name: Both replicas are up and serving through the gateway
+        run: |
+          running=$(docker compose ps --status running --format '{{.Service}}' | grep -c '^api$')
+          echo "api replicas running: $running"
+          [ "$running" -eq 2 ]
+
+          for _ in $(seq 1 20); do
+            curl --fail --silent --show-error http://localhost:8080/health/ready > /dev/null
+          done
 
       - name: Smoke test through the gateway
         run: |

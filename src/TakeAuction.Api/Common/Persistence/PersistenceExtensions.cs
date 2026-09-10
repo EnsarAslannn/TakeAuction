@@ -50,10 +50,35 @@ public static class PersistenceExtensions
         return services;
     }
 
+    // Seeding is a check-then-insert against a unique email index, so two replicas booting
+    // together would both find a user missing and both try to write it. A session-level
+    // advisory lock on the shared connection serialises the whole migrate-and-seed startup
+    // across every instance; EF's own migration lock does not cover the seeding delegates.
+    private const long StartupLockKey = 5_712_090_143_071_268;
+
     public static async Task MigrateAndSeedAsync(this WebApplication app)
     {
         await using var scope = app.Services.CreateAsyncScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        await context.Database.MigrateAsync();
+
+        await context.Database.OpenConnectionAsync();
+
+        try
+        {
+            await context.Database.ExecuteSqlRawAsync("SELECT pg_advisory_lock({0})", StartupLockKey);
+
+            try
+            {
+                await context.Database.MigrateAsync();
+            }
+            finally
+            {
+                await context.Database.ExecuteSqlRawAsync("SELECT pg_advisory_unlock({0})", StartupLockKey);
+            }
+        }
+        finally
+        {
+            await context.Database.CloseConnectionAsync();
+        }
     }
 }

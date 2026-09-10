@@ -157,6 +157,17 @@ docker compose up --detach --wait # http://localhost:8080
 Gateway `/api`, `/hubs` ve `/uploads` isteklerini API'ye, geri kalanını SPA'ya
 yönlendirir. API, başlangıçta kendi migration'larını uygular ve verilerini seed eder.
 
+API yatay olarak ölçeklenebilir — outbox `FOR UPDATE SKIP LOCKED` ile çalışır, SignalR
+Redis backplane üzerinden yayın yapar ve Hangfire süpürmeleri `DisableConcurrentExecution`
+ile korunur:
+
+```bash
+docker compose up --detach --wait --scale api=3
+```
+
+nginx, upstream'deki `api` adını açılışta çözer ve dönen her replika adresini havuza
+ekler; bu yüzden ölçeği gateway ayağa kalkmadan önce vermek gerekir.
+
 ### Geliştirme için çalıştırma
 
 ```bash
