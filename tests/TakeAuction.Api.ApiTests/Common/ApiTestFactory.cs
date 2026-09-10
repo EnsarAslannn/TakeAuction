@@ -27,6 +27,7 @@ public sealed class ApiTestFactory : WebApplicationFactory<Program>
         ["Jobs__DashboardEnabled"] = "true",
         ["Jobs__QueuePollIntervalSeconds"] = "1",
         ["Jobs__ExpireAuctionsCron"] = NeverFiringCron,
+        ["Jobs__ActivateAuctionsCron"] = NeverFiringCron,
         ["Telemetry__PrometheusEndpointEnabled"] = "true"
     };
 }
