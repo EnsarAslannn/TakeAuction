@@ -173,6 +173,19 @@ jobs:
             http://localhost:8080/
           grep -qi "^x-content-type-options: nosniff" web.headers
           grep -qi "^x-frame-options: DENY" web.headers
+          grep -qi "^permissions-policy:" web.headers
+
+          # The policy has to be enforced, not merely reported: a Report-Only header
+          # with no collector blocks nothing, which is how it silently lapsed before.
+          grep -qi "^content-security-policy:" web.headers
+          ! grep -qi "^content-security-policy-report-only:" web.headers
+
+          # The salon loads its typefaces from Google Fonts and decodes Draco meshes
+          # in a blob worker; drop either source and the page ships broken.
+          grep -i "^content-security-policy:" web.headers | grep -q "fonts.googleapis.com"
+          grep -i "^content-security-policy:" web.headers | grep -q "fonts.gstatic.com"
+          grep -i "^content-security-policy:" web.headers | grep -q "worker-src 'self' blob:"
+          grep -i "^content-security-policy:" web.headers | grep -q "wasm-unsafe-eval"
 
       - name: The gateway throttles a burst of sign-in attempts
         run: |
