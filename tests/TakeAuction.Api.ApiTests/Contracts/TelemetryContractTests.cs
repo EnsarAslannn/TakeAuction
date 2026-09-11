@@ -46,8 +46,7 @@ public sealed class TelemetryContractTests : IAsyncLifetime
         using var bidder = await _fixture.CreateBidderAsync();
         (await bidder.PostAsync(ApiRoutes.Bids(_auctionId), new { amount = 150m })).EnsureSuccessStatusCode();
 
-        using var client = _fixture.CreateRawClient();
-        var scrape = await client.GetStringAsync("/metrics");
+        var scrape = await ScrapeContainingAsync("outcome=\"accepted\"");
 
         Assert.Contains("takeauction_bids", scrape, StringComparison.Ordinal);
         Assert.Contains("outcome=\"accepted\"", scrape, StringComparison.Ordinal);
@@ -60,8 +59,7 @@ public sealed class TelemetryContractTests : IAsyncLifetime
         using var bidder = await _fixture.CreateBidderAsync();
         (await bidder.PostAsync(ApiRoutes.Bids(_auctionId), new { amount = 150m })).EnsureSuccessStatusCode();
 
-        using var client = _fixture.CreateRawClient();
-        var scrape = await client.GetStringAsync("/metrics");
+        var scrape = await ScrapeContainingAsync("takeauction_bids_attempts_bucket");
 
         var buckets = scrape
             .Split('\n')
@@ -79,8 +77,7 @@ public sealed class TelemetryContractTests : IAsyncLifetime
         using var bidder = await _fixture.CreateBidderAsync();
         await bidder.PostAsync(ApiRoutes.Bids(_auctionId), new { amount = 1m });
 
-        using var client = _fixture.CreateRawClient();
-        var scrape = await client.GetStringAsync("/metrics");
+        var scrape = await ScrapeContainingAsync("outcome=\"BidTooLow\"");
 
         Assert.Contains("outcome=\"BidTooLow\"", scrape, StringComparison.Ordinal);
     }
@@ -91,7 +88,7 @@ public sealed class TelemetryContractTests : IAsyncLifetime
         using var client = _fixture.CreateRawClient();
         await client.GetAsync(ApiRoutes.Auctions);
 
-        var scrape = await client.GetStringAsync("/metrics");
+        var scrape = await ScrapeContainingAsync("http_server_request_duration");
 
         Assert.Contains("http_server_request_duration", scrape, StringComparison.Ordinal);
         Assert.Contains("dotnet_gc", scrape, StringComparison.Ordinal);
@@ -100,16 +97,7 @@ public sealed class TelemetryContractTests : IAsyncLifetime
     [Fact]
     public async Task The_outbox_backlog_is_on_the_scrape_for_the_dead_letter_alert()
     {
-        using var client = _fixture.CreateRawClient();
-
-        var scrape = await client.GetStringAsync("/metrics");
-        var deadline = DateTime.UtcNow.AddSeconds(10);
-
-        while (!scrape.Contains("takeauction_outbox_pending", StringComparison.Ordinal) && DateTime.UtcNow < deadline)
-        {
-            await Task.Delay(250);
-            scrape = await client.GetStringAsync("/metrics");
-        }
+        var scrape = await ScrapeContainingAsync("takeauction_outbox_pending");
 
         Assert.Contains("takeauction_outbox_pending", scrape, StringComparison.Ordinal);
         Assert.Contains("takeauction_outbox_dead_letters", scrape, StringComparison.Ordinal);
@@ -122,9 +110,26 @@ public sealed class TelemetryContractTests : IAsyncLifetime
         using var bidder = await _fixture.CreateBidderAsync();
         (await bidder.PostAsync(ApiRoutes.Bids(_auctionId), new { amount = 987654m })).EnsureSuccessStatusCode();
 
-        using var client = _fixture.CreateRawClient();
-        var scrape = await client.GetStringAsync("/metrics");
+        var scrape = await ScrapeContainingAsync("outcome=\"accepted\"");
 
         Assert.DoesNotContain("987654", scrape, StringComparison.Ordinal);
+    }
+
+    // The exporter caches a scrape for a few hundred milliseconds, so the first read after an
+    // action can still be the one taken before it.
+    private async Task<string> ScrapeContainingAsync(string expected)
+    {
+        using var client = _fixture.CreateRawClient();
+
+        var scrape = await client.GetStringAsync("/metrics");
+        var deadline = DateTime.UtcNow.AddSeconds(10);
+
+        while (!scrape.Contains(expected, StringComparison.Ordinal) && DateTime.UtcNow < deadline)
+        {
+            await Task.Delay(100);
+            scrape = await client.GetStringAsync("/metrics");
+        }
+
+        return scrape;
     }
 }
