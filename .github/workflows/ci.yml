@@ -254,7 +254,7 @@ jobs:
 
       - name: Prometheus finds every API replica on its own
         run: |
-          docker compose --profile observability up --detach prometheus
+          docker compose --profile observability up --detach --no-deps prometheus
           for _ in $(seq 1 30); do
             found=$(curl --silent --get http://localhost:9090/api/v1/query \
               --data-urlencode 'query=count(up{job="takeauction-api"} == 1)' \
