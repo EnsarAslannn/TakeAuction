@@ -151,7 +151,7 @@ export function Hero({ auctions }: HeroProps) {
   const atEnd = index === total - 1;
 
   return (
-    <section id="hero" data-nav-theme="dark" className="relative h-[100svh] overflow-hidden bg-ink">
+    <section id="hero" data-nav-theme="dark" className="relative h-svh overflow-hidden bg-ink">
       <div className="absolute inset-0">
         <img
           src={BACKGROUND}
@@ -163,15 +163,15 @@ export function Hero({ auctions }: HeroProps) {
           }}
           className="h-full w-full object-cover object-center"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-ink via-ink/78 to-ink/55" />
-        <div className="absolute inset-0 bg-gradient-to-t from-ink via-transparent to-ink/60" />
+        <div className="absolute inset-0 bg-linear-to-r from-ink via-ink/78 to-ink/55" />
+        <div className="absolute inset-0 bg-linear-to-t from-ink via-transparent to-ink/60" />
       </div>
 
       <div className="grain absolute inset-0" />
 
       <div className="shell relative z-10 mx-auto flex h-full max-w-shell flex-col pb-8 pt-24 md:pb-14 md:pt-32">
         <div className="grid flex-1 items-center gap-10 lg:grid-cols-[minmax(0,40%)_1fr]">
-          <div className="max-w-[34rem]">
+          <div className="max-w-136">
             <p className="mb-5 flex items-center gap-3 font-mono text-eyebrow uppercase text-paper/60">
               <span aria-hidden className="h-px w-7 bg-sand" />
               {t("hero.eyebrow")}
@@ -329,14 +329,14 @@ function CarouselCard({
       onClick={onSelect}
       aria-current={isActive}
       aria-label={t("hero.selectLot", { lot: label })}
-      className={`group relative block h-[var(--card-h)] w-full overflow-hidden rounded-2xl bg-ink text-left transition-shadow duration-700 ease-editorial ${
+      className={`group relative block h-(--card-h) w-full overflow-hidden rounded-2xl bg-ink text-left transition-shadow duration-700 ease-editorial ${
         isActive
           ? "shadow-[0_38px_90px_-34px_rgba(0,0,0,0.95)] ring-1 ring-sand/50"
           : "shadow-[0_18px_50px_-30px_rgba(0,0,0,0.8)]"
       }`}
     >
       {failed ? (
-        <div className="absolute inset-0 bg-gradient-to-br from-stone-dark via-ink-soft to-ink" />
+        <div className="absolute inset-0 bg-linear-to-br from-stone-dark via-ink-soft to-ink" />
       ) : (
         <img
           src={item.card}
@@ -344,11 +344,11 @@ function CarouselCard({
           loading="lazy"
           draggable={false}
           onError={() => setFailed(true)}
-          className="absolute inset-0 h-full w-full object-cover transition-transform duration-[1200ms] ease-editorial group-hover:scale-105"
+          className="absolute inset-0 h-full w-full object-cover transition-transform duration-1200 ease-editorial group-hover:scale-105"
         />
       )}
 
-      <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/25 to-transparent" />
+      <div className="absolute inset-0 bg-linear-to-t from-ink via-ink/25 to-transparent" />
 
       <div
         className={`absolute inset-0 bg-ink transition-opacity duration-700 ease-editorial ${

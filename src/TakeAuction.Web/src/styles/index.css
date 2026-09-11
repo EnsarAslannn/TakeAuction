@@ -1,6 +1,157 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+@theme {
+  --color-ink: #1a1815;
+  --color-ink-soft: #2c2823;
+  --color-ink-muted: #52443d;
+
+  --color-paper: #f4f1eb;
+  --color-paper-pure: #fbfaf7;
+  --color-paper-warm: #efe3d2;
+
+  --color-sand: #c0a070;
+  --color-sand-deep: #a0805f;
+  --color-sand-pale: #e0c6a0;
+
+  --color-slate: #7e9bbd;
+  --color-slate-pale: #b0c4da;
+  --color-slate-deep: #5e7a9b;
+
+  --color-stone: #8b837c;
+  --color-stone-light: #c4b1a4;
+  --color-stone-dark: #635c56;
+
+  --font-display: Bricolage Grotesque, Inter Tight, system-ui, sans-serif;
+  --font-sans: Inter Tight, Inter, system-ui, sans-serif;
+  --font-mono: IBM Plex Mono, ui-monospace, monospace;
+
+  --tracking-tightest: -0.055em;
+  --tracking-headline: -0.04em;
+
+  --text-mega: clamp(3.5rem, 13vw, 15rem);
+  --text-mega--line-height: 0.82;
+  --text-mega--letter-spacing: -0.05em;
+  --text-giant: clamp(2.6rem, 8vw, 8rem);
+  --text-giant--line-height: 0.88;
+  --text-giant--letter-spacing: -0.045em;
+  --text-huge: clamp(2rem, 5vw, 4.5rem);
+  --text-huge--line-height: 0.95;
+  --text-huge--letter-spacing: -0.035em;
+  --text-eyebrow: 0.6875rem;
+  --text-eyebrow--line-height: 1;
+  --text-eyebrow--letter-spacing: 0.22em;
+
+  --container-shell: 96rem;
+
+  --ease-editorial: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --animate-veil-up: veil-up 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-drift: drift 6s ease-in-out infinite;
+  --animate-shimmer: shimmer 2.4s linear infinite;
+
+  @keyframes veil-up {
+    from {
+      transform: translate3d(0, 110%, 0);
+    }
+    to {
+      transform: translate3d(0, 0, 0);
+    }
+  }
+  @keyframes drift {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0);
+    }
+    50% {
+      transform: translate3d(0, -10px, 0);
+    }
+  }
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
+
+@utility shell {
+  padding-inline: var(--shell-pad);
+}
+
+@utility eyebrow {
+  @apply font-mono text-eyebrow uppercase text-stone;
+}
+
+@utility rule {
+  @apply h-px w-full bg-ink/10;
+}
+
+@utility grain {
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.28;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  }
+}
+
+@utility field {
+  @apply w-full rounded-none border-0 border-b border-ink/20 bg-transparent px-0 py-3
+           font-sans text-base text-ink placeholder:text-stone/60
+           transition-colors duration-300 focus:border-sand focus:outline-hidden;
+}
+
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-full px-7 py-3.5
+           font-mono text-[0.7rem] uppercase tracking-[0.18em]
+           transition-all duration-500 ease-editorial disabled:cursor-not-allowed disabled:opacity-40;
+}
+
+@utility btn-primary {
+  @apply btn bg-ink text-paper hover:bg-sand-deep;
+}
+
+@utility btn-ghost {
+  @apply btn border border-ink/20 text-ink hover:border-ink hover:bg-ink hover:text-paper;
+}
+
+@utility text-balance {
+  text-wrap: balance;
+  overflow-wrap: break-word;
+}
+
+@utility mask-fade-b {
+  -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
+}
+
+@utility text-stroke {
+  -webkit-text-stroke: 1px currentColor;
+  color: transparent;
+}
 
 @layer base {
   :root {
@@ -66,67 +217,6 @@
 
   p {
     text-wrap: pretty;
-  }
-}
-
-@layer components {
-  .shell {
-    padding-inline: var(--shell-pad);
-  }
-
-  .eyebrow {
-    @apply font-mono text-eyebrow uppercase text-stone;
-  }
-
-  .rule {
-    @apply h-px w-full bg-ink/10;
-  }
-
-  .grain::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    opacity: 0.28;
-    mix-blend-mode: multiply;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
-  }
-
-  .field {
-    @apply w-full rounded-none border-0 border-b border-ink/20 bg-transparent px-0 py-3
-           font-sans text-base text-ink placeholder:text-stone/60
-           transition-colors duration-300 focus:border-sand focus:outline-none;
-  }
-
-  .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-full px-7 py-3.5
-           font-mono text-[0.7rem] uppercase tracking-[0.18em]
-           transition-all duration-500 ease-editorial disabled:cursor-not-allowed disabled:opacity-40;
-  }
-
-  .btn-primary {
-    @apply btn bg-ink text-paper hover:bg-sand-deep;
-  }
-
-  .btn-ghost {
-    @apply btn border border-ink/20 text-ink hover:border-ink hover:bg-ink hover:text-paper;
-  }
-}
-
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-    overflow-wrap: break-word;
-  }
-
-  .mask-fade-b {
-    -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
-    mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
-  }
-
-  .text-stroke {
-    -webkit-text-stroke: 1px currentColor;
-    color: transparent;
   }
 }
 

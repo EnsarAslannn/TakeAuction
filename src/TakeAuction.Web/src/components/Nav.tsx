@@ -12,7 +12,7 @@ const LINKS: { to: string; labelKey: TranslationKey }[] = [
 ];
 
 const ctaClass = (dark: boolean) =>
-  `btn !px-5 !py-2.5 ${dark ? "bg-paper text-ink hover:bg-sand" : "bg-ink text-paper hover:bg-sand-deep"}`;
+  `btn px-5! py-2.5! ${dark ? "bg-paper text-ink hover:bg-sand" : "bg-ink text-paper hover:bg-sand-deep"}`;
 
 export function Nav() {
   const [scrolled, setScrolled] = useState(false);
@@ -90,7 +90,7 @@ export function Nav() {
                 {canSell(user) && (
                   <Link
                     to="/auctions/new"
-                    className={`btn !px-5 !py-2.5 border ${
+                    className={`btn px-5! py-2.5! border ${
                       dark
                         ? "border-paper/25 text-paper hover:border-sand hover:bg-sand hover:text-ink"
                         : "border-ink/20 text-ink hover:border-ink hover:bg-ink hover:text-paper"
@@ -141,7 +141,7 @@ export function Nav() {
             />
             <span
               className={`h-px w-5 transition-all duration-300 ${dark ? "bg-paper" : "bg-ink"} ${
-                open ? "-translate-y-[3.5px] -rotate-45" : ""
+                open ? "translate-y-[-3.5px] -rotate-45" : ""
               }`}
             />
           </button>

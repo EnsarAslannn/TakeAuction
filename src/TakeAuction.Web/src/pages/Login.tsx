@@ -36,7 +36,7 @@ export function Login() {
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
       <div className="relative hidden lg:block">
-        <div aria-hidden className="absolute inset-0 bg-gradient-to-br from-stone-dark via-ink-soft to-ink" />
+        <div aria-hidden className="absolute inset-0 bg-linear-to-br from-stone-dark via-ink-soft to-ink" />
         <img
           src={VISUALS.login}
           alt=""

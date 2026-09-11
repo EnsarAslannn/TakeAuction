@@ -26,7 +26,7 @@ export function HowItWorks() {
           loading="lazy"
           className="h-full w-full object-cover opacity-[0.22]"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-ink via-ink/85 to-ink" />
+        <div className="absolute inset-0 bg-linear-to-b from-ink via-ink/85 to-ink" />
       </div>
 
       <div className="shell relative z-10 mx-auto max-w-shell">
@@ -55,7 +55,7 @@ export function HowItWorks() {
                     </p>
                   </div>
                 </div>
-                <div className="mt-8 h-px w-0 bg-sand transition-[width] duration-[900ms] ease-editorial group-hover:w-full" />
+                <div className="mt-8 h-px w-0 bg-sand transition-[width] duration-900 ease-editorial group-hover:w-full" />
               </div>
             </Reveal>
           ))}

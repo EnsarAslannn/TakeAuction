@@ -28,19 +28,19 @@ export function Manifesto() {
 
         <div className="mt-16 grid gap-12 md:grid-cols-12 md:gap-8">
           <Reveal className="md:col-span-5">
-            <div className="relative aspect-[4/5] overflow-hidden">
+            <div className="relative aspect-4/5 overflow-hidden">
               <img
                 src={VISUALS.vault}
                 alt={t("manifesto.vaultAlt")}
                 loading="lazy"
-                className="h-full w-full object-cover transition-transform duration-[1400ms] ease-editorial hover:scale-[1.04]"
+                className="h-full w-full object-cover transition-transform duration-1400 ease-editorial hover:scale-[1.04]"
               />
             </div>
           </Reveal>
 
           <div className="md:col-span-6 md:col-start-7">
             <Reveal delay={80}>
-              <p className="font-sans text-2xl font-light leading-[1.5] text-ink md:text-[1.75rem]">
+              <p className="font-sans text-2xl font-light leading-normal text-ink md:text-[1.75rem]">
                 {t("manifesto.lede")}
               </p>
             </Reveal>

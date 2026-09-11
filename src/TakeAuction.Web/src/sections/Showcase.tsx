@@ -57,7 +57,7 @@ export function Showcase({ auctions }: ShowcaseProps) {
       id="showcase"
       ref={stageRef}
       data-nav-theme="dark"
-      className="relative h-[100svh] overflow-hidden bg-ink text-paper"
+      className="relative h-svh overflow-hidden bg-ink text-paper"
     >
       <div
         aria-hidden
@@ -97,7 +97,7 @@ export function Showcase({ auctions }: ShowcaseProps) {
         </div>
 
         <div className="flex flex-col gap-10 md:flex-row md:items-end md:justify-between">
-          <div className="max-w-[34rem]">
+          <div className="max-w-136">
             <p className="eyebrow mb-4 text-sand">{t(item.categoryKey)}</p>
             <h2
               key={item.slug}

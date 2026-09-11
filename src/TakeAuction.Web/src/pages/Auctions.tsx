@@ -137,8 +137,8 @@ export function Auctions() {
           <div className="mt-4">
             {Array.from({ length: 5 }).map((_, index) => (
               <div key={index} className="border-t border-ink/10 py-10">
-                <div className="h-7 w-2/5 animate-pulse rounded bg-ink/[0.06]" />
-                <div className="mt-3 h-3 w-1/5 animate-pulse rounded bg-ink/[0.04]" />
+                <div className="h-7 w-2/5 animate-pulse rounded-sm bg-ink/6" />
+                <div className="mt-3 h-3 w-1/5 animate-pulse rounded-sm bg-ink/4" />
               </div>
             ))}
           </div>

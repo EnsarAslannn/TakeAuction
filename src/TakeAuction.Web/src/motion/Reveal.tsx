@@ -14,7 +14,7 @@ export function Reveal({ children, delay = 0, className = "", as = "div" }: Reve
   return (
     <Tag
       ref={ref as never}
-      className={`transition-[opacity,transform] duration-[1100ms] ease-editorial ${
+      className={`transition-[opacity,transform] duration-1100 ease-editorial ${
         inView ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
       } ${className}`}
       style={{ transitionDelay: `${delay}ms` }}
@@ -39,7 +39,7 @@ export function SplitLine({ text, className = "", delay = 0 }: SplitLineProps) {
       {words.map((word, index) => (
         <span key={`${word}-${index}`} className="inline-block overflow-hidden align-bottom">
           <span
-            className="inline-block transition-transform duration-[1000ms] ease-editorial"
+            className="inline-block transition-transform duration-1000 ease-editorial"
             style={{
               transform: inView ? "translateY(0)" : "translateY(110%)",
               transitionDelay: `${delay + index * 55}ms`,

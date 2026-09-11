@@ -32,7 +32,7 @@ export function ImageDropzone({
   if (preview) {
     return (
       <div className="space-y-4">
-        <div className="relative aspect-[4/3] overflow-hidden bg-ink">
+        <div className="relative aspect-4/3 overflow-hidden bg-ink">
           <div
             aria-hidden
             className="absolute inset-0 scale-110 bg-cover bg-center opacity-25 blur-2xl"
@@ -101,7 +101,7 @@ export function ImageDropzone({
           setOver(false);
           take(event.dataTransfer.files);
         }}
-        className={`flex aspect-[4/3] cursor-pointer flex-col items-center justify-center gap-4 border border-dashed px-8 text-center transition-colors duration-500 ${
+        className={`flex aspect-4/3 cursor-pointer flex-col items-center justify-center gap-4 border border-dashed px-8 text-center transition-colors duration-500 ${
           over ? "border-sand bg-sand/8" : "border-ink/20 hover:border-ink/40 hover:bg-paper-pure"
         }`}
       >

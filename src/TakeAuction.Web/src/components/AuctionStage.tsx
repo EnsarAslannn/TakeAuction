@@ -125,6 +125,6 @@ function ModelStage({
 
 function Frame({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative aspect-square overflow-hidden bg-ink lg:aspect-[4/3]">{children}</div>
+    <div className="relative aspect-square overflow-hidden bg-ink lg:aspect-4/3">{children}</div>
   );
 }

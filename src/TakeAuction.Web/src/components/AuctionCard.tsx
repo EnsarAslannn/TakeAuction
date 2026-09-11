@@ -34,7 +34,7 @@ export function AuctionCard({ auction, index }: { auction: AuctionListItem; inde
         </span>
 
         <div className="flex min-w-0 items-center gap-5 transition-transform duration-700 ease-editorial group-hover:translate-x-2 md:col-span-5 md:pr-8">
-          <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-ink/[0.06] md:h-20 md:w-20">
+          <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-ink/6 md:h-20 md:w-20">
             {thumb && !thumbFailed ? (
               <img
                 src={thumb}
@@ -42,10 +42,10 @@ export function AuctionCard({ auction, index }: { auction: AuctionListItem; inde
                 aria-hidden
                 loading="lazy"
                 onError={() => setThumbFailed(true)}
-                className="h-full w-full object-cover transition-transform duration-[1200ms] ease-editorial group-hover:scale-105"
+                className="h-full w-full object-cover transition-transform duration-1200 ease-editorial group-hover:scale-105"
               />
             ) : (
-              <div className="h-full w-full bg-gradient-to-br from-stone-light/40 to-ink/10" />
+              <div className="h-full w-full bg-linear-to-br from-stone-light/40 to-ink/10" />
             )}
           </div>
 

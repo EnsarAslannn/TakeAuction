@@ -34,7 +34,7 @@ export function Capabilities() {
             </Reveal>
 
             <Reveal delay={240}>
-              <div className="mt-12 aspect-[16/10] overflow-hidden">
+              <div className="mt-12 aspect-16/10 overflow-hidden">
                 <img
                   src={VISUALS.capabilities}
                   alt={t("cap.imageAlt")}

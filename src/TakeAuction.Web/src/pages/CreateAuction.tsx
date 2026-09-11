@@ -161,7 +161,7 @@ export function CreateAuction() {
         data-nav-theme="dark"
         className="relative flex min-h-[62vh] items-end overflow-hidden bg-ink pb-16 pt-40 md:min-h-[68vh] md:pb-20"
       >
-        <div aria-hidden className="absolute inset-0 bg-gradient-to-br from-stone-dark via-ink-soft to-ink" />
+        <div aria-hidden className="absolute inset-0 bg-linear-to-br from-stone-dark via-ink-soft to-ink" />
         {!visualFailed && (
           <img
             src={VISUALS.create}
@@ -367,7 +367,7 @@ export function CreateAuction() {
             <div className="lg:sticky lg:top-28">
               <p className="eyebrow">{t("create.preview")}</p>
 
-              <div className="relative mt-6 aspect-[4/5] overflow-hidden bg-ink">
+              <div className="relative mt-6 aspect-4/5 overflow-hidden bg-ink">
                 {preview ? (
                   <>
                     <div
