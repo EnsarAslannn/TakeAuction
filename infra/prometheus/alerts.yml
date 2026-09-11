@@ -1,0 +1,65 @@
+groups:
+  - name: takeauction-dead-letters
+    rules:
+      - alert: OutboxMessagesExhausted
+        expr: max(takeauction_outbox_dead_letters) > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $value }} outbox message(s) burned every attempt and will not be published"
+          description: >-
+            Rows in outbox_messages have Attempts >= Outbox:MaxAttempts and ProcessedAtUtc IS NULL.
+            Read LastError on those rows, fix the cause, then reset Attempts to 0 to requeue them.
+
+      - alert: BrokerMessagesDeadLettered
+        expr: >-
+          sum by (queue, message_type) (
+            (increase(takeauction_messaging_dead_letters_total[5m]) > 0)
+            or ((takeauction_messaging_dead_letters_total > 0) and (time() - takeauction_messaging_dead_letters_created < 300))
+          ) > 0
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.message_type }} gave up on {{ $labels.queue }} after its retries"
+          description: >-
+            A consumer exhausted MessageBroker:RetryCount and the message was moved to
+            {{ $labels.queue }}_error. The API log carries the exception at Error level.
+
+      - alert: ErrorQueueNotEmpty
+        expr: sum by (queue) (rabbitmq_detailed_queue_messages{queue=~".*_error"}) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $value }} message(s) parked on {{ $labels.queue }}"
+          description: >-
+            The broker's own count, so it survives API restarts. Inspect the messages in the
+            RabbitMQ management UI and move them back to the source queue once the consumer is fixed.
+
+  - name: takeauction-backlog
+    rules:
+      - alert: OutboxFallingBehind
+        expr: max(takeauction_outbox_oldest_pending_age_seconds) > 120
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "The oldest unpublished outbox row is {{ $value | humanizeDuration }} old"
+          description: >-
+            Integration events are reaching the broker late, so real-time updates and cache
+            invalidation lag behind the database. Check that RabbitMQ is reachable.
+
+      - alert: BidRetryBudgetExhausted
+        expr: >-
+          sum(
+            (increase(takeauction_bids_total{outcome="ConcurrencyConflict"}[5m]) > 0)
+            or ((takeauction_bids_total{outcome="ConcurrencyConflict"} > 0) and (time() - takeauction_bids_created{outcome="ConcurrencyConflict"} < 300))
+          ) > 0
+        labels:
+          severity: warning
+        annotations:
+          summary: "Bidders were told to retry because the optimistic loop ran out of attempts"
+          description: >-
+            PlaceBid lost the row-version race on every pass. Contention on a single lot has
+            outgrown the retry budget.

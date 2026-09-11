@@ -1,3 +1,4 @@
+using MassTransit.Monitoring;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -33,6 +34,7 @@ public static class TelemetryExtensions
             {
                 metrics
                     .AddMeter(TakeAuctionTelemetry.MeterName)
+                    .AddMeter(InstrumentationOptions.MeterName)
                     .AddAspNetCoreInstrumentation()
                     .AddHttpClientInstrumentation()
                     .AddRuntimeInstrumentation();

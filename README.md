@@ -80,6 +80,12 @@ kanıtlayacak metriklerle desteklenen uçtan uca bir sistem ortaya koymaktır.
   (`takeauction.bids.attempts`), uçtan uca teklif süresi (`takeauction.bids.duration`),
   proxy'nin lider adına kaç kez yanıt verdiği, kapanışın kaç kez ertelendiği ve outbox'ın
   yetişip yetişmediği (`takeauction.outbox.batch_size`)
+- Hiçbir mesaj sessizce kaybolmaz: retry'larını tüketip `_error` kuyruğuna düşen her mesaj
+  sayılır (`takeauction.messaging.dead_letters`), `MaxAttempts`'i tüketmiş outbox satırları
+  ve en eski yayımlanmamış satırın yaşı gauge olarak yayınlanır
+- `docker compose --profile observability up` ile Prometheus ve hazır bir Grafana paneli
+  gelir; Prometheus API replikalarını Docker DNS üzerinden kendisi bulur ve dead letter,
+  outbox birikmesi ve tükenen retry bütçesi için alarm kuralları tanımlıdır
 - `Telemetry__OtlpEndpoint` ile trace ve metrikler bir OTLP collector'a gönderilir
 
 ### 🔐 Secrets & Konfigürasyon
@@ -170,6 +176,29 @@ docker compose up --detach --wait --scale api=3
 
 nginx, upstream'deki `api` adını açılışta çözer ve dönen her replika adresini havuza
 ekler; bu yüzden ölçeği gateway ayağa kalkmadan önce vermek gerekir.
+
+Her replika en fazla `POSTGRES_POOL_SIZE` (varsayılan 30) bağlantı açar. Replika sayısı
+çarpı bu değer, PostgreSQL'in `max_connections` sınırının (100) altında kalmalıdır; aksi
+halde yük altında `too many clients` hatası alınır.
+
+### Gözlemlenebilirlik paneli
+
+```bash
+docker compose --profile observability up --detach --wait
+# Grafana: http://localhost:3000   Prometheus: http://localhost:9090
+```
+
+Panel anlamlı veriyi yük altında gösterir; [yük testi](tests/TakeAuction.LoadTests/README.md)
+tek bir lota yüzlerce eşzamanlı teklif gönderir:
+
+<p align="center">
+<img src="docs/screenshots/grafana.png" width="800"/>
+</p>
+
+İki replika ve 150 sanal kullanıcıyla: saniyede ~740 satır sürümü çakışması yaşanıyor ve
+retry döngüsü her birini emiyor. Tekliflerin yaklaşık beşte biri ilk denemede sonuçlanıyor,
+geri kalanı ikinci ya da üçüncü turda. Hiçbir teklif sahibi "tekrar deneyin" (409) yanıtı
+almıyor.
 
 ### Geliştirme için çalıştırma
 

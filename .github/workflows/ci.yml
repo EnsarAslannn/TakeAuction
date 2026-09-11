@@ -238,13 +238,40 @@ jobs:
           echo "rejected $rejected of 30"
           [ "$rejected" -gt 0 ]
 
+      - name: The scrape endpoint answers inside the network and not through the gateway
+        run: |
+          status=$(curl --silent --output /dev/null --write-out "%{http_code}" http://localhost:8080/metrics)
+          echo "gateway /metrics: $status"
+          [ "$status" = "404" ]
+
+          docker compose exec -T api curl --fail --silent --show-error http://127.0.0.1:8080/metrics \
+            | grep -q "^takeauction_outbox_pending"
+
+      - name: The monitoring rules parse
+        run: |
+          docker run --rm --volume "$PWD/infra/prometheus:/etc/prometheus:ro" \
+            --entrypoint promtool prom/prometheus:v3.14.0 check config /etc/prometheus/prometheus.yml
+
+      - name: Prometheus finds every API replica on its own
+        run: |
+          docker compose --profile observability up --detach prometheus
+          for _ in $(seq 1 30); do
+            found=$(curl --silent --get http://localhost:9090/api/v1/query \
+              --data-urlencode 'query=count(up{job="takeauction-api"} == 1)' \
+              | grep -o '"value":\[[^]]*\]' | sed -E 's/.*,"([0-9]+)"\]/\1/')
+            [ "$found" = "2" ] && break
+            sleep 2
+          done
+          echo "replicas scraped: ${found:-0}"
+          [ "$found" = "2" ]
+
       - name: Collect service logs
         if: failure()
         run: docker compose logs --no-color --tail 200
 
       - name: Tear down
         if: always()
-        run: docker compose down --volumes --remove-orphans
+        run: docker compose --profile observability down --volumes --remove-orphans
 
   e2e-tests:
     name: Playwright E2E

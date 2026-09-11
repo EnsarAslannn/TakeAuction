@@ -74,6 +74,12 @@ by the metrics needed to prove it.
   (`takeauction.bids.attempts`), end-to-end bid duration by outcome
   (`takeauction.bids.duration`), how often a proxy answered for a leader, how often a
   close was pushed out, and outbox batch fullness (`takeauction.outbox.batch_size`)
+- Nothing is lost quietly: every message that exhausts its retries and lands on an `_error`
+  queue is counted (`takeauction.messaging.dead_letters`), and outbox rows that burned
+  `MaxAttempts` are published as a gauge next to the age of the oldest unpublished row
+- `docker compose --profile observability up` brings Prometheus and a provisioned Grafana
+  dashboard; Prometheus discovers the API replicas through Docker DNS, and alert rules
+  cover dead letters, a falling-behind outbox and an exhausted bid retry budget
 - Traces and metrics ship to an OTLP collector via `Telemetry__OtlpEndpoint`
 
 ### 🔐 Secrets & Configuration
@@ -152,6 +158,28 @@ docker compose up --detach --wait # http://localhost:8080
 
 The gateway routes `/api`, `/hubs` and `/uploads` to the API and everything else to the
 SPA. The API migrates and seeds itself on start.
+
+The API scales out with `--scale api=N`. Each replica opens at most `POSTGRES_POOL_SIZE`
+(default 30) connections, and replicas times that has to stay under PostgreSQL's
+`max_connections` (100), or the database starts refusing clients under load.
+
+### Observability dashboard
+
+```bash
+docker compose --profile observability up --detach --wait
+# Grafana: http://localhost:3000   Prometheus: http://localhost:9090
+```
+
+The dashboard tells its story under load; the [load test](tests/TakeAuction.LoadTests/README.md)
+sends hundreds of concurrent bids at a single lot:
+
+<p align="center">
+<img src="docs/screenshots/grafana.png" width="800"/>
+</p>
+
+Two replicas and 150 virtual users: ~740 row-version conflicts a second, every one absorbed
+by the retry loop. About a fifth of bids settle on the first pass, the rest on the second or
+third, and no bidder is ever told to retry (409).
 
 ### Running for development
 

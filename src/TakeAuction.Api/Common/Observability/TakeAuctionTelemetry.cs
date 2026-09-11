@@ -43,7 +43,9 @@ public sealed class TakeAuctionTelemetry
         _bidAttempts = Meter.CreateHistogram<int>(
             "takeauction.bids.attempts",
             unit: "{attempt}",
-            description: "How many passes through the optimistic retry loop a bid took to settle.");
+            description: "How many passes through the optimistic retry loop a bid took to settle.",
+            tags: null,
+            advice: new InstrumentAdvice<int> { HistogramBucketBoundaries = [1, 2, 3, 4, 5, 10] });
 
         _bidDuration = Meter.CreateHistogram<double>(
             "takeauction.bids.duration",

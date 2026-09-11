@@ -81,6 +81,7 @@ services:
       ConnectionStrings__Redis: redis:6379
       ConnectionStrings__RabbitMq: amqp://${RABBITMQ_USER:-takeauction}:${RABBITMQ_PASSWORD:-takeauction_dev_pw}@rabbitmq:5672
       ReverseProxy__KnownNetworks__0: 172.16.0.0/12
+      Telemetry__PrometheusEndpointEnabled: "true"
     volumes:
       - api_uploads:/app/App_Data/uploads
     healthcheck:
@@ -123,11 +124,56 @@ services:
     networks:
       - takeauction-network
 
+  prometheus:
+    image: prom/prometheus:v3.14.0
+    container_name: takeauction-prometheus
+    profiles: ["observability"]
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=7d
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./infra/prometheus:/etc/prometheus:ro
+      - prometheus_data:/prometheus
+    networks:
+      - takeauction-network
+
+  grafana:
+    image: grafana/grafana:13.2.1
+    container_name: takeauction-grafana
+    profiles: ["observability"]
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-takeauction_dev_pw}
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/takeauction.json
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    volumes:
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./infra/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    networks:
+      - takeauction-network
+
 volumes:
   postgres_data:
   redis_data:
   rabbitmq_data:
   api_uploads:
+  prometheus_data:
+  grafana_data:
 
 networks:
   takeauction-network:

@@ -55,6 +55,25 @@ public sealed class TelemetryContractTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Retry_passes_are_bucketed_one_pass_at_a_time()
+    {
+        using var bidder = await _fixture.CreateBidderAsync();
+        (await bidder.PostAsync(ApiRoutes.Bids(_auctionId), new { amount = 150m })).EnsureSuccessStatusCode();
+
+        using var client = _fixture.CreateRawClient();
+        var scrape = await client.GetStringAsync("/metrics");
+
+        var buckets = scrape
+            .Split('\n')
+            .Where(line => line.StartsWith("takeauction_bids_attempts_bucket", StringComparison.Ordinal))
+            .ToList();
+
+        Assert.Contains(buckets, line => line.Contains("le=\"1\"", StringComparison.Ordinal));
+        Assert.Contains(buckets, line => line.Contains("le=\"2\"", StringComparison.Ordinal));
+        Assert.Contains(buckets, line => line.Contains("le=\"3\"", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task A_refused_bid_is_told_apart_from_an_accepted_one_on_the_scrape()
     {
         using var bidder = await _fixture.CreateBidderAsync();

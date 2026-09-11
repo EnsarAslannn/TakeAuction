@@ -24,17 +24,22 @@ history.
 
 ## Running it
 
-The rate limiter has to be lifted first, or the run measures the limiter rather than the
-database — two hundred virtual users from one host all land in the same partition.
+The rate limiters have to be out of the way, or the run measures them rather than the
+database — two hundred virtual users from one host all land in the same partition. The
+override lifts the API's own limiter, and k6 talks to the API directly rather than through
+nginx, whose 20 requests a second per address would otherwise answer most bids with a 429.
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.load.yml up --detach --wait
+docker compose -f docker-compose.yml -f docker-compose.load.yml --profile observability \
+  up --detach --wait --scale api=2
 
 docker run --rm --network takeauction_takeauction-network \
   -v "$PWD/tests/TakeAuction.LoadTests:/scripts" \
-  -e BASE_URL=http://nginx \
+  -e BASE_URL=http://api:8080 \
   grafana/k6 run /scripts/bidding-contention.js
 ```
+
+Watch it on the Grafana dashboard at http://localhost:3000 while it runs.
 
 Knobs, all optional: `PEAK_VUS` (default 200), `STAGE_DURATION` (default 30s),
 `BIDDER_COUNT` (default 60), `BASE_URL`.
@@ -44,7 +49,7 @@ A quick shape check before the real thing:
 ```bash
 docker run --rm --network takeauction_takeauction-network \
   -v "$PWD/tests/TakeAuction.LoadTests:/scripts" \
-  -e BASE_URL=http://nginx -e PEAK_VUS=40 -e STAGE_DURATION=10s -e BIDDER_COUNT=15 \
+  -e BASE_URL=http://api:8080 -e PEAK_VUS=40 -e STAGE_DURATION=10s -e BIDDER_COUNT=15 \
   grafana/k6 run /scripts/bidding-contention.js
 ```
 
@@ -59,3 +64,16 @@ The run did surface something else: the auction detail endpoint could serve a st
 up to its cache TTL, because a reader that missed the cache could publish its snapshot *after*
 a bid had invalidated the entry. The detail cache is now keyed by a generation the way the
 listing already was, so a late writer lands on a key nobody reads.
+
+## What the dashboard showed
+
+"Zero conflicts" above means zero *409s*, not zero races. With the metrics on a dashboard the
+races are visible: at 150 virtual users across two replicas the handler lost the row-version
+race about 740 times a second, and only a fifth of bids settled on their first pass. Every
+one of them settled by the third; `takeauction_bids_total{outcome="ConcurrencyConflict"}`
+stayed at zero.
+
+The first two-replica run also returned eleven 500s. The Npgsql pool defaults to 100
+connections per process, EF and Hangfire share it, and PostgreSQL allows 100 in total, so
+the second replica was refused with `sorry, too many clients already`. The compose file now
+caps each replica at `POSTGRES_POOL_SIZE` (30); the rerun at the same load returned none.
