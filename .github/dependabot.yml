@@ -40,6 +40,18 @@ updates:
         update-types: [version-update:semver-major]
       - dependency-name: "@vitejs/plugin-react"
         update-types: [version-update:semver-major]
+      # The other half of that same decision. fiber v9 asks for react >=19 <19.3 and drei
+      # v10 for react ^19, so neither can land while React is held at 18 - leaving them out
+      # of the ignore list only reopened a pull request every week that could never merge.
+      - dependency-name: "@react-three/fiber"
+        update-types: [version-update:semver-major]
+      - dependency-name: "@react-three/drei"
+        update-types: [version-update:semver-major]
+      # TypeScript 7 type-checks, builds and tests this client fine, but typescript-eslint
+      # refuses to load against the 7.0 API, so taking it would cost the linter entirely.
+      # Tracked at https://github.com/typescript-eslint/typescript-eslint/issues/10940.
+      - dependency-name: typescript
+        update-types: [version-update:semver-major]
 
   - package-ecosystem: npm
     directory: /tests/TakeAuction.E2E
