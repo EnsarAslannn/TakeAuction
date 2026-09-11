@@ -3,6 +3,7 @@ import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { canSell, useAuthStore } from "@/store/authStore";
 import { useNavTheme } from "@/lib/useNavTheme";
 import { LanguageSwitch } from "@/components/LanguageSwitch";
+import { NotificationBell } from "@/components/NotificationBell";
 import { useT, type TranslationKey } from "@/i18n";
 
 const LINKS: { to: string; labelKey: TranslationKey }[] = [
@@ -99,6 +100,15 @@ export function Nav() {
                     {t("nav.createListing")}
                   </Link>
                 )}
+                <Link
+                  to="/watchlist"
+                  className={`font-mono text-eyebrow uppercase transition-colors duration-500 ${
+                    dark ? "text-paper/50 hover:text-paper" : "text-stone hover:text-ink"
+                  }`}
+                >
+                  {t("nav.watchlist")}
+                </Link>
+                <NotificationBell dark={dark} />
                 <span
                   className={`font-mono text-eyebrow uppercase transition-colors duration-500 ${
                     dark ? "text-paper/50" : "text-stone"
@@ -127,6 +137,8 @@ export function Nav() {
             )}
           </div>
 
+          <div className="flex items-center gap-1 md:hidden">
+          {user && <NotificationBell dark={dark} />}
           <button
             type="button"
             onClick={() => setOpen((value) => !value)}
@@ -145,12 +157,13 @@ export function Nav() {
               }`}
             />
           </button>
+          </div>
         </div>
       </div>
 
       <div
         className={`overflow-hidden bg-paper/95 backdrop-blur-xl transition-[max-height] duration-700 ease-editorial md:hidden ${
-          open ? "max-h-96" : "max-h-0"
+          open ? "max-h-[32rem]" : "max-h-0"
         }`}
       >
         <nav className="shell mx-auto flex max-w-shell flex-col gap-5 py-8">
@@ -162,6 +175,9 @@ export function Nav() {
           <div className="rule my-2" />
           {user ? (
             <>
+              <Link to="/watchlist" className="font-display text-2xl font-light text-ink">
+                {t("nav.watchlist")}
+              </Link>
               {canSell(user) && (
                 <Link to="/auctions/new" className="font-display text-2xl font-light text-ink">
                   {t("nav.createListing")}

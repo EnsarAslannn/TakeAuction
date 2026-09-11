@@ -64,6 +64,19 @@ kanıtlayacak metriklerle desteklenen uçtan uca bir sistem ortaya koymaktır.
   teklifin kendisine göre ileri iter; böylece her snipe aynı yanıt süresini alır, üst
   üste birikmez
 
+### 🔔 Bildirim Kutusu ve Takip Listesi
+
+- Bir lot kapandığında kazanana "parça sizin", satıcıya "satıldı" ya da "teklif gelmedi"
+  bildirimi gider. Bildirim önce kalıcı bir kutuya yazılır, sonra SignalR ile yalnızca
+  alıcısına itilir; kapanış anında sitede olmayan kullanıcı da girişte görür
+- Teslimat "en az bir kez" çalıştığı için kutu idempotent'tir: `(kullanıcı, tür, lot)`
+  üzerindeki unique index, tekrar teslim edilen bir mesajın ikinci satır açmasını ve ikinci
+  kez itilmesini engeller
+- Alıcılar bir lotu takibe alabilir; lot son beş dakikasına girdiğinde haber verilir.
+  Hatırlatma job'ı vadesi gelen takipleri tek bir `UPDATE … RETURNING` ile,
+  `FOR UPDATE SKIP LOCKED` üzerinden sahiplenir ve hatırlatma olayını aynı transaction
+  içinde outbox'a yazar; aynı anda çalışan iki tarama bile bir takibi iki kez hatırlatmaz
+
 ### 🩺 Sağlık ve Operasyon Uçları
 
 - `/health/live` — sürecin ayakta olup olmadığını kontrol eder, hiçbir dış bağımlılığa

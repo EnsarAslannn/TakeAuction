@@ -114,6 +114,28 @@ export interface OutbidNotification {
   occurredAtUtc: string;
 }
 
+export type NotificationKind = "AuctionWon" | "AuctionSold" | "AuctionUnsold" | "AuctionClosingSoon";
+
+export interface UserNotification {
+  id: string;
+  kind: NotificationKind;
+  auctionId: string;
+  auctionTitle: string;
+  amount: number | null;
+  auctionEndsAtUtc: string;
+  createdAtUtc: string;
+  readAtUtc: string | null;
+}
+
+export interface NotificationsResponse {
+  items: UserNotification[];
+  unreadCount: number;
+}
+
+export interface WatchlistItem extends AuctionListItem {
+  watchedAtUtc: string;
+}
+
 export interface AuctionStatusChangedNotification {
   auctionId: string;
   status: AuctionStatus;

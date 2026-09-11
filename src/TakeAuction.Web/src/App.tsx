@@ -4,6 +4,8 @@ import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/Footer";
 import { LanguageSwitch } from "@/components/LanguageSwitch";
 import { OutbidNotices } from "@/components/OutbidNotices";
+import { NotificationCenter } from "@/components/NotificationCenter";
+import { NoticeStack } from "@/components/NoticeStack";
 import { SmoothScroll, useHashScroll, useScrollReset } from "@/motion/SmoothScroll";
 import { Landing } from "@/pages/Landing";
 import { Auctions } from "@/pages/Auctions";
@@ -14,6 +16,9 @@ import { useLanguageStore, useT } from "@/i18n";
 
 const AuctionDetail = lazy(() =>
   import("@/pages/AuctionDetail").then((module) => ({ default: module.AuctionDetail }))
+);
+const Watchlist = lazy(() =>
+  import("@/pages/Watchlist").then((module) => ({ default: module.Watchlist }))
 );
 const CreateAuction = lazy(() =>
   import("@/pages/CreateAuction").then((module) => ({ default: module.CreateAuction }))
@@ -98,6 +103,14 @@ function Shell() {
               }
             />
             <Route path="/auctions/:id" element={<AuctionDetail />} />
+            <Route
+              path="/watchlist"
+              element={
+                <RequireAuth>
+                  <Watchlist />
+                </RequireAuth>
+              }
+            />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="*" element={<Navigate to="/" replace />} />
@@ -105,7 +118,10 @@ function Shell() {
         </Suspense>
       </main>
       {!bare && <Footer />}
-      <OutbidNotices />
+      <NoticeStack>
+        <NotificationCenter />
+        <OutbidNotices />
+      </NoticeStack>
     </>
   );
 }

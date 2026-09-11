@@ -5,6 +5,7 @@ import { toApiError } from "@/api/client";
 import { useAuthStore } from "@/store/authStore";
 import { AuctionStage } from "@/components/AuctionStage";
 import { BidPanel } from "@/components/BidPanel";
+import { WatchButton } from "@/components/WatchButton";
 import { showcaseForAuction } from "@/content/catalog";
 import { useAuctionChannel, useConnectionState } from "@/realtime/useAuctionHub";
 import { useFormat, useT } from "@/i18n";
@@ -261,6 +262,10 @@ export function AuctionDetail() {
                   {auction.bidCount === 0
                     ? t("detail.noBidsYet")
                     : t("detail.bidCount", { n: auction.bidCount })}
+                </span>
+
+                <span className="ml-auto">
+                  <WatchButton auctionId={auction.id} status={auction.status} />
                 </span>
               </div>
 

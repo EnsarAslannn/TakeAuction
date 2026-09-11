@@ -39,7 +39,7 @@ test.describe("Salondan teklife giden yol", () => {
 
     await expect(detail.signInPrompt).toBeVisible();
     await expect(detail.amountInput).toHaveCount(0);
-    await expect(page.getByRole("link", { name: "Giriş yapın" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Giriş yapın", exact: true })).toBeVisible();
   });
 
   test("alıcı sınırını verir, panel onaylar ve parça açılış fiyatında kalır", async ({

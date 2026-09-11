@@ -60,6 +60,18 @@ by the metrics needed to prove it.
 - A bid inside the closing window pushes the end out from the bid itself (not the old end),
   so every snipe buys the same reply window instead of stacking
 
+### 🔔 Inbox & Watchlist
+
+- When a lot closes, the winner hears "the lot is yours" and the seller "sold" or "no bids
+  came in". The notification is written to a durable inbox first and then pushed over
+  SignalR to its recipient alone, so someone offline at the close sees it when they sign in
+- Delivery is at least once, so the inbox is idempotent: a unique index on
+  `(user, kind, lot)` keeps a redelivered message from adding a second row or a second push
+- Bidders can watch a lot and are told when it enters its last five minutes. The reminder
+  job claims due watches with a single `UPDATE … RETURNING` over `FOR UPDATE SKIP LOCKED`
+  and writes the reminder event to the outbox in the same transaction, so even two sweeps
+  running at once never remind anyone twice
+
 ### 🩺 Health & Operations
 
 - `/health/live` — process liveness, checks nothing downstream

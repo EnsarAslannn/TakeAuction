@@ -16,6 +16,7 @@ export interface Formatters {
   moneyPrecise: (value: number) => string;
   dateTime: (iso: string) => string;
   time: (iso: string) => string;
+  clock: (iso: string) => string;
   countdown: (msRemaining: number) => string;
   status: (status: string) => string;
 }
@@ -45,6 +46,8 @@ function build(language: Language): Formatters {
 
   const time = new Intl.DateTimeFormat(locale, { timeStyle: "medium" });
 
+  const clock = new Intl.DateTimeFormat(locale, { timeStyle: "short" });
+
   const dayShort = translateIn(language, "format.dayShort");
 
   return {
@@ -52,6 +55,7 @@ function build(language: Language): Formatters {
     moneyPrecise: (value) => currencyPrecise.format(value),
     dateTime: (iso) => dateTime.format(new Date(iso)),
     time: (iso) => time.format(new Date(iso)),
+    clock: (iso) => clock.format(new Date(iso)),
     countdown: (msRemaining) => {
       if (msRemaining <= 0) return "00:00:00";
 

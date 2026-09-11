@@ -10,6 +10,7 @@ import type {
   AuctionStatusChangedNotification,
   BidPlacedNotification,
   OutbidNotification,
+  UserNotification,
 } from "@/api/types";
 
 export type ConnectionState = "disconnected" | "connecting" | "connected" | "reconnecting";
@@ -28,6 +29,7 @@ const isConnected = (connection: HubConnection): boolean =>
 type BidHandler = (notification: BidPlacedNotification) => void;
 type StatusHandler = (notification: AuctionStatusChangedNotification) => void;
 type OutbidHandler = (notification: OutbidNotification) => void;
+type NotificationHandler = (notification: UserNotification) => void;
 type StateHandler = (state: ConnectionState) => void;
 
 class AuctionHubClient {
@@ -37,6 +39,7 @@ class AuctionHubClient {
   private readonly bidHandlers = new Set<BidHandler>();
   private readonly statusHandlers = new Set<StatusHandler>();
   private readonly outbidHandlers = new Set<OutbidHandler>();
+  private readonly notificationHandlers = new Set<NotificationHandler>();
   private readonly stateHandlers = new Set<StateHandler>();
 
   private readonly auctionSubscriptions = new Map<string, number>();
@@ -74,6 +77,10 @@ class AuctionHubClient {
 
     connection.on("Outbid", (notification: OutbidNotification) =>
       this.outbidHandlers.forEach((handler) => handler(notification))
+    );
+
+    connection.on("NotificationReceived", (notification: UserNotification) =>
+      this.notificationHandlers.forEach((handler) => handler(notification))
     );
 
     connection.onreconnecting(() => this.emitState("reconnecting"));
@@ -143,6 +150,13 @@ class AuctionHubClient {
     this.outbidHandlers.add(handler);
     return () => {
       this.outbidHandlers.delete(handler);
+    };
+  }
+
+  onNotification(handler: NotificationHandler): () => void {
+    this.notificationHandlers.add(handler);
+    return () => {
+      this.notificationHandlers.delete(handler);
     };
   }
 
