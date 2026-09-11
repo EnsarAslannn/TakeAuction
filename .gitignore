@@ -437,6 +437,7 @@ node_modules/
 dist/
 dist-ssr/
 .vite/
+.eslintcache
 *.local
 npm-debug.log*
 yarn-debug.log*

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { showcaseForAuction } from "@/content/catalog";
 import { useFormat, useT } from "@/i18n";
 import { useNow } from "@/lib/hooks";
+import { isBiddable, msRemaining } from "@/lib/auctionWindow";
 import type { AuctionListItem } from "@/api/types";
 
 const STATUS_TONE: Record<string, string> = {
@@ -17,8 +18,8 @@ export function AuctionCard({ auction, index }: { auction: AuctionListItem; inde
   const t = useT();
   const format = useFormat();
   const showcase = showcaseForAuction(auction);
-  const remaining = new Date(auction.endsAtUtc).getTime() - now;
-  const isLive = auction.status === "Active" && remaining > 0;
+  const remaining = msRemaining(auction, now);
+  const isLive = isBiddable(auction, now);
   const [thumbFailed, setThumbFailed] = useState(false);
   const thumb = auction.imageUrl ?? showcase?.card ?? null;
 

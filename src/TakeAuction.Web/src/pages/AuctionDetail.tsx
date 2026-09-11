@@ -9,6 +9,7 @@ import { showcaseForAuction } from "@/content/catalog";
 import { useAuctionChannel, useConnectionState } from "@/realtime/useAuctionHub";
 import { useFormat, useT } from "@/i18n";
 import { useNow, usePrefersReducedMotion } from "@/lib/hooks";
+import { isBiddable, msRemaining } from "@/lib/auctionWindow";
 import type { AuctionDetail as AuctionDetailModel, BidPlacedNotification } from "@/api/types";
 
 const FEED_LENGTH = 12;
@@ -147,10 +148,8 @@ export function AuctionDetail() {
   }
 
   const showcase = showcaseForAuction(auction);
-  const endsAt = new Date(auction.endsAtUtc).getTime();
-  const startsAt = new Date(auction.startsAtUtc).getTime();
-  const remaining = endsAt - now;
-  const isLive = auction.status === "Active" && remaining > 0 && now >= startsAt;
+  const remaining = msRemaining(auction, now);
+  const isLive = isBiddable(auction, now);
   const minimumNextBid = auction.minimumAcceptableBid;
 
   return (
