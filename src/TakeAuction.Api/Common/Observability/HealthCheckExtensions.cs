@@ -12,6 +12,19 @@ public static class HealthCheckExtensions
 
     public const string ServiceName = "TakeAuction.Api";
 
+    // Spelled out rather than left to the framework default, because the broker case turns
+    // on it. MassTransit reports a lost broker as Degraded, and that has to stay a 200: the
+    // outbox is what lets the salon keep taking bids while RabbitMQ is away, so evicting or
+    // restarting the instance over it would turn a working degradation into an outage.
+    // Postgres and Redis report Unhealthy instead, and the probe does fail on those.
+    public static readonly IReadOnlyDictionary<HealthStatus, int> ProbeStatusCodes =
+        new Dictionary<HealthStatus, int>
+        {
+            [HealthStatus.Healthy] = StatusCodes.Status200OK,
+            [HealthStatus.Degraded] = StatusCodes.Status200OK,
+            [HealthStatus.Unhealthy] = StatusCodes.Status503ServiceUnavailable
+        };
+
     public static IServiceCollection AddTakeAuctionHealthChecks(
         this IServiceCollection services,
         IConfiguration configuration)
@@ -49,6 +62,12 @@ public static class HealthCheckExtensions
         builder.MapHealthChecks(path, new HealthCheckOptions
         {
             Predicate = predicate,
+            ResultStatusCodes =
+            {
+                [HealthStatus.Healthy] = ProbeStatusCodes[HealthStatus.Healthy],
+                [HealthStatus.Degraded] = ProbeStatusCodes[HealthStatus.Degraded],
+                [HealthStatus.Unhealthy] = ProbeStatusCodes[HealthStatus.Unhealthy]
+            },
             ResponseWriter = WriteReportAsync
         })
         .WithName(name)
