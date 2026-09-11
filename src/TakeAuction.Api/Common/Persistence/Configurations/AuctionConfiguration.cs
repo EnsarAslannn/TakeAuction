@@ -65,13 +65,18 @@ public sealed class AuctionConfiguration : IEntityTypeConfiguration<Auction>
         builder.Property(a => a.CreatedAtUtc)
             .IsRequired();
 
+        // The database default backfilled rows that predate the column. Without a sentinel EF
+        // reads 0 as "unset" and lets that default overwrite it, so a lot created with the
+        // anti-snipe switched off would be stored with it switched on.
         builder.Property(a => a.AntiSnipeWindowSeconds)
             .IsRequired()
-            .HasDefaultValue(Auction.DefaultAntiSnipeWindowSeconds);
+            .HasDefaultValue(Auction.DefaultAntiSnipeWindowSeconds)
+            .HasSentinel(-1);
 
         builder.Property(a => a.AntiSnipeExtensionSeconds)
             .IsRequired()
-            .HasDefaultValue(Auction.DefaultAntiSnipeExtensionSeconds);
+            .HasDefaultValue(Auction.DefaultAntiSnipeExtensionSeconds)
+            .HasSentinel(-1);
 
         builder.Property(a => a.Version)
             .IsRowVersion();
