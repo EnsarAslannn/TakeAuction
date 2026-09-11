@@ -86,6 +86,32 @@ export function onSessionLost(listener: SessionListener): void {
   lost = listener;
 }
 
+const ROTATION_SETTLE_TIMEOUT_MS = 2000;
+const ROTATION_POLL_MS = 50;
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// A 409 means somebody else claimed the refresh token first. Their reply carries the new
+// cookies, so retrying the original call right away would still send the expired one and
+// fail for no reason. Every successful refresh rewrites the CSRF cookie, and that one is
+// readable here, so its value changing is the signal that the winner's session has landed.
+export async function waitForRotatedSession(
+  previousCsrfToken: string | null,
+  { timeoutMs = ROTATION_SETTLE_TIMEOUT_MS, pollMs = ROTATION_POLL_MS } = {}
+): Promise<boolean> {
+  const deadline = Date.now() + timeoutMs;
+
+  while (readCookie(CSRF_COOKIE) === previousCsrfToken) {
+    if (Date.now() >= deadline) {
+      return false;
+    }
+
+    await sleep(pollMs);
+  }
+
+  return true;
+}
+
 async function requestRefresh(): Promise<void> {
   const token = readCookie(CSRF_COOKIE);
 
@@ -96,6 +122,10 @@ async function requestRefresh(): Promise<void> {
     });
   } catch (error) {
     if ((error as AxiosError).response?.status !== 409) {
+      throw error;
+    }
+
+    if (!(await waitForRotatedSession(token))) {
       throw error;
     }
   }
