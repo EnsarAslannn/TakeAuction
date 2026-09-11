@@ -12,6 +12,7 @@ public sealed class AuctionCache
     private const string GenerationKey = "auctions:list:generation";
     private static readonly TimeSpan GenerationTtl = TimeSpan.FromDays(7);
 
+    private readonly SemaphoreSlim _seedGate = new(1, 1);
     private readonly ICacheService _cache;
     private readonly CacheOptions _options;
 
@@ -50,9 +51,28 @@ public sealed class AuctionCache
             return generation;
         }
 
-        var created = NewGenerationToken();
-        await _cache.SetAsync(key, created, GenerationTtl, cancellationToken);
-        return created;
+        // A cold generation key would otherwise hand every caller in the first wave its own
+        // token, so each would file its page under a different key and none would find the
+        // others' work. Seeding runs once at a time, and the second look inside the gate
+        // picks up whatever the caller ahead already wrote.
+        await _seedGate.WaitAsync(cancellationToken);
+
+        try
+        {
+            generation = await _cache.GetAsync<string>(key, cancellationToken);
+            if (!string.IsNullOrEmpty(generation))
+            {
+                return generation;
+            }
+
+            var created = NewGenerationToken();
+            await _cache.SetAsync(key, created, GenerationTtl, cancellationToken);
+            return created;
+        }
+        finally
+        {
+            _seedGate.Release();
+        }
     }
 
     public static string ListKey(
