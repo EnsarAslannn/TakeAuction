@@ -79,6 +79,25 @@ public sealed class TelemetryContractTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task The_outbox_backlog_is_on_the_scrape_for_the_dead_letter_alert()
+    {
+        using var client = _fixture.CreateRawClient();
+
+        var scrape = await client.GetStringAsync("/metrics");
+        var deadline = DateTime.UtcNow.AddSeconds(10);
+
+        while (!scrape.Contains("takeauction_outbox_pending", StringComparison.Ordinal) && DateTime.UtcNow < deadline)
+        {
+            await Task.Delay(250);
+            scrape = await client.GetStringAsync("/metrics");
+        }
+
+        Assert.Contains("takeauction_outbox_pending", scrape, StringComparison.Ordinal);
+        Assert.Contains("takeauction_outbox_dead_letters", scrape, StringComparison.Ordinal);
+        Assert.Contains("takeauction_outbox_oldest_pending_age_seconds", scrape, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task The_scrape_does_not_leak_a_bidder_s_sealed_ceiling()
     {
         using var bidder = await _fixture.CreateBidderAsync();

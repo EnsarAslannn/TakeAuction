@@ -22,6 +22,9 @@ public sealed class TakeAuctionTelemetry
     private readonly Counter<long> _outboxMessages;
     private readonly Histogram<int> _outboxBatchSize;
     private readonly Counter<long> _cacheLookups;
+    private readonly Counter<long> _deadLetters;
+
+    private OutboxBacklog? _outboxBacklog;
 
     public TakeAuctionTelemetry(IMeterFactory meterFactory)
     {
@@ -71,6 +74,29 @@ public sealed class TakeAuctionTelemetry
             "takeauction.cache.lookups",
             unit: "{lookup}",
             description: "Cache reads, tagged hit or miss.");
+
+        _deadLetters = Meter.CreateCounter<long>(
+            "takeauction.messaging.dead_letters",
+            unit: "{message}",
+            description: "Messages a consumer gave up on after its retries, now parked on the endpoint's _error queue.");
+
+        Meter.CreateObservableGauge(
+            "takeauction.outbox.pending",
+            () => ObserveBacklog(backlog => backlog.Pending),
+            unit: "{message}",
+            description: "Outbox rows still waiting to reach the broker and still eligible for another attempt.");
+
+        Meter.CreateObservableGauge(
+            "takeauction.outbox.dead_letters",
+            () => ObserveBacklog(backlog => backlog.DeadLetters),
+            unit: "{message}",
+            description: "Outbox rows that burned every attempt and will not be retried without a hand.");
+
+        Meter.CreateObservableGauge(
+            "takeauction.outbox.oldest_pending_age",
+            () => ObserveBacklog(backlog => backlog.OldestPendingAgeSeconds),
+            unit: "s",
+            description: "Age of the oldest row still waiting to be published.");
     }
 
     public Meter Meter { get; }
@@ -105,4 +131,21 @@ public sealed class TakeAuctionTelemetry
 
     public void CacheLookup(bool hit) =>
         _cacheLookups.Add(1, new KeyValuePair<string, object?>("result", hit ? "hit" : "miss"));
+
+    public void MessageDeadLettered(string queue, string messageType) =>
+        _deadLetters.Add(
+            1,
+            new KeyValuePair<string, object?>("queue", queue),
+            new KeyValuePair<string, object?>("message_type", messageType));
+
+    public void OutboxBacklogSampled(OutboxBacklog backlog) => Volatile.Write(ref _outboxBacklog, backlog);
+
+    private IEnumerable<Measurement<double>> ObserveBacklog(Func<OutboxBacklog, double> select)
+    {
+        var backlog = Volatile.Read(ref _outboxBacklog);
+
+        return backlog is null ? [] : [new Measurement<double>(select(backlog))];
+    }
 }
+
+public sealed record OutboxBacklog(long Pending, long DeadLetters, double OldestPendingAgeSeconds);

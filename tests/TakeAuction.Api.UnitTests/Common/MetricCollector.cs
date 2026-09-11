@@ -38,6 +38,8 @@ public sealed class MetricCollector : IDisposable
 
     public double Total(string instrument) => For(instrument).Sum(measurement => measurement.Value);
 
+    public void Observe() => _listener.RecordObservableInstruments();
+
     public void Dispose() => _listener.Dispose();
 
     private void Record(Instrument instrument, double value, ReadOnlySpan<KeyValuePair<string, object?>> tags) =>

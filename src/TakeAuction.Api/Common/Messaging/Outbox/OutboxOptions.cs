@@ -15,4 +15,6 @@ public sealed class OutboxOptions
     public int ClaimLeaseSeconds { get; set; } = 60;
 
     public int RetentionHours { get; set; } = 24;
+
+    public int BacklogSampleIntervalSeconds { get; set; } = 30;
 }

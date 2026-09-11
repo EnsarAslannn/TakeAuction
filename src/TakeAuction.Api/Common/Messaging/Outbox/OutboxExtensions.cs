@@ -18,12 +18,19 @@ public static class OutboxExtensions
         services.AddScoped<OutboxSignalInterceptor>();
         services.AddScoped<IOutbox, Outbox>();
         services.AddScoped<OutboxDispatcher>();
+        services.AddScoped<OutboxBacklogProbe>();
 
         var options = section.Get<OutboxOptions>() ?? new OutboxOptions();
 
         if (options.DispatcherEnabled)
         {
             services.AddHostedService<OutboxDispatcherService>();
+        }
+
+        if (options.BacklogSampleIntervalSeconds > 0)
+        {
+            services.AddSingleton<OutboxBacklogSampler>();
+            services.AddHostedService(provider => provider.GetRequiredService<OutboxBacklogSampler>());
         }
 
         return services;

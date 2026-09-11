@@ -18,6 +18,8 @@ public static class MessageBrokerExtensions
         var connectionString = options.ConnectionString
             ?? configuration.GetConnectionString("RabbitMq");
 
+        services.AddReceiveObserver<DeadLetterObserver>();
+
         services.AddMassTransit(bus =>
         {
             bus.SetEndpointNameFormatter(
