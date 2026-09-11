@@ -7,4 +7,6 @@ public interface IAuctionClient
     Task AuctionStatusChanged(AuctionStatusChangedNotification notification);
 
     Task Outbid(OutbidNotification notification);
+
+    Task NotificationReceived(UserNotification notification);
 }

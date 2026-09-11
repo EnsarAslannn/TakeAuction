@@ -25,6 +25,7 @@ public sealed class TakeAuctionApiFactory : WebApplicationFactory<Program>
         ["Jobs__QueuePollIntervalSeconds"] = "1",
         ["Jobs__ExpireAuctionsCron"] = TakeAuctionApiFactory.NeverFiringCron,
         ["Jobs__ActivateAuctionsCron"] = TakeAuctionApiFactory.NeverFiringCron,
+        ["Jobs__RemindWatchersCron"] = TakeAuctionApiFactory.NeverFiringCron,
         ["Jobs__PurgeRefreshTokensCron"] = TakeAuctionApiFactory.NeverFiringCron,
         ["Jobs__PurgeOutboxCron"] = TakeAuctionApiFactory.NeverFiringCron,
 

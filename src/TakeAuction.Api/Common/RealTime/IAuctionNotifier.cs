@@ -12,4 +12,9 @@ public interface IAuctionNotifier
         Guid bidderId,
         OutbidNotification notification,
         CancellationToken cancellationToken = default);
+
+    Task NotifyUserAsync(
+        Guid userId,
+        UserNotification notification,
+        CancellationToken cancellationToken = default);
 }

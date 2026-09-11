@@ -47,6 +47,22 @@ public sealed class SignalRAuctionNotifier : IAuctionNotifier
             notification.AuctionId);
     }
 
+    public async Task NotifyUserAsync(
+        Guid userId,
+        UserNotification notification,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        await _hubContext.Clients.User(userId.ToString()).NotificationReceived(notification);
+
+        _logger.LogDebug(
+            "Pushed a {Kind} notification about auction {AuctionId} to user {UserId}",
+            notification.Kind,
+            notification.AuctionId,
+            userId);
+    }
+
     public async Task AuctionStatusChangedAsync(
         AuctionStatusChangedNotification notification,
         CancellationToken cancellationToken = default)

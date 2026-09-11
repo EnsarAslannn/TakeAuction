@@ -19,6 +19,16 @@ public sealed record OutbidNotification(
     DateTimeOffset EndsAtUtc,
     DateTimeOffset OccurredAtUtc);
 
+public sealed record UserNotification(
+    Guid Id,
+    string Kind,
+    Guid AuctionId,
+    string AuctionTitle,
+    decimal? Amount,
+    DateTimeOffset AuctionEndsAtUtc,
+    DateTimeOffset CreatedAtUtc,
+    DateTimeOffset? ReadAtUtc);
+
 public sealed record AuctionStatusChangedNotification(
     Guid AuctionId,
     string Status,

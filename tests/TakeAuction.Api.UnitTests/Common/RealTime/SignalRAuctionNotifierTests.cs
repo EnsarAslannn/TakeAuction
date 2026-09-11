@@ -113,6 +113,32 @@ public sealed class SignalRAuctionNotifierTests
     }
 
     [Fact]
+    public async Task Pushes_a_notification_to_its_recipient_and_nobody_else()
+    {
+        var recipientId = Guid.CreateVersion7();
+        var everyoneElse = Substitute.For<IAuctionClient>();
+
+        _clients.User(recipientId.ToString()).Returns(_target);
+        _clients.All.Returns(everyoneElse);
+        _clients.Group(Arg.Any<string>()).Returns(everyoneElse);
+
+        var notification = new UserNotification(
+            Guid.CreateVersion7(),
+            "AuctionWon",
+            AuctionId,
+            "Rare stamp collection",
+            250m,
+            TestHarness.Now,
+            TestHarness.Now,
+            null);
+
+        await _notifier.NotifyUserAsync(recipientId, notification, CancellationToken.None);
+
+        await _target.Received(1).NotificationReceived(notification);
+        await everyoneElse.DidNotReceive().NotificationReceived(Arg.Any<UserNotification>());
+    }
+
+    [Fact]
     public async Task Honours_cancellation_before_broadcasting()
     {
         using var cancellation = new CancellationTokenSource();

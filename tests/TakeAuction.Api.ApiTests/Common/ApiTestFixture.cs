@@ -136,6 +136,14 @@ public sealed class ApiTestFixture : IAsyncLifetime
         await _redis.ExecAsync(["redis-cli", "FLUSHALL"]);
     }
 
+    public async Task<T> ExecuteDbContextAsync<T>(Func<AppDbContext, Task<T>> action)
+    {
+        await using var scope = _factory.Services.CreateAsyncScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        return await action(dbContext);
+    }
+
     private async Task<ApiSession> CreateSessionAsync(UserRole role, string? displayName)
     {
         var session = CreateSession();

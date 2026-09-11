@@ -14,6 +14,8 @@ using TakeAuction.Api.Common.RealTime;
 using TakeAuction.Api.Common.Security;
 using TakeAuction.Api.Features.Auctions;
 using TakeAuction.Api.Features.Media;
+using TakeAuction.Api.Features.Notifications;
+using TakeAuction.Api.Features.Watchlist;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -44,6 +46,8 @@ try
     builder.Services.AddTakeAuctionTelemetry(builder.Configuration, builder.Environment);
     builder.Services.AddAuctionsFeature();
     builder.Services.AddMediaFeature(builder.Configuration);
+    builder.Services.AddNotificationsFeature();
+    builder.Services.AddWatchlistFeature();
     builder.Services.AddProblemDetails();
     builder.Services.AddExceptionHandler<ValidationExceptionHandler>();
 

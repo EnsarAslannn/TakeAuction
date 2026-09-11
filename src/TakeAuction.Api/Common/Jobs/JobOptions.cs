@@ -22,6 +22,12 @@ public sealed class JobOptions
 
     public int ActivateAuctionsBatchSize { get; set; } = 200;
 
+    public string RemindWatchersCron { get; set; } = "* * * * *";
+
+    public int RemindWatchersLeadMinutes { get; set; } = 5;
+
+    public int RemindWatchersBatchSize { get; set; } = 500;
+
     public string PurgeRefreshTokensCron { get; set; } = "0 3 * * *";
 
     public string PurgeOutboxCron { get; set; } = "15 3 * * *";

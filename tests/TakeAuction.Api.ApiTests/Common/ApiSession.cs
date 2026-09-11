@@ -40,6 +40,12 @@ public sealed class ApiSession : IDisposable
             new HttpRequestMessage(HttpMethod.Post, url) { Content = JsonContent.Create(body) },
             withCsrf);
 
+    public Task<HttpResponseMessage> PutAsync(string url, bool withCsrf = true) =>
+        SendAsync(new HttpRequestMessage(HttpMethod.Put, url), withCsrf);
+
+    public Task<HttpResponseMessage> DeleteAsync(string url, bool withCsrf = true) =>
+        SendAsync(new HttpRequestMessage(HttpMethod.Delete, url), withCsrf);
+
     public Task<HttpResponseMessage> PostWithCsrfTokenAsync<TBody>(string url, TBody body, string csrfToken)
     {
         var request = new HttpRequestMessage(HttpMethod.Post, url) { Content = JsonContent.Create(body) };
@@ -190,6 +196,12 @@ public static class ApiRoutes
     public static string Bids(Guid id) => $"/api/v1/auctions/{id}/bids";
 
     public static string Cancel(Guid id) => $"/api/v1/auctions/{id}/cancel";
+
+    public static string Watch(Guid id) => $"/api/v1/auctions/{id}/watch";
+
+    public const string Watchlist = "/api/v1/watchlist";
+    public const string Notifications = "/api/v1/notifications";
+    public const string NotificationsRead = "/api/v1/notifications/read";
 }
 
 public static class LocationAssert

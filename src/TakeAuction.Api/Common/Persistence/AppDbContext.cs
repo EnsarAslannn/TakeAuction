@@ -1,7 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using TakeAuction.Api.Common.Messaging.Outbox;
 using TakeAuction.Api.Domain.Auctions;
+using TakeAuction.Api.Domain.Notifications;
 using TakeAuction.Api.Domain.Users;
+using TakeAuction.Api.Domain.Watchlist;
 
 namespace TakeAuction.Api.Common.Persistence;
 
@@ -20,6 +22,10 @@ public sealed class AppDbContext : DbContext
     public DbSet<Bid> Bids => Set<Bid>();
 
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
+
+    public DbSet<Notification> Notifications => Set<Notification>();
+
+    public DbSet<AuctionWatch> AuctionWatches => Set<AuctionWatch>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
