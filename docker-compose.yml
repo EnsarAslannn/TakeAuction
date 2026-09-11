@@ -77,7 +77,7 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
       ASPNETCORE_HTTP_PORTS: 8080
-      ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=${POSTGRES_DB:-takeauction};Username=${POSTGRES_USER:-takeauction};Password=${POSTGRES_PASSWORD:-takeauction_dev_pw}
+      ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=${POSTGRES_DB:-takeauction};Username=${POSTGRES_USER:-takeauction};Password=${POSTGRES_PASSWORD:-takeauction_dev_pw};Maximum Pool Size=${POSTGRES_POOL_SIZE:-30}
       ConnectionStrings__Redis: redis:6379
       ConnectionStrings__RabbitMq: amqp://${RABBITMQ_USER:-takeauction}:${RABBITMQ_PASSWORD:-takeauction_dev_pw}@rabbitmq:5672
       ReverseProxy__KnownNetworks__0: 172.16.0.0/12

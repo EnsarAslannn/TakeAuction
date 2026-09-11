@@ -66,7 +66,7 @@ renamed them before.
 | --- | --- |
 | `ASPNETCORE_ENVIRONMENT` | `Production` |
 | `ASPNETCORE_HTTP_PORTS` | `8080` |
-| `ConnectionStrings__Postgres` | `Host=${{Postgres.RAILWAY_PRIVATE_DOMAIN}};Port=5432;Database=${{Postgres.PGDATABASE}};Username=${{Postgres.PGUSER}};Password=${{Postgres.PGPASSWORD}}` |
+| `ConnectionStrings__Postgres` | `Host=${{Postgres.RAILWAY_PRIVATE_DOMAIN}};Port=5432;Database=${{Postgres.PGDATABASE}};Username=${{Postgres.PGUSER}};Password=${{Postgres.PGPASSWORD}};Maximum Pool Size=30` |
 | `ConnectionStrings__Redis` | `${{Redis.RAILWAY_PRIVATE_DOMAIN}}:6379,password=${{Redis.REDISPASSWORD}},abortConnect=false` |
 | `Jwt__SigningKey` | 32+ bytes of randomness, see below |
 | `Cors__AllowedOrigins__0` | `https://<app>.vercel.app` |
