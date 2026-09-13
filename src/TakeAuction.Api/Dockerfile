@@ -19,7 +19,7 @@ RUN apt-get update \
 
 COPY --from=build /app ./
 
-RUN mkdir -p /app/App_Data/uploads/auctions \
+RUN mkdir -p /app/App_Data/uploads \
     && chown -R $APP_UID:$APP_UID /app/App_Data
 
 USER $APP_UID
