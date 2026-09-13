@@ -130,7 +130,7 @@ public sealed class ApiTestFixture : IAsyncLifetime
         {
             var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             await dbContext.Database.ExecuteSqlRawAsync(
-                """TRUNCATE TABLE "bids", "auctions", "refresh_tokens", "users" RESTART IDENTITY CASCADE;""");
+                """TRUNCATE TABLE "notifications", "auction_watches", "bids", "refresh_tokens", "auctions", "users" RESTART IDENTITY CASCADE;""");
         }
 
         await _redis.ExecAsync(["redis-cli", "FLUSHALL"]);
