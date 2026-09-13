@@ -218,11 +218,13 @@ jobs:
           grep -qi "^content-security-policy:" web.headers
           ! grep -qi "^content-security-policy-report-only:" web.headers
 
-          # The salon loads its typefaces from Google Fonts and decodes Draco meshes
-          # in a blob worker; drop either source and the page ships broken.
+          # The salon loads its typefaces from Google Fonts, decodes Draco meshes
+          # in a blob worker and fetches embedded glTF textures from blob URLs;
+          # drop any of these sources and the page ships broken.
           grep -i "^content-security-policy:" web.headers | grep -q "fonts.googleapis.com"
           grep -i "^content-security-policy:" web.headers | grep -q "fonts.gstatic.com"
           grep -i "^content-security-policy:" web.headers | grep -q "worker-src 'self' blob:"
+          grep -i "^content-security-policy:" web.headers | grep -q "connect-src 'self' blob:"
           grep -i "^content-security-policy:" web.headers | grep -q "wasm-unsafe-eval"
 
       - name: The gateway throttles a burst of sign-in attempts
