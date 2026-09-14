@@ -9,8 +9,10 @@ import type { AuctionDetail, PlaceBidResponse } from "@/api/types";
 interface BidPanelProps {
   auction: AuctionDetail;
   minimumNextBid: number;
+  ceiling: number | null;
   isLive: boolean;
   onAccepted: (result: PlaceBidResponse) => void;
+  onFloorMoved: () => void;
   onWithdrawn: () => void;
 }
 
@@ -26,10 +28,19 @@ type Feedback =
   | { kind: "leading"; price: number; max: number }
   | { kind: "answered"; price: number; max: number }
   | { kind: "outbid" }
+  | { kind: "floor"; minimum: number }
   | { kind: "invalid" }
   | { kind: "error"; message: string };
 
-export function BidPanel({ auction, minimumNextBid, isLive, onAccepted, onWithdrawn }: BidPanelProps) {
+export function BidPanel({
+  auction,
+  minimumNextBid,
+  ceiling,
+  isLive,
+  onAccepted,
+  onFloorMoved,
+  onWithdrawn,
+}: BidPanelProps) {
   const user = useAuthStore((state) => state.user);
   const [amount, setAmount] = useState("");
   const [feedback, setFeedback] = useState<Feedback>({ kind: "idle" });
@@ -84,7 +95,13 @@ export function BidPanel({ auction, minimumNextBid, isLive, onAccepted, onWithdr
     } catch (caught) {
       const error = toApiError(caught);
 
-      if (error instanceof ApiError && error.status === 409) {
+      const floor = error.problem.minimumAcceptableBid;
+
+      if (error.status === 400 && typeof floor === "number") {
+        setAmount(floor.toFixed(2));
+        setFeedback(ceiling !== null ? { kind: "floor", minimum: floor } : { kind: "outbid" });
+        onFloorMoved();
+      } else if (error instanceof ApiError && error.status === 409) {
         setFeedback({ kind: "outbid" });
       } else {
         setFeedback({ kind: "error", message: error.message });
@@ -191,7 +208,9 @@ export function BidPanel({ auction, minimumNextBid, isLive, onAccepted, onWithdr
         </p>
       </div>
 
-      <p className="mt-4 font-sans text-sm leading-relaxed text-ink/60">{t("bid.explain")}</p>
+      <p className="mt-4 font-sans text-sm leading-relaxed text-ink/60">
+        {ceiling !== null ? t("bid.ceiling", { max: format.moneyPrecise(ceiling) }) : t("bid.explain")}
+      </p>
 
       <div className="mt-6">
         <label htmlFor="bid-amount" className="sr-only">
@@ -260,6 +279,15 @@ export function BidPanel({ auction, minimumNextBid, isLive, onAccepted, onWithdr
           className="mt-5 border-l-2 border-slate pl-4 font-sans text-sm leading-relaxed text-ink/70"
         >
           {t("bid.conflict")}
+        </p>
+      )}
+
+      {feedback.kind === "floor" && (
+        <p
+          data-testid="bid-feedback"
+          className="mt-5 border-l-2 border-slate pl-4 font-sans text-sm leading-relaxed text-ink/70"
+        >
+          {t("bid.floor", { amount: format.moneyPrecise(feedback.minimum) })}
         </p>
       )}
 

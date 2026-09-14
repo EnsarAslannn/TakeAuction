@@ -195,6 +195,8 @@ public static class ApiRoutes
 
     public static string Bids(Guid id) => $"/api/v1/auctions/{id}/bids";
 
+    public static string Standing(Guid id) => $"/api/v1/auctions/{id}/standing";
+
     public static string Cancel(Guid id) => $"/api/v1/auctions/{id}/cancel";
 
     public static string Watch(Guid id) => $"/api/v1/auctions/{id}/watch";

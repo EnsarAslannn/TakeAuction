@@ -215,6 +215,10 @@ export const tr = {
   "bid.explain":
     "Ödeyeceğiniz en yüksek tutarı yazın. Bu rakamı kimse görmez; sizin adınıza yalnızca önde kalmaya yetecek kadar artırırız.",
   "bid.inputLabel": "En yüksek teklif tutarınız",
+  "bid.ceiling":
+    "Şu an öndesiniz ve sizin adınıza en fazla {max} verilecek. Sınırınızı yükseltmek isterseniz bunun üzerine çıkın.",
+  "bid.floor":
+    "Sınırınızı yükseltmek için en az {amount} girmeniz gerekiyor. Tutarı sizin için güncelledik.",
   "bid.submitting": "Gönderiliyor…",
   "bid.submit": "Sınırınızı gönderin",
   "bid.invalidAmount": "Geçerli bir tutar girin.",

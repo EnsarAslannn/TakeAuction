@@ -4,6 +4,7 @@ import type {
   AuctionDetail,
   AuctionListItem,
   AuctionStatus,
+  BidStanding,
   CancelAuctionResponse,
   CreateAuctionResponse,
   PagedResult,
@@ -47,6 +48,11 @@ export async function placeBid(
     { amount },
     { headers: { "Idempotency-Key": idempotencyKey } }
   );
+  return data;
+}
+
+export async function getBidStanding(auctionId: string): Promise<BidStanding> {
+  const { data } = await http.get<BidStanding>(`/auctions/${auctionId}/standing`);
   return data;
 }
 

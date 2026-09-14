@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { getAuctionBids, getAuctionById } from "@/api/auctions";
+import { getAuctionBids, getAuctionById, getBidStanding } from "@/api/auctions";
 import { toApiError } from "@/api/client";
 import { useAuthStore } from "@/store/authStore";
 import { AuctionStage } from "@/components/AuctionStage";
@@ -11,7 +11,9 @@ import { useAuctionChannel, useConnectionState } from "@/realtime/useAuctionHub"
 import { useFormat, useT } from "@/i18n";
 import { useNow, usePrefersReducedMotion } from "@/lib/hooks";
 import { isBiddable, msRemaining } from "@/lib/auctionWindow";
-import type { AuctionDetail as AuctionDetailModel, BidPlacedNotification } from "@/api/types";
+import { minimumBidFor, publicFloor, standingAfterBid, standingFrom } from "@/lib/bidFloor";
+import type { Standing } from "@/lib/bidFloor";
+import type { AuctionDetail as AuctionDetailModel, BidPlacedNotification, BidStanding } from "@/api/types";
 
 const FEED_LENGTH = 12;
 
@@ -33,6 +35,7 @@ export function AuctionDetail() {
   const [loading, setLoading] = useState(true);
   const [flash, setFlash] = useState(false);
   const [extended, setExtended] = useState(false);
+  const [standing, setStanding] = useState<Standing | null>(null);
 
   const now = useNow(1000);
   const reducedMotion = usePrefersReducedMotion();
@@ -72,8 +75,44 @@ export function AuctionDetail() {
     load();
   }, [load]);
 
+  const userId = user?.id;
+
+  const applyStanding = useCallback((fresh: BidStanding) => {
+    setStanding(standingFrom(fresh));
+
+    if (!fresh.isLeading) {
+      setAuction((previous) =>
+        previous && fresh.minimumAcceptableBid > previous.minimumAcceptableBid
+          ? { ...previous, minimumAcceptableBid: fresh.minimumAcceptableBid }
+          : previous
+      );
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!id || !userId) return;
+
+    let current = true;
+
+    getBidStanding(id)
+      .then((fresh) => {
+        if (current) applyStanding(fresh);
+      })
+      .catch(() => {
+        if (current) setStanding(null);
+      });
+
+    return () => {
+      current = false;
+    };
+  }, [id, userId, applyStanding]);
+
   useAuctionChannel(id, {
     onBidPlaced: (notification: BidPlacedNotification) => {
+      if (auction) {
+        setStanding((previous) => standingAfterBid(previous, auction, notification, userId));
+      }
+
       setAuction((previous) => {
         if (!previous) return previous;
 
@@ -85,7 +124,7 @@ export function AuctionDetail() {
           ...previous,
           currentPrice: notification.amount,
           bidCount: previous.bidCount + 1,
-          minimumAcceptableBid: notification.amount + previous.minimumBidIncrement,
+          minimumAcceptableBid: publicFloor(notification.amount, previous.minimumBidIncrement),
           endsAtUtc: laterOf(previous.endsAtUtc, notification.endsAtUtc),
         };
       });
@@ -151,7 +190,8 @@ export function AuctionDetail() {
   const showcase = showcaseForAuction(auction);
   const remaining = msRemaining(auction, now);
   const isLive = isBiddable(auction, now);
-  const minimumNextBid = auction.minimumAcceptableBid;
+  const ownStanding = userId ? standing : null;
+  const minimumNextBid = minimumBidFor(auction, ownStanding);
 
   return (
     <div className="min-h-screen bg-paper pb-32 pt-28 md:pt-32">
@@ -273,15 +313,20 @@ export function AuctionDetail() {
                 <BidPanel
                   auction={auction}
                   minimumNextBid={minimumNextBid}
+                  ceiling={ownStanding?.isLeading ? ownStanding.maxAmount : null}
                   isLive={isLive}
+                  onFloorMoved={() => {
+                    getBidStanding(auction.id).then(applyStanding, () => undefined);
+                  }}
                   onAccepted={(result) => {
+                    setStanding(standingFrom(result));
                     setAuction((previous) =>
                       previous
                         ? {
                             ...previous,
                             currentPrice: result.currentPrice,
                             bidCount: result.bidCount,
-                            minimumAcceptableBid: result.minimumNextBid,
+                            minimumAcceptableBid: publicFloor(result.currentPrice, previous.minimumBidIncrement),
                             endsAtUtc: laterOf(previous.endsAtUtc, result.endsAtUtc),
                           }
                         : previous

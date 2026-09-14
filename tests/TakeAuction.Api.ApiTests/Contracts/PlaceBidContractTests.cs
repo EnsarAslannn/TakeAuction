@@ -228,6 +228,24 @@ public sealed class PlaceBidContractTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task A_bid_that_is_too_low_carries_the_floor_as_a_number_the_client_can_act_on()
+    {
+        using var leader = await _fixture.CreateBidderAsync();
+
+        (await leader.PostAsync(ApiRoutes.Bids(_auctionId), new { amount = 500m })).EnsureSuccessStatusCode();
+
+        var response = await leader.PostAsync(ApiRoutes.Bids(_auctionId), new { amount = 400m });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var body = JsonAssert.Root(await response.Content.ReadAsStringAsync());
+
+        Assert.Equal(
+            505m,
+            body.GetProperty(PlaceBidEndpoint.MinimumAcceptableBidExtension).GetDecimal());
+    }
+
+    [Fact]
     public async Task A_ladder_of_bids_leaves_the_top_bid_standing()
     {
         var bidders = await _fixture.CreateBiddersAsync(3);

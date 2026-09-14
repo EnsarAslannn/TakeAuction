@@ -151,6 +151,14 @@ export interface ProblemDetails {
   status?: number;
   detail?: string;
   errors?: Record<string, string[]>;
+  minimumAcceptableBid?: number;
+}
+
+export interface BidStanding {
+  auctionId: string;
+  isLeading: boolean;
+  maxAmount: number | null;
+  minimumAcceptableBid: number;
 }
 
 export interface AuctionBidItem {

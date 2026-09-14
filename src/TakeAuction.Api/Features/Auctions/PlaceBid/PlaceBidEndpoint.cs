@@ -12,6 +12,8 @@ public sealed class PlaceBidEndpoint : IEndpoint
 
     public const string IdempotentReplayHeader = "Idempotent-Replay";
 
+    public const string MinimumAcceptableBidExtension = "minimumAcceptableBid";
+
     public void MapEndpoint(IEndpointRouteBuilder builder)
     {
         builder.MapPost("/auctions/{id:guid}/bids", async (
@@ -81,7 +83,11 @@ public sealed class PlaceBidEndpoint : IEndpoint
             detail: string.Create(
                 CultureInfo.InvariantCulture,
                 $"The bid must be at least {result.MinimumAcceptableBid:0.00}."),
-            statusCode: StatusCodes.Status400BadRequest),
+            statusCode: StatusCodes.Status400BadRequest,
+            extensions: new Dictionary<string, object?>
+            {
+                [MinimumAcceptableBidExtension] = result.MinimumAcceptableBid
+            }),
 
         BidRejection.ConcurrencyConflict => Results.Problem(
             title: "Bid could not be applied",

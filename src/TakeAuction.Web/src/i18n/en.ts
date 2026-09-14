@@ -219,6 +219,10 @@ export const en: Record<TranslationKey, string> = {
   "bid.explain":
     "Enter the highest amount you would pay. Nobody sees that figure; on your behalf we only raise as far as it takes to stay in front.",
   "bid.inputLabel": "Your maximum bid amount",
+  "bid.ceiling":
+    "You are in front and at most {max} will be bid on your behalf. To raise your limit, go above it.",
+  "bid.floor":
+    "To raise your limit you need to enter at least {amount}. The amount has been updated for you.",
   "bid.submitting": "Submitting…",
   "bid.submit": "Submit your limit",
   "bid.invalidAmount": "Enter a valid amount.",
