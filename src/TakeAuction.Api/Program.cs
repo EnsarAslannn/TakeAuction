@@ -13,6 +13,7 @@ using TakeAuction.Api.Common.Persistence;
 using TakeAuction.Api.Common.RealTime;
 using TakeAuction.Api.Common.Security;
 using TakeAuction.Api.Features.Auctions;
+using TakeAuction.Api.Features.Chat;
 using TakeAuction.Api.Features.Media;
 using TakeAuction.Api.Features.Notifications;
 using TakeAuction.Api.Features.Watchlist;
@@ -45,6 +46,7 @@ try
     builder.Services.AddTakeAuctionHealthChecks(builder.Configuration);
     builder.Services.AddTakeAuctionTelemetry(builder.Configuration, builder.Environment);
     builder.Services.AddAuctionsFeature();
+    builder.Services.AddChatFeature();
     builder.Services.AddMediaFeature(builder.Configuration);
     builder.Services.AddNotificationsFeature();
     builder.Services.AddWatchlistFeature();
@@ -103,6 +105,7 @@ try
     .WithTags("Diagnostics")
     .WithSummary("Returns runtime information and the client IP as resolved behind the reverse proxy.");
 
+    app.MapUnversionedChatEndpoint();
     api.MapTakeAuctionEndpoints();
 
     app.MapTakeAuctionRealTime();

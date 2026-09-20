@@ -6,6 +6,7 @@ import { LanguageSwitch } from "@/components/LanguageSwitch";
 import { OutbidNotices } from "@/components/OutbidNotices";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import { NoticeStack } from "@/components/NoticeStack";
+import { ChatAssistant } from "@/components/ChatAssistant";
 import { SmoothScroll, useHashScroll, useScrollReset } from "@/motion/SmoothScroll";
 import { Landing } from "@/pages/Landing";
 import { Auctions } from "@/pages/Auctions";
@@ -122,6 +123,7 @@ function Shell() {
         <NotificationCenter />
         <OutbidNotices />
       </NoticeStack>
+      <ChatAssistant />
     </>
   );
 }

@@ -7,6 +7,7 @@ const repoRoot = path.resolve(here, "../..");
 
 const WEB_PORT = Number(process.env.E2E_WEB_PORT ?? 5173);
 const API_PORT = Number(process.env.E2E_API_PORT ?? 5080);
+const SKIP_API_SERVER = process.env.E2E_SKIP_API === "true";
 
 export const WEB_URL = process.env.E2E_BASE_URL ?? `http://localhost:${WEB_PORT}`;
 export const API_URL = process.env.E2E_API_URL ?? `http://localhost:${API_PORT}`;
@@ -35,7 +36,7 @@ export default defineConfig({
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: [
-    {
+    ...(!SKIP_API_SERVER ? [{
       command: `dotnet run --no-launch-profile --project "${path.join(repoRoot, "src", "TakeAuction.Api", "TakeAuction.Api.csproj")}"`,
       cwd: repoRoot,
       url: `${API_URL}/health/ready`,
@@ -50,7 +51,7 @@ export default defineConfig({
         RateLimiting__PermitLimit: "1000000",
         RateLimiting__AuthPermitLimit: "1000000",
       },
-    },
+    }] : []),
     {
       command: `npm run dev -- --port ${WEB_PORT} --strictPort`,
       cwd: path.join(repoRoot, "src", "TakeAuction.Web"),
