@@ -21,6 +21,21 @@ public sealed class KnowledgeChatServiceTests
     }
 
     [Fact]
+    public void A_question_about_available_questions_lists_supported_site_topics()
+    {
+        var response = _service.Reply(new ChatRequest(
+            "Hangi soruları sorabilirim?",
+            "tr",
+            []));
+
+        Assert.Contains("teklif", response.Answer, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("hesap", response.Answer, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("/", Assert.Single(response.Sources).Url);
+        Assert.InRange(response.Suggestions.Count, 1, 3);
+        Assert.False(response.UsedAi);
+    }
+
+    [Fact]
     public void An_english_seller_question_links_to_the_listing_page()
     {
         var response = _service.Reply(new ChatRequest(

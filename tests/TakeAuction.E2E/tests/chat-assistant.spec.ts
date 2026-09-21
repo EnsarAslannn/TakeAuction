@@ -66,6 +66,23 @@ test.describe("TakeAuction asistanı", () => {
     expect(box?.width).toBeLessThanOrEqual(390);
     expect(box?.height).toBeLessThanOrEqual(844);
 
+    const headerBox = await panel.locator("header").boundingBox();
+    const welcomeBox = await panel.getByRole("heading", { name: "Size nasıl yardımcı olabilirim?" }).boundingBox();
+    const questionGuideBox = await panel.getByRole("button", { name: "Hangi soruları sorabilirim?" }).boundingBox();
+    const bidQuestionBox = await panel.getByRole("button", { name: "Teklif nasıl verilir?" }).boundingBox();
+    const lastQuestionBox = await panel.getByRole("button", { name: "Açık artırmaları nasıl bulurum?" }).boundingBox();
+    const inputBox = await panel.getByRole("textbox", { name: "Sorunuz" }).boundingBox();
+
+    expect(headerBox).not.toBeNull();
+    expect(welcomeBox).not.toBeNull();
+    expect(questionGuideBox).not.toBeNull();
+    expect(bidQuestionBox).not.toBeNull();
+    expect(lastQuestionBox).not.toBeNull();
+    expect(inputBox).not.toBeNull();
+    expect(welcomeBox!.y - (headerBox!.y + headerBox!.height)).toBeLessThanOrEqual(72);
+    expect(questionGuideBox!.y).toBeLessThan(bidQuestionBox!.y);
+    expect(inputBox!.y - (lastQuestionBox!.y + lastQuestionBox!.height)).toBeLessThanOrEqual(64);
+
     await page.keyboard.press("Escape");
     await expect(panel).toBeHidden();
     await expect(launcher).toBeFocused();

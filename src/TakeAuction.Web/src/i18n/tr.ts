@@ -364,6 +364,7 @@ export const tr = {
   "chat.private": "Kişisel alanınız",
   "chat.watchlist": "Takip listem",
   "chat.createListing": "Yeni ilan oluştur",
+  "chat.quickHelp": "Hangi soruları sorabilirim?",
   "chat.quickBid": "Teklif nasıl verilir?",
   "chat.quickBrowse": "Açık artırmaları nasıl bulurum?",
   "chat.localKnowledge": "Yerel bilgi tabanı · Yapay zekâ kullanılmaz",

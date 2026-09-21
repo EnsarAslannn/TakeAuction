@@ -35,6 +35,16 @@ describe("ChatAssistant", () => {
     expect(launcher).toHaveFocus();
   });
 
+  it("shows the question guide before the other starter questions", () => {
+    renderAssistant();
+    fireEvent.click(screen.getByRole("button", { name: "TakeAuction asistanını aç" }));
+
+    const questionGuide = screen.getByRole("button", { name: "Hangi soruları sorabilirim?" });
+    const bidQuestion = screen.getByRole("button", { name: "Teklif nasıl verilir?" });
+
+    expect(questionGuide.compareDocumentPosition(bidQuestion) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it("sends recent history and renders sources plus at most three server suggestions", async () => {
     vi.mocked(postChat)
       .mockResolvedValueOnce({

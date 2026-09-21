@@ -368,6 +368,7 @@ export const en: Record<TranslationKey, string> = {
   "chat.private": "Your personal area",
   "chat.watchlist": "My watchlist",
   "chat.createListing": "Create a listing",
+  "chat.quickHelp": "What can I ask?",
   "chat.quickBid": "How do I place a bid?",
   "chat.quickBrowse": "How do I find an auction?",
   "chat.localKnowledge": "Local knowledge base · No AI used",

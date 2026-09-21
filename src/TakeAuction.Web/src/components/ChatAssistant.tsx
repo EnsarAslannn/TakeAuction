@@ -63,6 +63,8 @@ export function ChatAssistant() {
   const latestAssistant = [...(activeConversation?.messages ?? [])]
     .reverse()
     .find((message) => message.role === "assistant");
+  const isEmptyConversation = (activeConversation?.messages.length ?? 0) === 0;
+  const useExpandedPanel = showHistory || !isEmptyConversation;
 
   useEffect(() => saveChatState(state), [state]);
 
@@ -207,7 +209,11 @@ export function ChatAssistant() {
           role="dialog"
           aria-label={t("chat.title")}
           onKeyDown={onPanelKeyDown}
-          className="fixed inset-x-0 bottom-0 flex h-[min(46rem,calc(100dvh-1rem))] flex-col overflow-hidden border border-ink/15 bg-paper-pure shadow-[0_24px_80px_rgba(26,24,21,0.28)] sm:inset-x-auto sm:bottom-24 sm:right-6 sm:h-[min(42rem,calc(100dvh-8rem))] sm:w-[26rem]"
+          className={`fixed inset-x-0 bottom-0 flex max-h-[calc(100dvh-1rem)] flex-col overflow-hidden border border-ink/15 bg-paper-pure shadow-[0_24px_80px_rgba(26,24,21,0.28)] sm:inset-x-auto sm:bottom-24 sm:right-6 sm:max-h-[calc(100dvh-8rem)] sm:w-[26rem] ${
+            useExpandedPanel
+              ? "h-[min(46rem,calc(100dvh-1rem))] sm:h-[min(42rem,calc(100dvh-8rem))]"
+              : ""
+          }`}
         >
           <header className="relative shrink-0 border-b border-paper/15 bg-ink px-5 py-4 text-paper">
             <div aria-hidden className="absolute inset-y-0 left-0 w-1 bg-sand" />
@@ -292,16 +298,19 @@ export function ChatAssistant() {
             </div>
           ) : (
             <>
-              <div aria-live="polite" className="min-h-0 flex-1 overflow-y-auto px-4 py-5">
-                {activeConversation?.messages.length === 0 ? (
-                  <div className="flex min-h-full flex-col justify-center py-4">
+              <div
+                aria-live="polite"
+                className={`min-h-0 overflow-y-auto px-4 py-4 ${isEmptyConversation ? "" : "flex-1"}`}
+              >
+                {isEmptyConversation ? (
+                  <div className="flex flex-col py-1">
                     <p className="eyebrow">TakeAuction / guide</p>
                     <h2 className="mt-3 font-display text-3xl font-light tracking-headline text-ink">
                       {t("chat.welcome")}
                     </h2>
                     <p className="mt-3 text-sm leading-relaxed text-ink/65">{t("chat.intro")}</p>
-                    <div className="mt-6 grid gap-2">
-                      {[t("chat.quickBid"), t("chat.quickBrowse")].map((question) => (
+                    <div className="mt-5 grid gap-2">
+                      {[t("chat.quickHelp"), t("chat.quickBid"), t("chat.quickBrowse")].map((question) => (
                         <button
                           type="button"
                           key={question}

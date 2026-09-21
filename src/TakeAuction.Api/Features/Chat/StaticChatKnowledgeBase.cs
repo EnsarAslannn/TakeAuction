@@ -5,6 +5,16 @@ public sealed class StaticChatKnowledgeBase : IChatKnowledgeBase
     public IReadOnlyList<ChatKnowledgeEntry> Entries { get; } =
     [
         new(
+            "help",
+            ["hangi sorular", "ne sorabilirim", "neler sorabilirim", "yardım", "konular"],
+            ["what can i ask", "questions can i ask", "help", "topics"],
+            "TakeAuction asistanına açık artırmaları bulma, teklif ve otomatik limit kuralları, hesaplar, ilan oluşturma, takip listesi, canlı güncellemeler ve bildirimler hakkında soru sorabilirsiniz.",
+            "You can ask the TakeAuction assistant about finding auctions, bids and automatic limit rules, accounts, creating listings, the watchlist, live updates, and notifications.",
+            new("TakeAuction ana sayfa", "/"),
+            new("TakeAuction home", "/"),
+            ["Teklif nasıl verilir?", "Açık artırmaları nasıl bulurum?", "Nasıl hesap açarım?"],
+            ["How do I place a bid?", "How do I find an auction?", "How do I create an account?"]),
+        new(
             "bidding",
             ["teklif", "teklif vermek", "minimum artış", "limit", "maksimum teklif", "proxy", "kim kazanır", "kazanan"],
             ["bid", "bidding", "minimum increment", "limit", "maximum bid", "proxy", "winner", "who wins"],
