@@ -6,7 +6,10 @@ namespace TakeAuction.Api.Features.Chat;
 
 public interface IChatService
 {
-    Task<ChatResponse> ReplyAsync(ChatRequest request, CancellationToken cancellationToken = default);
+    Task<ChatResponse> ReplyAsync(
+        ChatRequest request,
+        Guid? userId = null,
+        CancellationToken cancellationToken = default);
 }
 
 public sealed partial class KnowledgeChatService : IChatService
@@ -26,8 +29,29 @@ public sealed partial class KnowledgeChatService : IChatService
 
     public async Task<ChatResponse> ReplyAsync(
         ChatRequest request,
+        Guid? userId = null,
         CancellationToken cancellationToken = default)
     {
+        if (request.Context?.AuctionId is { } standingAuctionId && AsksAboutBidStanding(request.Message))
+        {
+            if (userId is null)
+            {
+                return SignInForStandingReply(request.Language);
+            }
+
+            var standing = _auctionContextReader is null
+                ? null
+                : await _auctionContextReader.FindStandingAsync(
+                    standingAuctionId,
+                    userId.Value,
+                    cancellationToken);
+
+            if (standing is not null)
+            {
+                return BidStandingReply(standing, request.Language);
+            }
+        }
+
         if (request.Context?.AuctionId is { } auctionId && RefersToCurrentAuction(request.Message))
         {
             var auction = _auctionContextReader is null
@@ -41,6 +65,58 @@ public sealed partial class KnowledgeChatService : IChatService
         }
 
         return Reply(request);
+    }
+
+    private static bool AsksAboutBidStanding(string message)
+    {
+        var normalized = Normalize(message);
+        return normalized.Contains("onde miyim", StringComparison.Ordinal) ||
+               normalized.Contains("lider miyim", StringComparison.Ordinal) ||
+               normalized.Contains("teklif durumum", StringComparison.Ordinal) ||
+               normalized.Contains("am i leading", StringComparison.Ordinal) ||
+               normalized.Contains("am i winning", StringComparison.Ordinal) ||
+               normalized.Contains("my bid status", StringComparison.Ordinal);
+    }
+
+    private static ChatResponse SignInForStandingReply(string language)
+    {
+        var english = string.Equals(language, "en", StringComparison.OrdinalIgnoreCase);
+        return new ChatResponse(
+            english
+                ? "Sign in to see your private bid standing for this auction."
+                : "Bu açık artırmadaki kişisel teklif durumunuzu görmek için giriş yapın.",
+            [new ChatSource(english ? "Sign in" : "Giriş yap", "/login")],
+            english ? ["How does automatic bidding work?"] : ["Otomatik teklif nasıl çalışır?"],
+            false);
+    }
+
+    private static ChatResponse BidStandingReply(ChatBidStandingContext standing, string language)
+    {
+        var english = string.Equals(language, "en", StringComparison.OrdinalIgnoreCase);
+        var culture = CultureInfo.GetCultureInfo(english ? "en-US" : "tr-TR");
+        string answer;
+
+        if (standing.IsLeading)
+        {
+            var ceiling = standing.MaxAmount?.ToString("C", culture);
+            answer = english
+                ? $"You are currently leading {standing.AuctionTitle}. The current price is {standing.CurrentPrice.ToString("C", culture)} and your private ceiling is {ceiling}. The system will bid only as much as needed unless another bidder exceeds that ceiling."
+                : $"{standing.AuctionTitle} lotunda şu anda öndesiniz. Güncel fiyat {standing.CurrentPrice.ToString("C", culture)}, gizli tavanınız {ceiling}. Başka bir teklif tavanınızı aşmadıkça sistem yalnızca gerektiği kadar otomatik teklif verir.";
+        }
+        else
+        {
+            answer = english
+                ? $"You are not currently leading {standing.AuctionTitle}. The current price is {standing.CurrentPrice.ToString("C", culture)} and your next bid must be at least {standing.MinimumAcceptableBid.ToString("C", culture)}."
+                : $"{standing.AuctionTitle} lotunda şu anda önde değilsiniz. Güncel fiyat {standing.CurrentPrice.ToString("C", culture)}; yeni teklifiniz en az {standing.MinimumAcceptableBid.ToString("C", culture)} olmalı.";
+        }
+
+        return new ChatResponse(
+            answer,
+            [new ChatSource(english ? "Auction details" : "Lot detayı", $"/auctions/{standing.AuctionId}")],
+            english
+                ? ["How does my private ceiling work?", "What is the minimum next bid?"]
+                : ["Gizli tavanım nasıl çalışır?", "Sonraki minimum teklif nedir?"],
+            false);
     }
 
     public ChatResponse Reply(ChatRequest request)

@@ -26,6 +26,14 @@ public sealed record ChatAuctionContext(
     decimal MinimumAcceptableBid,
     DateTimeOffset EndsAtUtc);
 
+public sealed record ChatBidStandingContext(
+    Guid AuctionId,
+    string AuctionTitle,
+    decimal CurrentPrice,
+    bool IsLeading,
+    decimal? MaxAmount,
+    decimal MinimumAcceptableBid);
+
 public sealed record ChatKnowledgeEntry(
     string Topic,
     IReadOnlyList<string> TurkishKeywords,

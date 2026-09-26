@@ -102,6 +102,103 @@ public sealed class KnowledgeChatServiceTests
         Assert.Equal($"/auctions/{auctionId}", Assert.Single(response.Sources).Url);
     }
 
+    [Fact]
+    public async Task A_signed_in_leader_gets_a_private_bid_standing_explanation()
+    {
+        var auctionId = Guid.Parse("018f6f47-4dd2-7c97-8f58-1f70edc78a21");
+        var bidderId = Guid.Parse("018f6f47-57b8-7687-a47a-5933bc18b499");
+        var service = new KnowledgeChatService(
+            new StaticChatKnowledgeBase(),
+            new StubAuctionContextReader(
+                new ChatAuctionContext(
+                    auctionId,
+                    "Osmanlı Cep Saati",
+                    "Active",
+                    12_500m,
+                    13_000m,
+                    new DateTimeOffset(2026, 9, 26, 18, 30, 0, TimeSpan.Zero)),
+                new ChatBidStandingContext(
+                    auctionId,
+                    "Osmanlı Cep Saati",
+                    12_500m,
+                    true,
+                    15_000m,
+                    13_000m)));
+
+        var response = await service.ReplyAsync(
+            new ChatRequest(
+                "Şu anda önde miyim?",
+                "tr",
+                [],
+                new ChatPageContext($"/auctions/{auctionId}", auctionId)),
+            bidderId);
+
+        Assert.Contains("öndesiniz", response.Answer, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("15.000", response.Answer, StringComparison.Ordinal);
+        Assert.Contains("gizli tavan", response.Answer, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal($"/auctions/{auctionId}", Assert.Single(response.Sources).Url);
+    }
+
+    [Fact]
+    public async Task A_guest_is_asked_to_sign_in_before_private_standing_is_read()
+    {
+        var auctionId = Guid.Parse("018f6f47-4dd2-7c97-8f58-1f70edc78a21");
+        var service = new KnowledgeChatService(
+            new StaticChatKnowledgeBase(),
+            new StubAuctionContextReader(new ChatAuctionContext(
+                auctionId,
+                "Osmanlı Cep Saati",
+                "Active",
+                12_500m,
+                13_000m,
+                new DateTimeOffset(2026, 9, 26, 18, 30, 0, TimeSpan.Zero))));
+
+        var response = await service.ReplyAsync(new ChatRequest(
+            "Şu anda önde miyim?",
+            "tr",
+            [],
+            new ChatPageContext($"/auctions/{auctionId}", auctionId)));
+
+        Assert.Contains("giriş", response.Answer, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("/login", Assert.Single(response.Sources).Url);
+    }
+
+    [Fact]
+    public async Task A_bidder_who_is_not_leading_sees_the_minimum_next_bid_without_a_private_ceiling()
+    {
+        var auctionId = Guid.Parse("018f6f47-4dd2-7c97-8f58-1f70edc78a21");
+        var bidderId = Guid.Parse("018f6f47-57b8-7687-a47a-5933bc18b499");
+        var service = new KnowledgeChatService(
+            new StaticChatKnowledgeBase(),
+            new StubAuctionContextReader(
+                new ChatAuctionContext(
+                    auctionId,
+                    "Osmanlı Cep Saati",
+                    "Active",
+                    12_500m,
+                    13_000m,
+                    new DateTimeOffset(2026, 9, 26, 18, 30, 0, TimeSpan.Zero)),
+                new ChatBidStandingContext(
+                    auctionId,
+                    "Osmanlı Cep Saati",
+                    12_500m,
+                    false,
+                    null,
+                    13_000m)));
+
+        var response = await service.ReplyAsync(
+            new ChatRequest(
+                "Teklif durumum nedir?",
+                "tr",
+                [],
+                new ChatPageContext($"/auctions/{auctionId}", auctionId)),
+            bidderId);
+
+        Assert.Contains("önde değilsiniz", response.Answer, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("13.000", response.Answer, StringComparison.Ordinal);
+        Assert.DoesNotContain("gizli tavan", response.Answer, StringComparison.OrdinalIgnoreCase);
+    }
+
     [Theory]
     [InlineData("")]
     [InlineData("   ")]
@@ -111,9 +208,17 @@ public sealed class KnowledgeChatServiceTests
             _service.Reply(new ChatRequest(message, "tr", [])));
     }
 
-    private sealed class StubAuctionContextReader(ChatAuctionContext auction) : IChatAuctionContextReader
+    private sealed class StubAuctionContextReader(
+        ChatAuctionContext auction,
+        ChatBidStandingContext? standing = null) : IChatAuctionContextReader
     {
         public Task<ChatAuctionContext?> FindAsync(Guid auctionId, CancellationToken cancellationToken) =>
             Task.FromResult<ChatAuctionContext?>(auctionId == auction.Id ? auction : null);
+
+        public Task<ChatBidStandingContext?> FindStandingAsync(
+            Guid auctionId,
+            Guid bidderId,
+            CancellationToken cancellationToken) =>
+            Task.FromResult<ChatBidStandingContext?>(auctionId == standing?.AuctionId ? standing : null);
     }
 }

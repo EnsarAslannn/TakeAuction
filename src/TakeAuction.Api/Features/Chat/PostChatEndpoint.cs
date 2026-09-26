@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using TakeAuction.Api.Common.Api;
 
 namespace TakeAuction.Api.Features.Chat;
@@ -21,6 +22,7 @@ public sealed class PostChatEndpoint : IEndpoint
     private static async Task<IResult> Handle(
         ChatRequest? request,
         IChatService service,
+        ClaimsPrincipal principal,
         CancellationToken cancellationToken)
     {
         if (request is null ||
@@ -43,6 +45,10 @@ public sealed class PostChatEndpoint : IEndpoint
             });
         }
 
-        return Results.Ok(await service.ReplyAsync(request, cancellationToken));
+        var userId = principal.GetUserId();
+        return Results.Ok(await service.ReplyAsync(
+            request,
+            userId == Guid.Empty ? null : userId,
+            cancellationToken));
     }
 }
