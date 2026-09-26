@@ -9,7 +9,9 @@ import { ChatAssistant } from "./ChatAssistant";
 
 vi.mock("@/api/chat", () => ({ postChat: vi.fn() }));
 
-const renderAssistant = () => render(<MemoryRouter><ChatAssistant /></MemoryRouter>);
+const renderAssistant = (initialEntry = "/") => render(
+  <MemoryRouter initialEntries={[initialEntry]}><ChatAssistant /></MemoryRouter>
+);
 
 describe("ChatAssistant", () => {
   beforeEach(() => {
@@ -78,9 +80,38 @@ describe("ChatAssistant", () => {
         { role: "user", content: "Teklif nasıl verilir?" },
         { role: "assistant", content: "Teklif vermek için oturum açın." },
       ],
+      context: { path: "/", auctionId: null },
     });
     expect(screen.getAllByRole("link", { name: "Nasıl çalışır" })).toHaveLength(2);
     expect(screen.getAllByRole("button", { name: /^(Limit nedir\?|Canlı güncellemeler nasıl gelir\?|Kim kazanır\?|Minimum artış nedir\?)$/ })).toHaveLength(1);
+  });
+
+  it("sends the current page and auction id as trusted-server lookup context", async () => {
+    const auctionId = "018f6f47-4dd2-7c97-8f58-1f70edc78a21";
+    vi.mocked(postChat).mockResolvedValue({
+      answer: "Bu lot aktiftir.",
+      sources: [{ title: "Lot detayı", url: `/auctions/${auctionId}` }],
+      suggestions: [],
+      usedAi: false,
+    });
+    renderAssistant(`/auctions/${auctionId}`);
+    fireEvent.click(screen.getByRole("button", { name: "TakeAuction asistanını aç" }));
+
+    fireEvent.change(screen.getByRole("textbox", { name: "Sorunuz" }), {
+      target: { value: "Bu lotun durumu nedir?" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Gönder" }));
+
+    await screen.findByText("Bu lot aktiftir.");
+    expect(postChat).toHaveBeenCalledWith({
+      message: "Bu lotun durumu nedir?",
+      language: "tr",
+      history: [],
+      context: {
+        path: `/auctions/${auctionId}`,
+        auctionId,
+      },
+    });
   });
 
   it("restores old chats, creates another chat, and clears all only after confirmation", async () => {

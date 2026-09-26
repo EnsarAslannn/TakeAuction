@@ -76,6 +76,32 @@ public sealed class KnowledgeChatServiceTests
         Assert.False(response.UsedAi);
     }
 
+    [Fact]
+    public async Task A_question_about_this_lot_uses_the_current_auction_from_the_server()
+    {
+        var auctionId = Guid.Parse("018f6f47-4dd2-7c97-8f58-1f70edc78a21");
+        var service = new KnowledgeChatService(
+            new StaticChatKnowledgeBase(),
+            new StubAuctionContextReader(new ChatAuctionContext(
+                auctionId,
+                "Osmanlı Cep Saati",
+                "Active",
+                12_500m,
+                13_000m,
+                new DateTimeOffset(2026, 9, 26, 18, 30, 0, TimeSpan.Zero))));
+
+        var response = await service.ReplyAsync(new ChatRequest(
+            "Bu lotun durumu nedir?",
+            "tr",
+            [],
+            new ChatPageContext($"/auctions/{auctionId}", auctionId)));
+
+        Assert.Contains("Osmanlı Cep Saati", response.Answer, StringComparison.Ordinal);
+        Assert.Contains("aktif", response.Answer, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("13.000", response.Answer, StringComparison.Ordinal);
+        Assert.Equal($"/auctions/{auctionId}", Assert.Single(response.Sources).Url);
+    }
+
     [Theory]
     [InlineData("")]
     [InlineData("   ")]
@@ -83,5 +109,11 @@ public sealed class KnowledgeChatServiceTests
     {
         Assert.Throws<ArgumentException>(() =>
             _service.Reply(new ChatRequest(message, "tr", [])));
+    }
+
+    private sealed class StubAuctionContextReader(ChatAuctionContext auction) : IChatAuctionContextReader
+    {
+        public Task<ChatAuctionContext?> FindAsync(Guid auctionId, CancellationToken cancellationToken) =>
+            Task.FromResult<ChatAuctionContext?>(auctionId == auction.Id ? auction : null);
     }
 }

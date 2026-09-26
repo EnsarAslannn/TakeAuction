@@ -6,11 +6,43 @@ namespace TakeAuction.Api.Features.Chat;
 
 public interface IChatService
 {
-    ChatResponse Reply(ChatRequest request);
+    Task<ChatResponse> ReplyAsync(ChatRequest request, CancellationToken cancellationToken = default);
 }
 
-public sealed partial class KnowledgeChatService(IChatKnowledgeBase knowledgeBase) : IChatService
+public sealed partial class KnowledgeChatService : IChatService
 {
+    private readonly IChatKnowledgeBase _knowledgeBase;
+    private readonly IChatAuctionContextReader? _auctionContextReader;
+
+    public KnowledgeChatService(IChatKnowledgeBase knowledgeBase) => _knowledgeBase = knowledgeBase;
+
+    public KnowledgeChatService(
+        IChatKnowledgeBase knowledgeBase,
+        IChatAuctionContextReader auctionContextReader)
+    {
+        _knowledgeBase = knowledgeBase;
+        _auctionContextReader = auctionContextReader;
+    }
+
+    public async Task<ChatResponse> ReplyAsync(
+        ChatRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (request.Context?.AuctionId is { } auctionId && RefersToCurrentAuction(request.Message))
+        {
+            var auction = _auctionContextReader is null
+                ? null
+                : await _auctionContextReader.FindAsync(auctionId, cancellationToken);
+
+            if (auction is not null)
+            {
+                return AuctionReply(auction, request.Language);
+            }
+        }
+
+        return Reply(request);
+    }
+
     public ChatResponse Reply(ChatRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Message))
@@ -25,7 +57,7 @@ public sealed partial class KnowledgeChatService(IChatKnowledgeBase knowledgeBas
             .TakeLast(6)
             .Select(item => Normalize(item.Content)));
 
-        var match = knowledgeBase.Entries
+        var match = _knowledgeBase.Entries
             .Select(entry => new { Entry = entry, Score = Score(entry, current, context, english) })
             .OrderByDescending(candidate => candidate.Score)
             .FirstOrDefault();
@@ -51,6 +83,43 @@ public sealed partial class KnowledgeChatService(IChatKnowledgeBase knowledgeBas
             (english ? match.Entry.EnglishSuggestions : match.Entry.TurkishSuggestions).Take(3).ToArray(),
             false);
     }
+
+    private static bool RefersToCurrentAuction(string message)
+    {
+        var normalized = Normalize(message);
+        return normalized.Contains("bu lot", StringComparison.Ordinal) ||
+               normalized.Contains("bu muzayede", StringComparison.Ordinal) ||
+               normalized.Contains("bu acik artirma", StringComparison.Ordinal) ||
+               normalized.Contains("this lot", StringComparison.Ordinal) ||
+               normalized.Contains("this auction", StringComparison.Ordinal);
+    }
+
+    private static ChatResponse AuctionReply(ChatAuctionContext auction, string language)
+    {
+        var english = string.Equals(language, "en", StringComparison.OrdinalIgnoreCase);
+        var culture = CultureInfo.GetCultureInfo(english ? "en-US" : "tr-TR");
+        var status = LocalizeStatus(auction.Status, english);
+        var answer = english
+            ? $"{auction.Title} is currently {status}. The current price is {auction.CurrentPrice.ToString("C", culture)} and the minimum acceptable bid is {auction.MinimumAcceptableBid.ToString("C", culture)}. It ends at {auction.EndsAtUtc.ToString("g", culture)}."
+            : $"{auction.Title} lotu şu anda {status}. Güncel fiyat {auction.CurrentPrice.ToString("C", culture)}; kabul edilecek en düşük teklif {auction.MinimumAcceptableBid.ToString("C", culture)}. Kapanış zamanı {auction.EndsAtUtc.ToString("g", culture)}.";
+
+        return new ChatResponse(
+            answer,
+            [new ChatSource(english ? "Auction details" : "Lot detayı", $"/auctions/{auction.Id}")],
+            english
+                ? ["Am I leading?", "How does automatic bidding work?"]
+                : ["Şu anda önde miyim?", "Otomatik teklif nasıl çalışır?"],
+            false);
+    }
+
+    private static string LocalizeStatus(string status, bool english) => status.ToLowerInvariant() switch
+    {
+        "active" => english ? "active" : "aktif",
+        "scheduled" => english ? "scheduled" : "planlanmış",
+        "ended" => english ? "ended" : "sona ermiş",
+        "cancelled" => english ? "cancelled" : "iptal edilmiş",
+        _ => status
+    };
 
     private static int Score(ChatKnowledgeEntry entry, string current, string context, bool english)
     {

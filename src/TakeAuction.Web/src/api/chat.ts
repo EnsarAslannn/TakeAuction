@@ -10,6 +10,12 @@ export interface ChatRequest {
   message: string;
   language: Language;
   history: ChatHistoryItem[];
+  context: ChatPageContext;
+}
+
+export interface ChatPageContext {
+  path: string;
+  auctionId: string | null;
 }
 
 export interface ChatSource {

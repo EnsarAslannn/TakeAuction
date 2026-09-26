@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { postChat } from "@/api/chat";
 import {
   createConversation,
@@ -40,6 +40,7 @@ function replaceConversation(
 }
 
 export function ChatAssistant() {
+  const location = useLocation();
   const language = useLanguageStore((value) => value.language);
   const user = useAuthStore((value) => value.user);
   const t = useT();
@@ -152,7 +153,16 @@ export function ChatAssistant() {
     })));
 
     try {
-      const response = await postChat({ message, language, history });
+      const auctionMatch = location.pathname.match(/^\/auctions\/([0-9a-f-]{36})$/i);
+      const response = await postChat({
+        message,
+        language,
+        history,
+        context: {
+          path: location.pathname,
+          auctionId: auctionMatch?.[1] ?? null,
+        },
+      });
       const assistantMessage: ChatMessage = {
         id: messageId(),
         role: "assistant",

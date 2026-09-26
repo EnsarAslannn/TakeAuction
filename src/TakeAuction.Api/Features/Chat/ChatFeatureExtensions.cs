@@ -1,3 +1,5 @@
+using Microsoft.Extensions.DependencyInjection.Extensions;
+
 namespace TakeAuction.Api.Features.Chat;
 
 public static class ChatFeatureExtensions
@@ -5,7 +7,8 @@ public static class ChatFeatureExtensions
     public static IServiceCollection AddChatFeature(this IServiceCollection services)
     {
         services.AddSingleton<IChatKnowledgeBase, StaticChatKnowledgeBase>();
-        services.AddSingleton<IChatService, KnowledgeChatService>();
+        services.TryAddScoped<IChatAuctionContextReader, ChatAuctionContextReader>();
+        services.AddScoped<IChatService, KnowledgeChatService>();
         return services;
     }
 

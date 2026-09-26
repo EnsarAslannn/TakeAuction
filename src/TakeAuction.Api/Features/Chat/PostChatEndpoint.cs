@@ -18,7 +18,10 @@ public sealed class PostChatEndpoint : IEndpoint
             .ProducesProblem(StatusCodes.Status400BadRequest);
     }
 
-    private static IResult Handle(ChatRequest? request, IChatService service)
+    private static async Task<IResult> Handle(
+        ChatRequest? request,
+        IChatService service,
+        CancellationToken cancellationToken)
     {
         if (request is null ||
             string.IsNullOrWhiteSpace(request.Message) ||
@@ -29,7 +32,8 @@ public sealed class PostChatEndpoint : IEndpoint
                 item.Content is null ||
                 item.Content.Length > 2_000 ||
                 item.Role is not ("user" or "assistant")) ||
-            request.Language is not ("tr" or "en"))
+            request.Language is not ("tr" or "en") ||
+            request.Context is { Path.Length: > 256 })
         {
             return Results.BadRequest(new ProblemDetails
             {
@@ -39,6 +43,6 @@ public sealed class PostChatEndpoint : IEndpoint
             });
         }
 
-        return Results.Ok(service.Reply(request));
+        return Results.Ok(await service.ReplyAsync(request, cancellationToken));
     }
 }
