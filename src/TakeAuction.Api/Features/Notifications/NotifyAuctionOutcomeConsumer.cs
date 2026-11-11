@@ -25,15 +25,17 @@ public sealed class NotifyAuctionOutcomeConsumer : IConsumer<AuctionEndedIntegra
         _logger = logger;
     }
 
-    public async Task Consume(ConsumeContext<AuctionEndedIntegrationEvent> context)
+    public Task Consume(ConsumeContext<AuctionEndedIntegrationEvent> context) =>
+        HandleAsync(context.Message, context.CancellationToken);
+
+    public async Task HandleAsync(AuctionEndedIntegrationEvent message, CancellationToken cancellationToken)
     {
-        var message = context.Message;
 
         var title = await _dbContext.Auctions
             .AsNoTracking()
             .Where(auction => auction.Id == message.AuctionId)
             .Select(auction => auction.Title)
-            .FirstOrDefaultAsync(context.CancellationToken);
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (title is null)
         {
@@ -44,7 +46,7 @@ public sealed class NotifyAuctionOutcomeConsumer : IConsumer<AuctionEndedIntegra
             return;
         }
 
-        var delivered = await _inbox.DeliverAsync(Outcome(message, title), context.CancellationToken);
+        var delivered = await _inbox.DeliverAsync(Outcome(message, title), cancellationToken);
 
         _logger.LogInformation(
             "Told {Delivered} participant(s) how auction {AuctionId} ended",

@@ -1,4 +1,7 @@
 using System.Reflection;
+using MediatR;
+using TakeAuction.Api.Features.Auctions;
+using TakeAuction.Api.Features.Notifications;
 
 namespace TakeAuction.Api.Common.Messaging.Outbox;
 
@@ -21,6 +24,21 @@ public static class OutboxExtensions
         services.AddScoped<OutboxBacklogProbe>();
 
         var options = section.Get<OutboxOptions>() ?? new OutboxOptions();
+        if (configuration.GetValue<bool>("DurableJobs:Enabled"))
+        {
+            services.AddScoped<IOutboxTransport, InlineOutboxTransport>();
+            services.AddTransient(typeof(IPipelineBehavior<,>), typeof(InlineOutboxBehavior<,>));
+            services.AddScoped<BroadcastAuctionCreatedConsumer>();
+            services.AddScoped<BroadcastAuctionOpenedConsumer>();
+            services.AddScoped<BroadcastAuctionCancelledConsumer>();
+            services.AddScoped<BroadcastAuctionEndedConsumer>();
+            services.AddScoped<BroadcastBidPlacedConsumer>();
+            services.AddScoped<NotifyAuctionOutcomeConsumer>();
+            services.AddScoped<NotifyWatcherClosingSoonConsumer>();
+            return services;
+        }
+
+        services.AddScoped<IOutboxTransport, BrokerOutboxTransport>();
 
         if (options.DispatcherEnabled)
         {

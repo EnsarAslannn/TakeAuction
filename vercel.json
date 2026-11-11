@@ -1,0 +1,18 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "regions": ["fra1"],
+  "services": {
+    "api": {
+      "root": ".",
+      "runtime": "container",
+      "entrypoint": "src/TakeAuction.Api/Dockerfile"
+    }
+  },
+  "rewrites": [
+    { "source": "/health/:path*", "destination": { "service": "api" } },
+    { "source": "/internal/durable-jobs", "destination": { "service": "api" } },
+    { "source": "/api/:path*", "destination": { "service": "api" } },
+    { "source": "/hubs/:path*", "destination": { "service": "api" } },
+    { "source": "/uploads/:path*", "destination": { "service": "api" } }
+  ]
+}

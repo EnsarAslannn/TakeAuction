@@ -1,0 +1,16 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "regions": ["fra1"],
+  "schedules": {
+    "auction-sweep": {
+      "schedule": "*/15 * * * *",
+      "path": "/api/reconcile",
+      "requestMethod": "POST"
+    },
+    "maintenance": {
+      "schedule": "30 3 * * *",
+      "path": "/api/maintenance",
+      "requestMethod": "POST"
+    }
+  }
+}

@@ -5,17 +5,20 @@ namespace TakeAuction.Api.Features.Auctions;
 
 public static class AuctionsFeatureExtensions
 {
-    public static IServiceCollection AddAuctionsFeature(this IServiceCollection services)
+    public static IServiceCollection AddAuctionsFeature(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddSingleton<AuctionCache>();
         services.AddScoped<AuctionCloser>();
         services.AddScoped<ExpireAuctionsJob>();
         services.AddScoped<CloseAuctionJob>();
-        services.AddScoped<IAuctionCloseSchedule, AuctionCloseSchedule>();
         services.AddScoped<AuctionOpener>();
         services.AddScoped<ActivateAuctionsJob>();
         services.AddScoped<OpenAuctionJob>();
-        services.AddScoped<IAuctionOpenSchedule, AuctionOpenSchedule>();
+        if (!configuration.GetValue<bool>("DurableJobs:Enabled"))
+        {
+            services.AddScoped<IAuctionCloseSchedule, AuctionCloseSchedule>();
+            services.AddScoped<IAuctionOpenSchedule, AuctionOpenSchedule>();
+        }
 
         return services;
     }

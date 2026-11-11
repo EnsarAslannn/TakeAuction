@@ -4,6 +4,7 @@ using TakeAuction.Api.Domain.Auctions;
 using TakeAuction.Api.Domain.Notifications;
 using TakeAuction.Api.Domain.Users;
 using TakeAuction.Api.Domain.Watchlist;
+using TakeAuction.Api.Features.Media;
 
 namespace TakeAuction.Api.Common.Persistence;
 
@@ -26,6 +27,7 @@ public sealed class AppDbContext : DbContext
     public DbSet<Notification> Notifications => Set<Notification>();
 
     public DbSet<AuctionWatch> AuctionWatches => Set<AuctionWatch>();
+    public DbSet<AuctionImage> AuctionImages => Set<AuctionImage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

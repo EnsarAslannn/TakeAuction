@@ -65,9 +65,16 @@ public sealed class UploadImageTests : IAsyncLifetime
         Assert.NotNull(uploaded);
         Assert.StartsWith("/uploads/auctions/", uploaded.Url, StringComparison.Ordinal);
 
-        var fetched = await client.GetAsync(uploaded.Url);
+        var imageName = uploaded.Url[(uploaded.Url.LastIndexOf('/') + 1)..];
+        var stored = await _fixture.ExecuteDbContextAsync(db =>
+            db.AuctionImages.SingleAsync(image => image.FileName == imageName));
+        Assert.Equal(PngBytes, stored.Content);
+
+        using var anonymous = _fixture.CreateClient();
+        var fetched = await anonymous.GetAsync(uploaded.Url);
 
         Assert.Equal(HttpStatusCode.OK, fetched.StatusCode);
+        Assert.Equal("image/png", fetched.Content.Headers.ContentType?.MediaType);
         Assert.Equal(PngBytes, await fetched.Content.ReadAsByteArrayAsync());
     }
 

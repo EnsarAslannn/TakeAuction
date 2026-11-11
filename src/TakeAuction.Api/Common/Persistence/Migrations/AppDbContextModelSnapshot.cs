@@ -359,6 +359,31 @@ namespace TakeAuction.Api.Common.Persistence.Migrations
                     b.ToTable("auction_watches", (string)null);
                 });
 
+            modelBuilder.Entity("TakeAuction.Api.Features.Media.AuctionImage", b =>
+                {
+                    b.Property<string>("FileName")
+                        .HasMaxLength(37)
+                        .HasColumnType("character varying(37)");
+
+                    b.Property<byte[]>("Content")
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("FileName");
+
+                    b.HasIndex("CreatedAtUtc");
+
+                    b.ToTable("auction_images", (string)null);
+                });
+
             modelBuilder.Entity("TakeAuction.Api.Domain.Auctions.Auction", b =>
                 {
                     b.HasOne("TakeAuction.Api.Domain.Users.User", null)

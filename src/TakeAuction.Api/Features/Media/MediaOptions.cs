@@ -4,6 +4,8 @@ public sealed class MediaOptions
 {
     public const string SectionName = "Media";
 
+    public bool StoreInPostgres { get; set; }
+
     public long MaxImageSizeInBytes { get; set; } = 5 * 1024 * 1024;
 
     public int OrphanRetentionHours { get; set; } = 24;

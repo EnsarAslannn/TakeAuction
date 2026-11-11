@@ -15,9 +15,11 @@ public sealed class NotifyWatcherClosingSoonConsumer : IConsumer<WatchedAuctionC
         _timeProvider = timeProvider;
     }
 
-    public Task Consume(ConsumeContext<WatchedAuctionClosingSoonIntegrationEvent> context)
+    public Task Consume(ConsumeContext<WatchedAuctionClosingSoonIntegrationEvent> context) =>
+        HandleAsync(context.Message, context.CancellationToken);
+
+    public Task HandleAsync(WatchedAuctionClosingSoonIntegrationEvent message, CancellationToken cancellationToken)
     {
-        var message = context.Message;
 
         var reminder = Notification.Create(
             message.UserId,
@@ -28,6 +30,6 @@ public sealed class NotifyWatcherClosingSoonConsumer : IConsumer<WatchedAuctionC
             message.EndsAtUtc,
             _timeProvider.GetUtcNow());
 
-        return _inbox.DeliverAsync([reminder], context.CancellationToken);
+        return _inbox.DeliverAsync([reminder], cancellationToken);
     }
 }

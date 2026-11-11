@@ -17,9 +17,11 @@ public sealed class BroadcastAuctionCreatedConsumer : IConsumer<AuctionCreatedIn
         _logger = logger;
     }
 
-    public async Task Consume(ConsumeContext<AuctionCreatedIntegrationEvent> context)
+    public Task Consume(ConsumeContext<AuctionCreatedIntegrationEvent> context) =>
+        HandleAsync(context.Message, context.CancellationToken);
+
+    public async Task HandleAsync(AuctionCreatedIntegrationEvent message, CancellationToken cancellationToken)
     {
-        var message = context.Message;
 
         await _notifier.AuctionStatusChangedAsync(
             new AuctionStatusChangedNotification(
@@ -29,7 +31,7 @@ public sealed class BroadcastAuctionCreatedConsumer : IConsumer<AuctionCreatedIn
                 null,
                 message.EndsAtUtc,
                 message.OccurredAtUtc),
-            context.CancellationToken);
+            cancellationToken);
 
         _logger.LogInformation(
             "Broadcast status {Status} for auction {AuctionId} to real-time watchers",

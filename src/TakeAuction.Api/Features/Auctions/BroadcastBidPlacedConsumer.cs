@@ -15,9 +15,11 @@ public sealed class BroadcastBidPlacedConsumer : IConsumer<BidPlacedIntegrationE
         _logger = logger;
     }
 
-    public async Task Consume(ConsumeContext<BidPlacedIntegrationEvent> context)
+    public Task Consume(ConsumeContext<BidPlacedIntegrationEvent> context) =>
+        HandleAsync(context.Message, context.CancellationToken);
+
+    public async Task HandleAsync(BidPlacedIntegrationEvent message, CancellationToken cancellationToken)
     {
-        var message = context.Message;
 
         await _notifier.BidPlacedAsync(
             new BidPlacedNotification(
@@ -31,7 +33,7 @@ public sealed class BroadcastBidPlacedConsumer : IConsumer<BidPlacedIntegrationE
                 message.EndsAtUtc,
                 message.AuctionExtended,
                 message.OccurredAtUtc),
-            context.CancellationToken);
+            cancellationToken);
 
         _logger.LogInformation(
             "Broadcast bid {BidId} on auction {AuctionId} to real-time watchers",
@@ -51,6 +53,6 @@ public sealed class BroadcastBidPlacedConsumer : IConsumer<BidPlacedIntegrationE
                 message.Amount,
                 message.EndsAtUtc,
                 message.OccurredAtUtc),
-            context.CancellationToken);
+            cancellationToken);
     }
 }

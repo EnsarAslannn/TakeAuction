@@ -1,8 +1,9 @@
 using Microsoft.Extensions.Options;
+using TakeAuction.Api.Features.Media.UploadImage;
 
 namespace TakeAuction.Api.Features.Media;
 
-public sealed class MediaStorage
+public sealed class MediaStorage : IImageWriter
 {
     private readonly MediaOptions _options;
 
@@ -27,4 +28,11 @@ public sealed class MediaStorage
         $"{RequestPath}/{_options.ImageFolder.Trim('/')}/{fileName}";
 
     public void EnsureCreated() => Directory.CreateDirectory(ImageRoot);
+
+    public async Task StoreAsync(string fileName, ImageFormat format, Stream source, CancellationToken cancellationToken)
+    {
+        EnsureCreated();
+        await using var target = File.Create(Path.Combine(ImageRoot, fileName));
+        await source.CopyToAsync(target, cancellationToken);
+    }
 }

@@ -1,0 +1,5 @@
+/.next/
+/.workflow-data/
+/node_modules/
+/next-env.d.ts
+/app/.well-known/workflow/

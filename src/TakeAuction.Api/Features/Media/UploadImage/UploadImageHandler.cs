@@ -8,11 +8,13 @@ public sealed class UploadImageHandler : IRequestHandler<UploadImageCommand, Upl
 {
     private readonly MediaStorage _storage;
     private readonly ILogger<UploadImageHandler> _logger;
+    private readonly IImageWriter _writer;
 
-    public UploadImageHandler(MediaStorage storage, ILogger<UploadImageHandler> logger)
+    public UploadImageHandler(MediaStorage storage, ILogger<UploadImageHandler> logger, IImageWriter? writer = null)
     {
         _storage = storage;
         _logger = logger;
+        _writer = writer ?? storage;
     }
 
     public async Task<UploadImageResponse> Handle(UploadImageCommand command, CancellationToken cancellationToken)
@@ -30,15 +32,10 @@ public sealed class UploadImageHandler : IRequestHandler<UploadImageCommand, Upl
             ]);
         }
 
-        _storage.EnsureCreated();
-
         var fileName = $"{Guid.CreateVersion7():n}{format.Extension}";
 
-        await using (var target = File.Create(Path.Combine(_storage.ImageRoot, fileName)))
-        {
-            command.Content.Position = 0;
-            await command.Content.CopyToAsync(target, cancellationToken);
-        }
+        command.Content.Position = 0;
+        await _writer.StoreAsync(fileName, format, command.Content, cancellationToken);
 
         var url = _storage.UrlFor(fileName);
 

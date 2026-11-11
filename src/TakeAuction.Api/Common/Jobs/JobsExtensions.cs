@@ -19,6 +19,11 @@ public static class JobsExtensions
         services.AddOptions<JobOptions>().Bind(section);
 
         var options = section.Get<JobOptions>() ?? new JobOptions();
+        if (configuration.GetValue<bool>("DurableJobs:Enabled"))
+        {
+            return services;
+        }
+
         var connectionString = configuration.GetConnectionString("Postgres")
             ?? throw new InvalidOperationException("Connection string 'Postgres' is not configured.");
 
@@ -58,7 +63,11 @@ public static class JobsExtensions
     {
         using var scope = app.ApplicationServices.CreateScope();
 
-        var manager = scope.ServiceProvider.GetRequiredService<IRecurringJobManager>();
+        var manager = scope.ServiceProvider.GetService<IRecurringJobManager>();
+        if (manager is null)
+        {
+            return app;
+        }
 
         foreach (var registration in scope.ServiceProvider.GetServices<IRecurringJobRegistration>())
         {
@@ -72,7 +81,7 @@ public static class JobsExtensions
     {
         var options = app.ApplicationServices.GetRequiredService<IOptions<JobOptions>>().Value;
 
-        if (!options.DashboardEnabled)
+        if (!options.DashboardEnabled || app.ApplicationServices.GetRequiredService<IOptions<DurableJobsOptions>>().Value.Enabled)
         {
             return app;
         }

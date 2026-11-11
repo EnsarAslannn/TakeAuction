@@ -77,7 +77,7 @@ export async function createAuction(payload: CreateAuctionPayload): Promise<Crea
 }
 
 export const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif"];
-export const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
+export const MAX_IMAGE_SIZE_BYTES = (import.meta.env.VITE_VERCEL_API_ORIGIN ? 4 : 5) * 1024 * 1024;
 
 export async function uploadAuctionImage(file: File): Promise<UploadImageResponse> {
   const body = new FormData();

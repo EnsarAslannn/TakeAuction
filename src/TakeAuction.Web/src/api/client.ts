@@ -3,7 +3,10 @@ import { translate } from "@/i18n";
 import type { ProblemDetails } from "./types";
 
 export const API_BASE = import.meta.env.VITE_API_BASE ?? "/api/v1";
-export const HUB_URL = import.meta.env.VITE_HUB_URL ?? "/hubs/auctions";
+export const VERCEL_API_ORIGIN = import.meta.env.VITE_VERCEL_API_ORIGIN;
+export const HUB_URL = VERCEL_API_ORIGIN
+  ? new URL("/hubs/auctions", VERCEL_API_ORIGIN).href
+  : (import.meta.env.VITE_HUB_URL ?? "/hubs/auctions");
 
 const CSRF_COOKIE = "takeauction_csrf";
 const CSRF_HEADER = "X-CSRF-TOKEN";

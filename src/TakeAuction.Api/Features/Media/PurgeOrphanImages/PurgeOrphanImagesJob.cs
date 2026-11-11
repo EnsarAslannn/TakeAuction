@@ -31,12 +31,20 @@ public sealed class PurgeOrphanImagesJob
 
     public async Task<int> RunAsync(CancellationToken cancellationToken)
     {
+        var cutoff = _timeProvider.GetUtcNow().AddHours(-_options.OrphanRetentionHours);
+        if (_options.StoreInPostgres)
+        {
+            var prefix = _storage.UrlFor("");
+            return await _dbContext.AuctionImages
+                .Where(image => image.CreatedAtUtc < cutoff &&
+                    !_dbContext.Auctions.Any(auction => auction.ImageUrl == prefix + image.FileName))
+                .ExecuteDeleteAsync(cancellationToken);
+        }
+
         if (!Directory.Exists(_storage.ImageRoot))
         {
             return 0;
         }
-
-        var cutoff = _timeProvider.GetUtcNow().AddHours(-_options.OrphanRetentionHours);
 
         var referenced = await _dbContext.Auctions
             .AsNoTracking()

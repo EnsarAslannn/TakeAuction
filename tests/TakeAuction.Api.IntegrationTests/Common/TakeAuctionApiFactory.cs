@@ -20,6 +20,7 @@ public sealed class TakeAuctionApiFactory : WebApplicationFactory<Program>
         ["RateLimiting__AuthPermitLimit"] = "1000000",
         ["RateLimiting__MediaUploadPermitLimit"] = "1000000",
         ["Seed__Enabled"] = "false",
+        ["Media__StoreInPostgres"] = "true",
         ["Jobs__ServerEnabled"] = "true",
         ["Jobs__WorkerCount"] = "2",
         ["Jobs__QueuePollIntervalSeconds"] = "1",

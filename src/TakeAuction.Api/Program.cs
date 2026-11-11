@@ -25,6 +25,7 @@ Log.Logger = new LoggerConfiguration()
 try
 {
     var builder = WebApplication.CreateBuilder(args);
+    MarketplaceConnections.Apply(builder.Configuration);
 
     builder.Host.UseTakeAuctionSerilog();
 
@@ -42,10 +43,11 @@ try
     builder.Services.AddTakeAuctionOutbox(builder.Configuration, Assembly.GetExecutingAssembly());
     builder.Services.AddTakeAuctionRealTime(builder.Configuration);
     builder.Services.AddTakeAuctionJobs(builder.Configuration, Assembly.GetExecutingAssembly());
+    builder.Services.AddTakeAuctionDurableJobs(builder.Configuration);
     builder.Services.AddTakeAuctionEndpoints(Assembly.GetExecutingAssembly());
     builder.Services.AddTakeAuctionHealthChecks(builder.Configuration);
     builder.Services.AddTakeAuctionTelemetry(builder.Configuration, builder.Environment);
-    builder.Services.AddAuctionsFeature();
+    builder.Services.AddAuctionsFeature(builder.Configuration);
     builder.Services.AddChatFeature();
     builder.Services.AddMediaFeature(builder.Configuration);
     builder.Services.AddNotificationsFeature();
@@ -109,6 +111,7 @@ try
     api.MapTakeAuctionEndpoints();
 
     app.MapTakeAuctionRealTime();
+    app.MapTakeAuctionDurableJobs();
     app.UseTakeAuctionRecurringJobs();
 
     app.MapTakeAuctionHealthChecks();

@@ -2,9 +2,10 @@ import {
   HubConnection,
   HubConnectionBuilder,
   HubConnectionState,
+  HttpTransportType,
   LogLevel,
 } from "@microsoft/signalr";
-import { HUB_URL } from "@/api/client";
+import { HUB_URL, VERCEL_API_ORIGIN } from "@/api/client";
 import { getHubTicket } from "@/api/auth";
 import type {
   AuctionStatusChangedNotification,
@@ -59,6 +60,9 @@ class AuctionHubClient {
     const connection = new HubConnectionBuilder()
       .withUrl(HUB_URL, {
         withCredentials: true,
+        ...(VERCEL_API_ORIGIN
+          ? { skipNegotiation: true, transport: HttpTransportType.WebSockets }
+          : {}),
         accessTokenFactory: async () =>
           readCookie(CSRF_COOKIE) === null ? "" : ((await getHubTicket()) ?? ""),
         headers: csrf ? { [CSRF_HEADER]: csrf } : {},

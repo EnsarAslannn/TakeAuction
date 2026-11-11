@@ -9,6 +9,8 @@ public sealed class OutboxSignalInterceptor : SaveChangesInterceptor
 
     private bool _queuedInThisSave;
 
+    public bool HasQueuedMessages { get; private set; }
+
     public OutboxSignalInterceptor(OutboxSignal signal) => _signal = signal;
 
     public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
@@ -72,6 +74,7 @@ public sealed class OutboxSignalInterceptor : SaveChangesInterceptor
         }
 
         _queuedInThisSave = false;
+        HasQueuedMessages = true;
         _signal.Notify();
     }
 }

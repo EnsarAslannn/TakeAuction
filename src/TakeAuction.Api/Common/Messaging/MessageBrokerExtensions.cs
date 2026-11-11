@@ -10,6 +10,11 @@ public static class MessageBrokerExtensions
         IConfiguration configuration,
         Assembly assembly)
     {
+        if (configuration.GetValue<bool>("DurableJobs:Enabled"))
+        {
+            return services;
+        }
+
         var section = configuration.GetSection(MessageBrokerOptions.SectionName);
 
         services.AddOptions<MessageBrokerOptions>().Bind(section);

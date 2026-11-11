@@ -1,6 +1,5 @@
 using System.Data.Common;
 using System.Text.Json;
-using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Options;
@@ -40,7 +39,7 @@ public sealed class OutboxDispatcher
         """UPDATE outbox_messages SET "LastError" = {0} WHERE "Id" = {1}""";
 
     private readonly AppDbContext _dbContext;
-    private readonly IPublishEndpoint _publishEndpoint;
+    private readonly IOutboxTransport _transport;
     private readonly IntegrationEventTypeRegistry _registry;
     private readonly TimeProvider _timeProvider;
     private readonly IOptions<OutboxOptions> _options;
@@ -49,7 +48,7 @@ public sealed class OutboxDispatcher
 
     public OutboxDispatcher(
         AppDbContext dbContext,
-        IPublishEndpoint publishEndpoint,
+        IOutboxTransport transport,
         IntegrationEventTypeRegistry registry,
         TimeProvider timeProvider,
         IOptions<OutboxOptions> options,
@@ -57,7 +56,7 @@ public sealed class OutboxDispatcher
         ILogger<OutboxDispatcher> logger)
     {
         _dbContext = dbContext;
-        _publishEndpoint = publishEndpoint;
+        _transport = transport;
         _registry = registry;
         _timeProvider = timeProvider;
         _options = options;
@@ -114,7 +113,7 @@ public sealed class OutboxDispatcher
             var integrationEvent = JsonSerializer.Deserialize(message.Payload, contract, Outbox.SerializerOptions)
                 ?? throw new InvalidOperationException($"Outbox payload for '{message.Type}' deserialised to null.");
 
-            await _publishEndpoint.Publish(integrationEvent, contract, cancellationToken);
+            await _transport.PublishAsync(integrationEvent, contract, cancellationToken);
 
             return true;
         }
